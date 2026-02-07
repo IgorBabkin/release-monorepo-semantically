@@ -1,0 +1,111 @@
+@startuml Domain Entities Model
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Core Domain Entities" {
+
+  class NpmPackage <<entity>> {
+    + name: string
+    + path: string
+    + version: string
+    + private: boolean
+    + dependencies: Record<string, string>
+    + devDependencies: Record<string, string>
+    --
+    Represents a package in the monorepo
+  }
+
+  class ConventionalCommit <<entity>> {
+    + hash: string
+    + type: CommitType
+    + scope: string | null
+    + subject: string
+    + body: string | null
+    + footer: Record<string, string>
+    + isBreaking: boolean
+    + authorName: string
+    + authorEmail: string
+    + date: Date
+    --
+    Represents a parsed conventional commit
+  }
+
+  class PackageRelease <<aggregate>> {
+    + package: NpmPackage
+    + commits: ConventionalCommit[]
+    + dependencyUpdates: DependencyUpdate[]
+    + bumpType: SemVerBumpType
+    + oldVersion: string
+    + newVersion: string
+    --
+    Aggregate root for a package release
+    Contains all information needed to release a package
+  }
+
+  class DependencyUpdate <<value object>> {
+    + packageName: string
+    + oldVersion: string
+    + newVersion: string
+    --
+    Represents an internal dependency update
+  }
+
+  class ChangelogEntry <<value object>> {
+    + version: string
+    + date: string
+    + breakingChanges: ConventionalCommit[]
+    + features: ConventionalCommit[]
+    + fixes: ConventionalCommit[]
+    + performance: ConventionalCommit[]
+    + dependencyUpdates: DependencyUpdate[]
+    --
+    Represents a changelog entry for a version
+  }
+
+  enum SemVerBumpType <<enumeration>> {
+    NONE
+    PATCH
+    MINOR
+    MAJOR
+  }
+
+  enum CommitType <<enumeration>> {
+    feat
+    fix
+    perf
+    docs
+    test
+    ci
+    chore
+    refactor
+    style
+  }
+}
+
+' Composition relationships
+PackageRelease *-- NpmPackage : contains
+PackageRelease *-- ConventionalCommit : contains (many)
+PackageRelease *-- DependencyUpdate : contains (many)
+PackageRelease --> SemVerBumpType : uses
+
+ChangelogEntry *-- ConventionalCommit : contains (many)
+ChangelogEntry *-- DependencyUpdate : contains (many)
+
+ConventionalCommit --> CommitType : uses
+
+' Notes
+note right of PackageRelease
+  This is the aggregate root
+  for the release domain.
+  It encapsulates all data
+  needed to perform a release.
+end note
+
+note right of ConventionalCommit
+  Follows Conventional Commits
+  specification v1.0.0
+end note
+
+@enduml

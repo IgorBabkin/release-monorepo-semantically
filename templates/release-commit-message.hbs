@@ -1,0 +1,13 @@
+ci: release [skip-ci]
+{{#each releases}}
+
+## {{this.package.name}}@{{this.newVersion}}
+{{#each this.commits}}
+- {{this.type}}{{#if this.isBreaking}}!{{/if}}: {{this.subject}}
+{{/each}}
+{{#each this.dependencyUpdates}}
+- deps: update {{this.packageName}} to {{this.newVersion}}
+{{/each}}
+{{/each}}
+
+Affected: {{#each releases}}{{this.package.name}}@{{this.newVersion}}{{#unless @last}},{{/unless}}{{/each}}

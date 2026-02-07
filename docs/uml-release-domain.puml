@@ -1,0 +1,143 @@
+@startuml Release Domain Model
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "Release Domain" {
+
+  class ReleaseController {
+    - rootPath: string
+    - options: ReleaseOptions
+    - releasedVersions: Map<string, string>
+    --
+    + execute(): Promise<void>
+    - discoverPackages(): NpmPackage[]
+    - buildDependencyGraph(packages: NpmPackage[]): Map<string, string[]>
+    - topologicalSort(packages: NpmPackage[], graph: Map<string, string[]>): NpmPackage[]
+    - processPackage(pkg: NpmPackage): PackageRelease
+    - checkDependencyUpdates(pkg: NpmPackage): DependencyUpdate[]
+    - releasePackage(release: PackageRelease): Promise<void>
+    - getLastTag(packageName: string): string | undefined
+    - updatePackageDependencies(pkg: NpmPackage, updates: DependencyUpdate[]): void
+    - runNpmVersion(pkg: NpmPackage, version: string): void
+    - generateChangelog(pkg: NpmPackage, release: PackageRelease): void
+    - createTag(packageName: string, version: string): void
+    - updateLockfile(): void
+    - createReleaseCommit(releases: PackageRelease[]): void
+    - pushToRemote(releases: PackageRelease[]): void
+    - printSummary(releases: PackageRelease[]): void
+  }
+
+  class CommitParser {
+    {static} + parse(commitMessage: string, hash: string): ConventionalCommit
+    {static} + getCommitsSince(sinceTag?: string): ConventionalCommit[]
+    {static} + filterByScope(commits: ConventionalCommit[], packageName: string): ConventionalCommit[]
+    {static} + validateConventional(commits: string[]): {valid: boolean, errors: string[]}
+    {static} + isReleaseTrigger(type: CommitType): boolean
+  }
+
+  class SemverCalculator {
+    {static} + calculateBump(commits: ConventionalCommit[], dependencyUpdates: DependencyUpdate[]): SemVerBumpType
+    {static} + bumpVersion(version: string, bumpType: SemVerBumpType): string
+    {static} + getBumpReason(commits: ConventionalCommit[], dependencyUpdates: DependencyUpdate[]): string
+    {static} + filterReleaseCommits(commits: ConventionalCommit[]): ConventionalCommit[]
+    {static} + isExactVersion(version: string): boolean
+    {static} + compareVersions(v1: string, v2: string): number
+  }
+
+  class NpmPackage {
+    + name: string
+    + path: string
+    + version: string
+    + private: boolean
+    + dependencies?: Record<string, string>
+    + devDependencies?: Record<string, string>
+  }
+
+  class ConventionalCommit {
+    + hash: string
+    + type: CommitType
+    + scope: string | null
+    + subject: string
+    + body: string | null
+    + footer: Record<string, string>
+    + isBreaking: boolean
+    + authorName: string
+    + authorEmail: string
+    + date: Date
+  }
+
+  class PackageRelease {
+    + package: NpmPackage
+    + commits: ConventionalCommit[]
+    + dependencyUpdates: DependencyUpdate[]
+    + bumpType: SemVerBumpType
+    + oldVersion: string
+    + newVersion: string
+  }
+
+  class DependencyUpdate {
+    + packageName: string
+    + oldVersion: string
+    + newVersion: string
+  }
+
+  class ReleaseOptions {
+    + dryRun: boolean
+  }
+
+  class ChangelogEntry {
+    + version: string
+    + date: string
+    + breakingChanges: ConventionalCommit[]
+    + features: ConventionalCommit[]
+    + fixes: ConventionalCommit[]
+    + performance: ConventionalCommit[]
+    + dependencyUpdates: DependencyUpdate[]
+  }
+
+  enum SemVerBumpType {
+    NONE
+    PATCH
+    MINOR
+    MAJOR
+  }
+
+  enum CommitType {
+    feat
+    fix
+    perf
+    docs
+    test
+    ci
+    chore
+    refactor
+    style
+  }
+}
+
+' Relationships
+ReleaseController --> ReleaseOptions : uses
+ReleaseController --> NpmPackage : processes
+ReleaseController --> PackageRelease : creates
+ReleaseController --> DependencyUpdate : tracks
+ReleaseController --> ChangelogEntry : generates
+ReleaseController ..> CommitParser : uses
+ReleaseController ..> SemverCalculator : uses
+
+PackageRelease --> NpmPackage : contains
+PackageRelease --> ConventionalCommit : contains
+PackageRelease --> DependencyUpdate : contains
+PackageRelease --> SemVerBumpType : uses
+
+ChangelogEntry --> ConventionalCommit : contains
+ChangelogEntry --> DependencyUpdate : contains
+
+ConventionalCommit --> CommitType : uses
+
+CommitParser ..> ConventionalCommit : creates
+SemverCalculator ..> ConventionalCommit : analyzes
+SemverCalculator ..> DependencyUpdate : analyzes
+SemverCalculator --> SemVerBumpType : returns
+
+@enduml

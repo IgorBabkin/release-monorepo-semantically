@@ -1,0 +1,149 @@
+@startuml Release Workflow Sequence
+
+!theme plain
+
+actor User
+participant "CLI Entry Point" as CLI
+participant "ReleaseController" as Controller
+participant "CommitParser" as Parser
+participant "SemverCalculator" as Semver
+participant "Git Repository" as Git
+participant "File System" as FS
+participant "NPM" as NPM
+
+User -> CLI: Execute release command
+activate CLI
+
+CLI -> Controller: new ReleaseController(rootPath, options)
+activate Controller
+
+CLI -> Controller: execute()
+activate Controller
+
+' Phase 1: Discovery
+Controller -> FS: read package.json
+activate FS
+FS --> Controller: root package.json
+deactivate FS
+
+Controller -> Controller: discoverPackages()
+Controller -> FS: glob workspace patterns
+activate FS
+FS --> Controller: package paths
+deactivate FS
+
+loop For each package path
+    Controller -> FS: read package.json
+    activate FS
+    FS --> Controller: package data
+    deactivate FS
+    Controller -> Controller: create NpmPackage
+end
+
+' Phase 2: Dependency Graph
+Controller -> Controller: buildDependencyGraph(packages)
+Controller -> Controller: topologicalSort(packages, graph)
+
+' Phase 3: Process Packages
+loop For each package (topologically sorted)
+    Controller -> Controller: processPackage(pkg)
+    
+    Controller -> Git: getLastTag(packageName)
+    activate Git
+    Git --> Controller: lastTag or undefined
+    deactivate Git
+    
+    Controller -> Parser: getCommitsSince(lastTag)
+    activate Parser
+    Parser -> Git: git log
+    activate Git
+    Git --> Parser: commit messages
+    deactivate Git
+    Parser -> Parser: parse commits
+    Parser --> Controller: ConventionalCommit[]
+    deactivate Parser
+    
+    Controller -> Parser: filterByScope(commits, packageName)
+    activate Parser
+    Parser --> Controller: filtered commits
+    deactivate Parser
+    
+    Controller -> Controller: checkDependencyUpdates(pkg)
+    
+    Controller -> Semver: calculateBump(commits, dependencyUpdates)
+    activate Semver
+    Semver --> Controller: SemVerBumpType
+    deactivate Semver
+    
+    Controller -> Semver: bumpVersion(oldVersion, bumpType)
+    activate Semver
+    Semver --> Controller: newVersion
+    deactivate Semver
+    
+    Controller -> Controller: create PackageRelease
+    
+    alt bumpType !== NONE
+        Controller -> Controller: releasePackage(release)
+        
+        alt !dryRun
+            Controller -> Controller: updatePackageDependencies()
+            Controller -> FS: update package.json
+            activate FS
+            deactivate FS
+            
+            Controller -> NPM: npm version
+            activate NPM
+            NPM --> Controller: version updated
+            deactivate NPM
+            
+            Controller -> Controller: generateChangelog()
+            Controller -> FS: read/write CHANGELOG.md
+            activate FS
+            deactivate FS
+            
+            Controller -> Git: create tag
+            activate Git
+            Git --> Controller: tag created
+            deactivate Git
+        end
+    end
+end
+
+' Phase 4: Finalization
+alt !dryRun
+    Controller -> NPM: pnpm install --lockfile-only
+    activate NPM
+    NPM --> Controller: lockfile updated
+    deactivate NPM
+    
+    Controller -> Controller: createReleaseCommit(releases)
+    Controller -> Git: git add .
+    activate Git
+    Git --> Controller: files staged
+    deactivate Git
+    
+    Controller -> Git: git commit
+    activate Git
+    Git --> Controller: commit created
+    deactivate Git
+    
+    Controller -> Controller: pushToRemote(releases)
+    Controller -> Git: git push
+    activate Git
+    Git --> Controller: pushed
+    deactivate Git
+    
+    Controller -> Git: git push --tags
+    activate Git
+    Git --> Controller: tags pushed
+    deactivate Git
+end
+
+Controller -> Controller: printSummary(releases)
+Controller --> CLI: complete
+deactivate Controller
+
+CLI --> User: Release complete
+deactivate CLI
+
+@enduml

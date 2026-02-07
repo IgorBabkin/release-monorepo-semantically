@@ -1,0 +1,127 @@
+@startuml Service Layer Model
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "Service Layer" {
+
+  class ReleaseController <<service>> {
+    - rootPath: string
+    - options: ReleaseOptions
+    - releasedVersions: Map<string, string>
+    --
+    Controls the entire release workflow
+    Coordinates between domain services
+  }
+
+  class CommitParser <<service>> {
+    {static} + parse(commitMessage: string, hash: string): ConventionalCommit
+    {static} + getCommitsSince(sinceTag?: string): ConventionalCommit[]
+    {static} + filterByScope(commits: ConventionalCommit[], packageName: string): ConventionalCommit[]
+    {static} + validateConventional(commits: string[]): ValidationResult
+    {static} + isReleaseTrigger(type: CommitType): boolean
+    --
+    Domain service for parsing and validating commits
+  }
+
+  class SemverCalculator <<service>> {
+    {static} + calculateBump(commits: ConventionalCommit[], dependencyUpdates: DependencyUpdate[]): SemVerBumpType
+    {static} + bumpVersion(version: string, bumpType: SemVerBumpType): string
+    {static} + getBumpReason(commits: ConventionalCommit[], dependencyUpdates: DependencyUpdate[]): string
+    {static} + filterReleaseCommits(commits: ConventionalCommit[]): ConventionalCommit[]
+    {static} + isExactVersion(version: string): boolean
+    {static} + compareVersions(v1: string, v2: string): number
+    --
+    Domain service for semantic version calculations
+  }
+
+  class VcsService <<service>> {
+    + getCommits(sinceTag?: string): GitCommit[]
+    + getCurrentBranch(): string
+    + getLatestTag(packagePath?: string): string | null
+    + createTag(tagName: string, message: string): void
+    + commit(message: string, files: string[]): void
+    + push(includeTags: boolean): void
+    + hasUncommittedChanges(): boolean
+    --
+    Infrastructure service for VCS operations
+  }
+
+  class FileSystemService <<service>> {
+    + readJson(filePath: string): any
+    + writeJson(filePath: string, data: any): void
+    + readFile(filePath: string): string
+    + writeFile(filePath: string, content: string): void
+    + fileExists(filePath: string): boolean
+    + findPackages(rootPath: string): string[]
+    --
+    Infrastructure service for file system operations
+  }
+
+  interface ReleaseOptions {
+    + dryRun: boolean
+  }
+}
+
+package "Domain Entities" {
+  class PackageRelease
+  class ConventionalCommit
+  class DependencyUpdate
+  class SemVerBumpType
+  class CommitType
+}
+
+' Service dependencies
+ReleaseController ..> CommitParser : uses
+ReleaseController ..> SemverCalculator : uses
+ReleaseController ..> VcsService : uses
+ReleaseController ..> FileSystemService : uses
+ReleaseController --> ReleaseOptions : uses
+
+CommitParser ..> VcsService : uses
+CommitParser ..> ConventionalCommit : creates
+CommitParser ..> CommitType : uses
+
+SemverCalculator ..> ConventionalCommit : analyzes
+SemverCalculator ..> DependencyUpdate : analyzes
+SemverCalculator ..> SemVerBumpType : returns
+
+ReleaseController ..> PackageRelease : creates
+
+' Notes
+note top of ReleaseController
+  Main controller that implements
+  the release workflow:
+  1. Discover packages
+  2. Build dependency graph
+  3. Topological sort
+  4. Process each package
+  5. Release packages
+  6. Finalize (commit, push)
+end note
+
+note right of CommitParser
+  Static utility class
+  Parses git commits following
+  Conventional Commits spec
+end note
+
+note right of SemverCalculator
+  Static utility class
+  Implements semantic versioning
+  bump calculation logic
+end note
+
+note bottom of VcsService
+  Encapsulates all Git/VCS operations
+  Isolates the domain layer from
+  specific VCS implementation
+end note
+
+note bottom of FileSystemService
+  Encapsulates all file system operations
+  Provides abstraction over Node.js fs module
+  Makes testing easier via dependency injection
+end note
+
+@enduml
