@@ -1,0 +1,8 @@
+---
+description: Read CLAUDE.md for initial project context
+alwaysApply: true
+---
+
+# Initial Context
+
+When starting work in this repository, read **CLAUDE.md** at the project root for initial context. It describes the project overview, conventional commits, release process, and development guidelines.
