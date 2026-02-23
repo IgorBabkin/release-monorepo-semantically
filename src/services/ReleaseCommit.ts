@@ -1,10 +1,10 @@
-import { VcsService } from './VcsService';
-import { RenderService } from './RenderService';
+import { GitService } from './GitService';
+import { HandlebarsRenderService } from './HandlebarsRenderService';
 
 export class ReleaseCommit {
   constructor(
-    private vscService: VcsService,
-    private readonly renderService: RenderService,
+    private vscService: GitService,
+    private readonly renderService: HandlebarsRenderService,
   ) {}
 
   commit(context: Record<string, unknown>): void {

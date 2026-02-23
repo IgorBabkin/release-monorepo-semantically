@@ -1,5 +1,3 @@
-import { FileSystemService } from './services/FileSystemService';
-import { VcsService } from './services/VcsService';
 import { NpmPackage } from './models/NpmPackage';
 import { bumpVersion, SemVerBumpType } from './models/SemVerBumpType';
 import { PackageJSON } from './models/PackageJSON';
@@ -8,14 +6,16 @@ import { ChangelogRenderer } from './services/ChangelogRenderer';
 import { sortLessDependenciesFirst } from './sortLessDependenciesFirst';
 import { PackageManager } from './services/PackageManager';
 import path from 'node:path';
+import { NodeFileSystemService } from './services/NodeFileSystemService';
+import { GitService } from './services/GitService';
 
 export class MonorepoController {
   private packages: NpmPackage[] = [];
   private rootPackageJson!: PackageJSON;
 
   constructor(
-    private fileSystemService: FileSystemService,
-    private vscService: VcsService,
+    private fileSystemService: NodeFileSystemService,
+    private vscService: GitService,
     private changelog: ChangelogRenderer,
     private releaseCommit: ReleaseCommit,
     private packageManager: PackageManager,

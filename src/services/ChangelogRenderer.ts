@@ -1,14 +1,14 @@
 import path from 'node:path';
-import { RenderService } from './RenderService';
-import { FileSystemService } from './FileSystemService';
 import { ConventionalCommit } from '../models/ConventionalCommit';
+import { NodeFileSystemService } from './NodeFileSystemService';
+import { HandlebarsRenderService } from './HandlebarsRenderService';
 
 export class ChangelogRenderer {
   private commits: ConventionalCommit[] = [];
 
   constructor(
-    private readonly renderService: RenderService,
-    private readonly fs: FileSystemService,
+    private readonly renderService: HandlebarsRenderService,
+    private readonly fs: NodeFileSystemService,
   ) {}
 
   addLog(entry: ConventionalCommit): void {

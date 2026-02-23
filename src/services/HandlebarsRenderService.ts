@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs';
 import Handlebars from 'handlebars';
-import { RenderService } from './RenderService';
 import path from 'node:path';
 
-export class HandlebarsRenderService implements RenderService {
+export class HandlebarsRenderService {
   constructor(private basePath: string) {}
 
   render(templatePath: string, data: Record<string, unknown>): string {

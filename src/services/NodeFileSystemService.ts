@@ -1,8 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { globSync } from 'glob';
-import { FileSystemService } from './FileSystemService';
 
-export class NodeFileSystemService implements FileSystemService {
+export class NodeFileSystemService {
   readJson<T = unknown>(filePath: string): T {
     const content = readFileSync(filePath, 'utf-8');
     return JSON.parse(content);

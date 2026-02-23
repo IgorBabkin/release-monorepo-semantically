@@ -1,8 +1,7 @@
 import { execSync } from 'node:child_process';
-import { VcsService } from './VcsService';
 import { ConventionalCommit } from '../models/ConventionalCommit';
 
-export class GitService implements VcsService {
+export class GitService {
   findManyCommitsSinceTag(sinceTag: string): ConventionalCommit[] {
     const range = `${sinceTag}..HEAD`;
     const output = execSync(`git log ${range} --format="%H %s"`, { encoding: 'utf-8' }).trim();
