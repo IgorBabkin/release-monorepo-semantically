@@ -1,25 +1,26 @@
-import {Container, IContainer} from "ts-ioc-container";
-import {CommonDeps} from "./di/CommonDeps";
-import {IDispatcherKey} from "./IDispatcher";
-import {IExceptionHandlerKey} from "./IErrorHandler";
+import { MonorepoController } from './MonorepoController';
+import { NodeFileSystemService } from './services/NodeFileSystemService';
+import { GitService } from './services/GitService';
+import { ChangelogRenderer } from './services/ChangelogRenderer';
+import { HandlebarsRenderService } from './services/HandlebarsRenderService';
+import { ReleaseCommit } from './services/ReleaseCommit';
+import { PackageManager } from './services/PackageManager';
 
-export function bootstrap(container: IContainer) {
-    const dispatcher = IDispatcherKey.resolve(container);
-    const errorHandlerList = IExceptionHandlerKey.resolve(container);
-    try {
-        const command = process.argv[1];
-        const args = process.argv.slice(2);
-        dispatcher.dispatch(command, args);
-    } catch (error) {
-        const handler = errorHandlerList.sort((a, b) => a.priority - b.priority).find(handler => handler.matches(error));
-        if (!handler) {
-            throw new Error('Cannot find error handler');
-        }
-        handler.handle(error);
-    } finally {
-        container.dispose();
-    }
+// Dependencies
+const fsService = new NodeFileSystemService();
+const vcs = new GitService();
+const renderService = new HandlebarsRenderService(process.cwd());
+const changelog = new ChangelogRenderer(renderService, fsService);
+const releaseCommit = new ReleaseCommit(vcs, renderService);
+const packageManager = new PackageManager();
+
+const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager);
+
+try {
+  // const args = process.argv.slice(2);
+  controller.discoverRootPackageJSON();
+  controller.discoverPackages();
+  controller.release();
+} catch (error) {
+  console.error(error);
 }
-
-const container = new Container().useModule(new CommonDeps());
-bootstrap(container);

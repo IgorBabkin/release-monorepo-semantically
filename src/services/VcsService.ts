@@ -1,11 +1,8 @@
-import { SingleToken } from "ts-ioc-container";
+import { ConventionalCommit } from '../models/ConventionalCommit';
 
 export interface VcsService {
-  getCommits(sinceTag?: string): string[];
-  getLatestTag(packageName: string): string | null;
   createTag(tagName: string): void;
   commit(message: string): void;
   push(includeTags: boolean): void;
+  findManyCommitsSinceTag(tag: string): ConventionalCommit[];
 }
-
-export const VcsServiceKey = new SingleToken<VcsService>('VcsService');

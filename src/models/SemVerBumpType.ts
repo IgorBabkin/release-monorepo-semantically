@@ -18,3 +18,11 @@ export function bumpVersion(version: string, bumpType: SemVerBumpType): string {
       return version;
   }
 }
+
+export class Semver {
+  bumpType: SemVerBumpType = SemVerBumpType.NONE;
+
+  bump(type: SemVerBumpType) {
+    this.bumpType = Math.max(this.bumpType, type);
+  }
+}

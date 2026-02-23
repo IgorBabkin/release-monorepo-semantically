@@ -1,11 +1,7 @@
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { globSync } from 'glob';
 import { FileSystemService } from './FileSystemService';
-import {bindTo, register} from "ts-ioc-container";
-import { FileSystemServiceKey } from './FileSystemService';
 
-@register(bindTo(FileSystemServiceKey))
 export class NodeFileSystemService implements FileSystemService {
   readJson<T = unknown>(filePath: string): T {
     const content = readFileSync(filePath, 'utf-8');
@@ -28,10 +24,7 @@ export class NodeFileSystemService implements FileSystemService {
     return existsSync(filePath);
   }
 
-  findPackages(rootPath: string): string[] {
-    const rootPkgJson = this.readJson<{ workspaces?: string[] }>(join(rootPath, 'package.json'));
-    const patterns = rootPkgJson.workspaces ?? [];
-
-    return patterns.flatMap((pattern) => globSync(pattern, { cwd: rootPath, absolute: true }));
+  findManyByGlob(patterns: string[], cwd = process.cwd()): string[] {
+    return patterns.flatMap((pattern) => globSync(pattern, { cwd, absolute: true }));
   }
 }

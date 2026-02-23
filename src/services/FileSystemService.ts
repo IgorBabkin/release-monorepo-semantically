@@ -1,4 +1,4 @@
-import {SingleToken} from "ts-ioc-container";
+import { SingleToken } from 'ts-ioc-container';
 
 export interface FileSystemService {
   readJson(filePath: string): unknown;
@@ -6,7 +6,7 @@ export interface FileSystemService {
   readFile(filePath: string): string;
   writeFile(filePath: string, content: string): void;
   fileExists(filePath: string): boolean;
-  findPackages(rootPath: string): string[];
+  findManyByGlob(patterns: string[], cwd?: string): string[];
 }
 
 export const FileSystemServiceKey = new SingleToken<FileSystemService>('FileSystemService');

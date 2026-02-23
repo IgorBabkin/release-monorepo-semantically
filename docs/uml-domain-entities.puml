@@ -1,4 +1,5 @@
-@startuml Domain Entities Model
+@startuml
+title Domain Entities Model
 
 !theme plain
 skinparam classAttributeIconSize 0

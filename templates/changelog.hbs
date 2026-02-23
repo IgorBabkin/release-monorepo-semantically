@@ -1,42 +1,55 @@
 # [{{entry.version}}](https://github.com/IgorBabkin/ts-ioc-container/compare/{{packageName}}@{{entry.oldVersion}}...{{packageName}}@{{entry.version}}) ({{entry.date}})
 
 {{#if entry.breakingChanges.length}}
-### BREAKING CHANGES
+  ### BREAKING CHANGES
 
-{{#each entry.breakingChanges}}
-- **{{this.scope}}:** {{this.subject}} ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
-{{/each}}
+  {{#each entry.breakingChanges}}
+    - **{{this.scope}}:**
+    {{this.subject}}
+    ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
+  {{/each}}
 
 {{/if}}
 {{#if entry.features.length}}
-### Features
+  ### Features
 
-{{#each entry.features}}
-- **{{this.scope}}:** {{this.subject}} ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
-{{/each}}
+  {{#each entry.features}}
+    - **{{this.scope}}:**
+    {{this.subject}}
+    ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
+  {{/each}}
 
 {{/if}}
 {{#if entry.fixes.length}}
-### Bug Fixes
+  ### Bug Fixes
 
-{{#each entry.fixes}}
-- **{{this.scope}}:** {{this.subject}} ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
-{{/each}}
+  {{#each entry.fixes}}
+    - **{{this.scope}}:**
+    {{this.subject}}
+    ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
+  {{/each}}
 
 {{/if}}
 {{#if entry.performance.length}}
-### Performance Improvements
+  ### Performance Improvements
 
-{{#each entry.performance}}
-- **{{this.scope}}:** {{this.subject}} ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
-{{/each}}
+  {{#each entry.performance}}
+    - **{{this.scope}}:**
+    {{this.subject}}
+    ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
+  {{/each}}
 
 {{/if}}
 {{#if entry.dependencyUpdates.length}}
-### Dependencies
+  ### Dependencies
 
-{{#each entry.dependencyUpdates}}
-- update {{this.packageName}} to {{this.newVersion}}
-{{/each}}
+  {{#each entry.dependencyUpdates}}
+    - update
+    {{this.packageName}}
+    to
+    {{this.newVersion}}
+  {{/each}}
 
 {{/if}}
+
+{{existing}}

@@ -1,16 +1,9 @@
-import { DependencyUpdate } from './DependencyUpdate';
 import { PackageJSON } from './PackageJSON';
+import { Sortable } from '../sortLessDependenciesFirst';
 
-export class NpmPackage {
+export class NpmPackage implements Sortable {
   static createFromPackage(pkgJson: PackageJSON, pkgPath: string): NpmPackage {
-    return new NpmPackage(
-      pkgJson.name,
-      pkgPath,
-      pkgJson.version,
-      pkgJson.private ?? false,
-      pkgJson.dependencies ?? {},
-      pkgJson.devDependencies ?? {},
-    );
+    return new NpmPackage(pkgJson.name, pkgPath, pkgJson.version, pkgJson.private ?? false, pkgJson.dependencies ?? {}, pkgJson.devDependencies ?? {});
   }
 
   constructor(
@@ -22,20 +15,11 @@ export class NpmPackage {
     readonly devDependencies: Record<string, string>,
   ) {}
 
-  getInternalDependencies(packageNames: Set<string>): string[] {
-    return Object.keys(this.dependencies).filter((d) => packageNames.has(d));
+  filterDependencies(packageNames: Set<string>): string[] {
+    return Object.keys({ ...this.dependencies, ...this.devDependencies }).filter((d) => packageNames.has(d));
   }
 
-  getOutdatedDependencies(releasedVersions: Map<string, string>): DependencyUpdate[] {
-    const updates: DependencyUpdate[] = [];
-
-    for (const [depName, depVersion] of Object.entries(this.dependencies)) {
-      const newVersion = releasedVersions.get(depName);
-      if (newVersion && newVersion !== depVersion) {
-        updates.push({ packageName: depName, oldVersion: depVersion, newVersion });
-      }
-    }
-
-    return updates;
+  hasDependency(depPkgName: string) {
+    return Object.keys({ ...this.dependencies, ...this.devDependencies }).includes(depPkgName);
   }
 }

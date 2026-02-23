@@ -1,4 +1,5 @@
-@startuml Release Workflow Sequence
+@startuml
+title Release Workflow Sequence
 
 !theme plain
 

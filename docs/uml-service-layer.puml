@@ -1,4 +1,5 @@
-@startuml Service Layer Model
+@startuml
+title Service Layer Model
 
 !theme plain
 skinparam classAttributeIconSize 0

@@ -4,4 +4,5 @@ export interface PackageJSON {
   private?: boolean;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
+  workspaces?: string[]; // global workspaces field for monorepos
 }
