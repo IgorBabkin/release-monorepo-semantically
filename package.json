@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ibabkin/release-monorepo-semantically.git"
+    "url": "git+https://github.com/IgorBabkin/release-monorepo-semantically.git"
   },
   "scripts": {
     "build": "tsc",
