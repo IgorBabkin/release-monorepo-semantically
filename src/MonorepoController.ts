@@ -1,5 +1,5 @@
 import { NpmPackage } from './models/NpmPackage';
-import { bumpVersion, SemVerBumpType } from './models/SemVerBumpType';
+import { bumpTypeToString, bumpVersion, SemVerBumpType } from './models/SemVerBumpType';
 import { PackageJSON } from './models/PackageJSON';
 import { ReleaseCommit } from './services/ReleaseCommit';
 import { ChangelogRenderer } from './services/ChangelogRenderer';
@@ -8,6 +8,7 @@ import { PackageManager } from './services/PackageManager';
 import path from 'node:path';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { GitService } from './services/GitService';
+import { ConsoleLogger } from './services/ConsoleLogger';
 
 export class MonorepoController {
   private packages: NpmPackage[] = [];
@@ -19,6 +20,7 @@ export class MonorepoController {
     private changelog: ChangelogRenderer,
     private releaseCommit: ReleaseCommit,
     private packageManager: PackageManager,
+    private logger: ConsoleLogger,
   ) {}
 
   discoverRootPackageJSON(): void {
@@ -44,13 +46,16 @@ export class MonorepoController {
         SemVerBumpType.NONE,
         ...commits.map((commit) => (commit.isBreaking ? SemVerBumpType.MAJOR : commit.bumpType)),
         ...Object.entries(versionBumpMap).map(([k, v]) => {
-          return !!v && pkg.hasDependency(k) ? SemVerBumpType.MINOR : SemVerBumpType.NONE;
+          return v !== SemVerBumpType.NONE && pkg.hasDependency(k) ? SemVerBumpType.MINOR : SemVerBumpType.NONE;
         }),
       );
 
       versionBumpMap.set(pkg.name, versionBump);
-      if (versionBump !== SemVerBumpType.NONE) {
+      if (versionBump === SemVerBumpType.NONE) {
+        this.logger.info(`bump(${pkg.name}) ${pkg.version} (skipped)`);
+      } else {
         this.packageManager.bumpVersion(pkg, versionBump);
+        this.logger.info(`bump(${pkg.name}) ${pkg.version} (${bumpTypeToString(versionBump)})`);
       }
 
       // collect changelog logs and render after bump to capture new version
@@ -63,10 +68,12 @@ export class MonorepoController {
         packageVersion: pkg.version,
         packagePath: pkg.path,
       });
+      this.logger.info(`changelog(${pkg.name}) generated`);
     }
 
     // create release commit
     this.releaseCommit.commit({});
+    this.logger.info(`releaseCommit generated`);
 
     // create git tags for every released package
     for (const [packageName, versionBump] of versionBumpMap) {
@@ -74,9 +81,11 @@ export class MonorepoController {
       if (versionBump !== SemVerBumpType.NONE) {
         const newVersion = bumpVersion(pkg.version, versionBump);
         this.vscService.createTag(`${pkg.name}@${newVersion}`);
+        this.logger.info(`createTag ${pkg.name}@${newVersion}`);
       }
     }
 
     this.vscService.push(true);
+    this.logger.info('VSC pushed');
   }
 }

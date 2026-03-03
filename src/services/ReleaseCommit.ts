@@ -3,7 +3,7 @@ import { HandlebarsRenderService } from './HandlebarsRenderService';
 
 export class ReleaseCommit {
   constructor(
-    private vscService: GitService,
+    private readonly vscService: GitService,
     private readonly renderService: HandlebarsRenderService,
   ) {}
 

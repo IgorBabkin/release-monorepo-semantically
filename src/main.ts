@@ -5,6 +5,7 @@ import { ChangelogRenderer } from './services/ChangelogRenderer';
 import { HandlebarsRenderService } from './services/HandlebarsRenderService';
 import { ReleaseCommit } from './services/ReleaseCommit';
 import { PackageManager } from './services/PackageManager';
+import { ConsoleLogger } from './services/ConsoleLogger';
 
 try {
   // Dependencies
@@ -15,7 +16,7 @@ try {
   const releaseCommit = new ReleaseCommit(vcs, renderService);
   const packageManager = new PackageManager();
 
-  const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager);
+  const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager, new ConsoleLogger('Release'));
 
   controller.discoverRootPackageJSON();
   controller.discoverPackages();

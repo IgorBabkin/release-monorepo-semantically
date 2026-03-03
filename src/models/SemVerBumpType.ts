@@ -5,6 +5,22 @@ export enum SemVerBumpType {
   MAJOR = 3,
 }
 
+export function bumpTypeToString(type: SemVerBumpType): string | undefined {
+  switch (type) {
+    case SemVerBumpType.MAJOR:
+      return 'major';
+
+    case SemVerBumpType.MINOR:
+      return 'minor';
+
+    case SemVerBumpType.PATCH:
+      return 'patch';
+
+    default:
+      return undefined;
+  }
+}
+
 export function bumpVersion(version: string, bumpType: SemVerBumpType): string {
   const [major, minor, patch] = version.split('.').map(Number);
   switch (bumpType) {
@@ -16,13 +32,5 @@ export function bumpVersion(version: string, bumpType: SemVerBumpType): string {
       return `${major}.${minor}.${patch + 1}`;
     default:
       return version;
-  }
-}
-
-export class Semver {
-  bumpType: SemVerBumpType = SemVerBumpType.NONE;
-
-  bump(type: SemVerBumpType) {
-    this.bumpType = Math.max(this.bumpType, type);
   }
 }

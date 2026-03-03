@@ -1,5 +1,5 @@
 {
-  "name": "@ibabkin/monorepo-semantic-release",
+  "name": "release-monorepo-semantically",
   "version": "1.0.0",
   "description": "cli commands to manage versioning of package in monorepo and generate changelog",
   "license": "ISC",
@@ -23,7 +23,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/release.cli.js",
+    "start": "node dist/main.js",
     "lint": "eslint src/",
     "test": "vitest run",
     "prepare": "husky"
