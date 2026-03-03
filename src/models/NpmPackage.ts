@@ -20,6 +20,6 @@ export class NpmPackage implements Sortable {
   }
 
   hasDependency(depPkgName: string) {
-    return Object.keys({ ...this.dependencies, ...this.devDependencies }).includes(depPkgName);
+    return Object.keys(this.dependencies).includes(depPkgName);
   }
 }
