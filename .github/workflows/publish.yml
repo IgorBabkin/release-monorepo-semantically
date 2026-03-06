@@ -116,6 +116,49 @@ jobs:
 
           rm -f "$response_file"
 
+      - name: Debug npm OIDC exchange
+        run: |
+          response_file="$(mktemp)"
+          status_code="$(
+            curl -sS \
+              -o "$response_file" \
+              -w "%{http_code}" \
+              -X POST \
+              -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org"
+          )"
+
+          echo "github_oidc_status=$status_code"
+
+          id_token="$(
+            node -e '
+              const fs = require("node:fs");
+              const response = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+              process.stdout.write(response.value || "");
+            ' "$response_file"
+          )"
+
+          if [ -z "$id_token" ]; then
+            echo "Failed to retrieve GitHub OIDC token"
+            cat "$response_file"
+            exit 1
+          fi
+
+          exchange_file="$(mktemp)"
+          exchange_status="$(
+            curl -sS \
+              -o "$exchange_file" \
+              -w "%{http_code}" \
+              -X POST \
+              -H "Authorization: Bearer $id_token" \
+              "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/release-monorepo-semantically"
+          )"
+
+          echo "npm_exchange_status=$exchange_status"
+          cat "$exchange_file"
+
+          rm -f "$response_file" "$exchange_file"
+
       - name: Release
         id: release
         env:
