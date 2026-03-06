@@ -15,8 +15,8 @@ permissions:
   id-token: write
 
 jobs:
-  qa:
-    name: QA
+  e2e:
+    name: e2e tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,11 +25,11 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
-      - run: npm run qa:run
+      - run: npm run test:e2e
 
   release:
     name: Release
-    needs: qa
+    needs: e2e
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:

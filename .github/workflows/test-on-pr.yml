@@ -1,10 +1,10 @@
-name: QA
+name: test
 
 on:
   pull_request:
 
 jobs:
-  qa:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,5 +18,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run QA baseline
-        run: npm run qa:run
+      - name: Run unit and integration tests
+        run: npm test
+
+      - name: Run end-to-end tests
+        run: npm run test:e2e
