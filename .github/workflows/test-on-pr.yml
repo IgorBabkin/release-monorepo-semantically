@@ -8,12 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
 
-      - run: npm ci
-      - run: npm lint
-      - run: npm test
-      - run: npm run test:e2e
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec lint
+      - run: pnpm test
+      - run: pnpm exec test:e2e

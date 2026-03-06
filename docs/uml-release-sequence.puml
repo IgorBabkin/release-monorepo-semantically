@@ -92,10 +92,10 @@ loop For each package (topologically sorted)
             activate FS
             deactivate FS
             
-            Controller -> NPM: npm version
-            activate NPM
-            NPM --> Controller: version updated
-            deactivate NPM
+            Controller -> PNPM: pnpm version
+            activate PNPM
+            PNPM --> Controller: version updated
+            deactivate PNPM
             
             Controller -> Controller: generateChangelog()
             Controller -> FS: read/write CHANGELOG.md

@@ -238,6 +238,7 @@ classDiagram
 ```
 
 **Notes:**
+
 - **PackageRelease** is the aggregate root that encapsulates all data needed to perform a release
 - **NpmPackage** and **ConventionalCommit** are entities with identity (name/hash)
 - **DependencyUpdate** and **ChangelogEntry** are value objects (immutable)
@@ -339,6 +340,7 @@ classDiagram
 ```
 
 **Service Responsibilities:**
+
 - **ReleaseController**: Main controller implementing the release workflow
 - **CommitParser**: Domain service for parsing and validating conventional commits
 - **SemverCalculator**: Domain service for semantic version calculations
@@ -433,29 +435,29 @@ sequenceDiagram
         Parser->>Parser: parse commits
         Parser-->>Controller: ConventionalCommit[]
         deactivate Parser
-        
+
         Controller->>Parser: filterByScope(commits, packageName)
         activate Parser
         Parser-->>Controller: filtered commits
         deactivate Parser
-        
+
         Controller->>Controller: checkDependencyUpdates(pkg)
-        
+
         Controller->>Semver: calculateBump(commits, dependencyUpdates)
         activate Semver
         Semver-->>Controller: SemVerBumpType
         deactivate Semver
-        
+
         Controller->>Semver: bumpVersion(oldVersion, bumpType)
         activate Semver
         Semver-->>Controller: newVersion
         deactivate Semver
-        
+
         Controller->>Controller: create PackageRelease
-        
+
         alt bumpType !== NONE
             Controller->>Controller: releasePackage(release)
-            
+
             alt !dryRun
                 Controller->>Controller: updatePackageDependencies()
                 Controller->>FSS: writeJson(package.json, data)
@@ -466,10 +468,10 @@ sequenceDiagram
                 FSS-->>Controller: success
                 deactivate FSS
 
-                Controller->>NPM: npm version
-                activate NPM
-                NPM-->>Controller: version updated
-                deactivate NPM
+                Controller->>PNPM: pnpm version
+                activate PNPM
+                PNPM-->>Controller: version updated
+                deactivate PNPM
 
                 Controller->>Controller: generateChangelog()
                 Controller->>FSS: readFile/writeFile(CHANGELOG.md)
@@ -547,18 +549,18 @@ erDiagram
     PACKAGE_RELEASE ||--o{ DEPENDENCY_UPDATE : "contains"
     PACKAGE_RELEASE }o--|| NPM_PACKAGE : "references"
     PACKAGE_RELEASE }o--|| SEMVER_BUMP_TYPE : "uses"
-    
+
     CHANGELOG_ENTRY ||--o{ CONVENTIONAL_COMMIT : "contains"
     CHANGELOG_ENTRY ||--o{ DEPENDENCY_UPDATE : "contains"
-    
+
     CONVENTIONAL_COMMIT }o--|| COMMIT_TYPE : "uses"
-    
+
     PACKAGE_RELEASE {
         string oldVersion
         string newVersion
         SemVerBumpType bumpType
     }
-    
+
     NPM_PACKAGE {
         string name PK
         string path
@@ -567,7 +569,7 @@ erDiagram
         json dependencies
         json devDependencies
     }
-    
+
     CONVENTIONAL_COMMIT {
         string hash PK
         CommitType type
@@ -580,22 +582,22 @@ erDiagram
         string authorEmail
         datetime date
     }
-    
+
     DEPENDENCY_UPDATE {
         string packageName
         string oldVersion
         string newVersion
     }
-    
+
     CHANGELOG_ENTRY {
         string version
         string date
     }
-    
+
     SEMVER_BUMP_TYPE {
         string value
     }
-    
+
     COMMIT_TYPE {
         string value
     }
@@ -604,6 +606,7 @@ erDiagram
 ## Viewing These Diagrams
 
 These Mermaid diagrams will render automatically on:
+
 - **GitHub**: View this file directly in the repository
 - **GitLab**: Native Mermaid support
 - **VS Code**: Install "Markdown Preview Mermaid Support" extension

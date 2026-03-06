@@ -2,7 +2,7 @@
 
 ## Overview
 
-Use ***handlebars*** for generation of commit message and changelog
+Use **_handlebars_** for generation of commit message and changelog
 
 Automated release management CLI for the monorepo. Analyzes conventional commits, determines semantic version bumps per package, generates changelogs, updates package versions, and creates release commits with tags.
 
@@ -30,6 +30,7 @@ Automated release management CLI for the monorepo. Analyzes conventional commits
 [Specification](https://www.conventionalcommits.org/en/v1.0.0/#specification)
 
 **Pattern:**
+
 ```
 <type>(<scope>): <subject>
 
@@ -39,6 +40,7 @@ Automated release management CLI for the monorepo. Analyzes conventional commits
 ```
 
 **Examples:**
+
 ```
 feat(ts-ioc-container): add lazy provider support
 fix(@ts-ioc-container/react): resolve context hook issue
@@ -56,6 +58,7 @@ chore: update dependencies
 - The error message MUST identify the problematic commit(s) and provide guidance on fixing them
 
 **Example Error:**
+
 ```
 ❌ Release failed: Non-conventional commits detected
 
@@ -76,6 +79,7 @@ Please rewrite these commits using conventional format and try again.
 The release process is orchestrated entirely from the root package.json:
 
 **Script workflow:**
+
 1. Discover all workspace packages
 2. Build dependency graph
 3. Sort packages topologically (dependencies first)
@@ -95,12 +99,14 @@ monorepo-semantic-release --dry-run
 ### CLI Options
 
 **`--dry-run`** (optional)
+
 - Simulates the entire release process without making any changes
 - Shows exactly what would be released, version bumps, and changelogs
 - No file modifications, no git commits, no git tags, no pushes
 - Safe to run repeatedly for planning and verification
 
 **Examples:**
+
 ```bash
 # Preview what would be released
 monorepo-semantic-release --dry-run
@@ -130,7 +136,7 @@ Root Release Script (monorepo-semantic-release)
    ├─ Calculate version bump (commits + dependency updates)
    ├─ Skip if no changes (BumpType.NONE)
    ├─ Update dependencies in package.json
-   ├─ Run npm version <newVersion>
+   ├─ Run pnpm version <newVersion>
    ├─ Generate & prepend new changelog to CHANGELOG.md
    ├─ Create git tag: pkg@version
    └─ Track released version for next package's dependency check
@@ -144,11 +150,13 @@ Root Release Script (monorepo-semantic-release)
 ### Sequential Processing (IMPORTANT)
 
 Packages **MUST** be processed sequentially (not in parallel) because:
+
 1. Later packages may depend on earlier packages
 2. Dependency version updates need to happen in order
 3. ONLY one result commit must be created
 
 **Example:**
+
 ```
 1. Release ts-ioc-container@2.1.0 first
    ↓
@@ -173,16 +181,16 @@ Packages **MUST** be processed sequentially (not in parallel) because:
 
 **IMPORTANT:** Package list is derived from root `package.json` → `workspaces` field.
 
-
 **Example Output:**
+
 ```typescript
 [
   { name: 'ts-ioc-container', path: 'packages/ts-ioc-container', version: '2.0.5', private: false },
   { name: '@ts-ioc-container/react', path: 'packages/react', version: '1.5.1', private: false },
   { name: '@ts-ioc-container/solidjs', path: 'packages/solidjs', version: '1.0.0', private: false },
   { name: '@ts-ioc-container/express', path: 'packages/express', version: '1.2.0', private: false },
-  { name: '@ts-ioc-container/fastify', path: 'packages/fastify', version: '1.1.0', private: false }
-]
+  { name: '@ts-ioc-container/fastify', path: 'packages/fastify', version: '1.1.0', private: false },
+];
 // Note: 'docs' is excluded because it has "private": true
 ```
 
@@ -195,6 +203,7 @@ Packages **MUST** be processed sequentially (not in parallel) because:
 **IMPORTANT:** Sort packages by dependency order - packages without internal dependencies first.
 
 **Example Output (sorted):**
+
 ```typescript
 [
   // 1. Packages with no internal dependencies (foundations)
@@ -204,8 +213,8 @@ Packages **MUST** be processed sequentially (not in parallel) because:
   { name: '@ts-ioc-container/react', dependencies: ['ts-ioc-container'] },
   { name: '@ts-ioc-container/solidjs', dependencies: ['ts-ioc-container'] },
   { name: '@ts-ioc-container/express', dependencies: ['ts-ioc-container'] },
-  { name: '@ts-ioc-container/fastify', dependencies: ['ts-ioc-container'] }
-]
+  { name: '@ts-ioc-container/fastify', dependencies: ['ts-ioc-container'] },
+];
 ```
 
 #### 1.4 Detect Changed Packages
@@ -213,11 +222,13 @@ Packages **MUST** be processed sequentially (not in parallel) because:
 For each workspace package, determine if it has changes since last release:
 
 **Input:**
+
 - Git history since last package-specific tag (e.g., `ts-ioc-container@1.2.3`)
 - OR since last release commit if no tags exist
 - OR all commits if never released
 
 **Commit Scope Mapping:**
+
 - `ts-ioc-container` → `packages/ts-ioc-container/`
 - `@ts-ioc-container/react` → `packages/react/`
 - `@ts-ioc-container/solidjs` → `packages/solidjs/`
@@ -227,6 +238,7 @@ For each workspace package, determine if it has changes since last release:
 #### 1.2 Parse Conventional Commits
 
 **Conventional Commit Format:**
+
 ```
 <type>(<scope>): <subject>
 
@@ -236,15 +248,16 @@ For each workspace package, determine if it has changes since last release:
 ```
 
 **Parsed Structure:**
+
 ```typescript
 interface ConventionalCommit {
   hash: string;
-  type: string;                    // feat, fix, perf, docs, test, ci, chore, refactor, style
-  scope: string;                   // Package scope
+  type: string; // feat, fix, perf, docs, test, ci, chore, refactor, style
+  scope: string; // Package scope
   subject: string;
   body: string | null;
-  footer: Record<string, string>;  // BREAKING CHANGE, etc.
-  isBreaking: boolean;             // true if footer contains BREAKING CHANGE
+  footer: Record<string, string>; // BREAKING CHANGE, etc.
+  isBreaking: boolean; // true if footer contains BREAKING CHANGE
   authorName: string;
   authorEmail: string;
   date: Date;
@@ -252,6 +265,7 @@ interface ConventionalCommit {
 ```
 
 **Breaking Change Detection:**
+
 - Footer contains `BREAKING CHANGE:`
 - OR commit message contains `!` after scope: `feat(scope)!: message`
 
@@ -262,6 +276,7 @@ interface ConventionalCommit {
 **IMPORTANT:** Before calculating version bump, check if package has outdated internal dependencies.
 
 **Important Note on Version Format:**
+
 - Internal dependencies **MUST use exact versions** (not wildcards)
 - ✅ Correct: `"ts-ioc-container": "2.0.5"`
 - ❌ Incorrect: `"ts-ioc-container": "^2.0.5"`
@@ -291,21 +306,22 @@ aggregateChanges(...changes: SemVerBumpType[]) = Math.max(SemVerBumpType.NONE, .
 ```
 
 Each change source produces its own bump type independently:
+
 - **Commits**: `MAJOR` (breaking) / `MINOR` (feat) / `PATCH` (fix/perf) / `NONE` (other)
 - **Dependency updates**: `MINOR` if any exist, `NONE` otherwise
 
 These are then aggregated — the highest value wins:
 
-| Commits | Dependency Update | Result | Reason |
-|---------|------------------|--------|--------|
-| Breaking change | Yes | **MAJOR** | `max(3, 2) = MAJOR` |
-| Breaking change | No | **MAJOR** | `max(3, 0) = MAJOR` |
-| Feature | Yes | **MINOR** | `max(2, 2) = MINOR` |
-| Feature | No | **MINOR** | `max(2, 0) = MINOR` |
-| Patch (fix/perf) | Yes | **MINOR** | `max(1, 2) = MINOR` |
-| Patch (fix/perf) | No | **PATCH** | `max(1, 0) = PATCH` |
-| None (docs/test/chore) | Yes | **MINOR** | `max(0, 2) = MINOR` |
-| None (docs/test/chore) | No | **NONE** | `max(0, 0) = NONE` |
+| Commits                | Dependency Update | Result    | Reason              |
+| ---------------------- | ----------------- | --------- | ------------------- |
+| Breaking change        | Yes               | **MAJOR** | `max(3, 2) = MAJOR` |
+| Breaking change        | No                | **MAJOR** | `max(3, 0) = MAJOR` |
+| Feature                | Yes               | **MINOR** | `max(2, 2) = MINOR` |
+| Feature                | No                | **MINOR** | `max(2, 0) = MINOR` |
+| Patch (fix/perf)       | Yes               | **MINOR** | `max(1, 2) = MINOR` |
+| Patch (fix/perf)       | No                | **PATCH** | `max(1, 0) = PATCH` |
+| None (docs/test/chore) | Yes               | **MINOR** | `max(0, 2) = MINOR` |
+| None (docs/test/chore) | No                | **NONE**  | `max(0, 0) = NONE`  |
 
 **Examples:**
 
@@ -339,6 +355,7 @@ These are then aggregated — the highest value wins:
 - ✅ Breaking changes **always** trigger MAJOR, regardless of dependency updates
 
 **Release-triggering commit types:**
+
 - `feat` → Minor bump
 - `fix` → Patch bump
 - `perf` → Patch bump
@@ -346,6 +363,7 @@ These are then aggregated — the highest value wins:
 - Dependency update → Minor bump
 
 **Non-release commit types (filtered out):**
+
 - `docs` → No release
 - `test` → No release
 - `ci` → No release
@@ -363,10 +381,11 @@ After calculating version bump, update `package.json` dependencies to new versio
 
 Each package maintains its own `CHANGELOG.md` at the package root.
 
-**Template:** 
+**Template:**
 Use handlebars
 
 **Structure:**
+
 ```markdown
 # Change Log
 
@@ -394,6 +413,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 ```
 
 **Key Features:**
+
 - Each version is a level 1 heading (`#`) with GitHub compare link
 - Includes commit links to GitHub
 - Section order: BREAKING CHANGES → Features → Bug Fixes → Performance Improvements
@@ -402,6 +422,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 #### 3.2 Changelog Section Mapping
 
 **Section Order:**
+
 1. **BREAKING CHANGES** (if any) - always first
 2. **Features** (`feat` commits)
 3. **Bug Fixes** (`fix` commits)
@@ -414,6 +435,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 Uses Handlebars template from `scripts/templates/changelog.hbs`:
 
 **Example CHANGELOG entry with dependency update:**
+
 ```markdown
 # [1.6.0](https://github.com/IgorBabkin/ts-ioc-container/compare/@ts-ioc-container/react@1.5.1...@ts-ioc-container/react@1.6.0) (2026-02-03)
 
@@ -428,15 +450,16 @@ Uses Handlebars template from `scripts/templates/changelog.hbs`:
 
 ### Phase 4: Version Updates
 
-#### 4.1 Update package.json using npm version
+#### 4.1 Update package.json using pnpm version
 
-**IMPORTANT:** Use `npm version` command to bump versions (not manual JSON editing).
+**IMPORTANT:** Use `pnpm version` command to bump versions (not manual JSON editing).
 
-**Why `npm version`?**
+**Why `pnpm version`?**
+
 - Validates semantic version format
 - Runs `preversion`, `version`, and `postversion` scripts from package.json
 - Updates package.json atomically
-- Standard npm behavior (more reliable than manual JSON editing)
+- Standard pnpm behavior (more reliable than manual JSON editing)
 
 #### 4.2 Update pnpm-lock.yaml
 
@@ -449,6 +472,7 @@ After updating all package.json files, regenerate the lockfile:
 **IMPORTANT:** Create **one commit per all package**.
 
 **Commit Message Format** (from `scripts/templates/release-commit-message.hbs`):
+
 ```
 ci: release [skip-ci]
 
@@ -465,6 +489,7 @@ Affected: package1@version,package2@version
 ```
 
 **Example:**
+
 ```
 ci: release [skip-ci]
 
@@ -488,6 +513,7 @@ Create a tag for each released package:
 **Tag Format:** `<package-name>@<version>`
 
 **Examples:**
+
 - `ts-ioc-container@2.1.0`
 - `@ts-ioc-container/react@1.5.2`
 
@@ -544,19 +570,19 @@ Create a tag for each released package:
 📝 Release plan:
 
   [1/3] ts-ioc-container (2.0.5 → 2.1.0)
-    ✓ Run npm version 2.1.0
+    ✓ Run pnpm version 2.1.0
     ✓ Update CHANGELOG.md
     ✓ Git tag: ts-ioc-container@2.1.0
 
   [2/3] @ts-ioc-container/react (1.5.1 → 1.6.0)
     ✓ Update dependency: ts-ioc-container@2.1.0
-    ✓ Run npm version 1.6.0
+    ✓ Run pnpm version 1.6.0
     ✓ Update CHANGELOG.md
     ✓ Git tag: @ts-ioc-container/react@1.6.0
 
   [3/3] @ts-ioc-container/solidjs (1.0.0 → 1.1.0)
     ✓ Update dependency: ts-ioc-container@2.1.0
-    ✓ Run npm version 1.1.0
+    ✓ Run pnpm version 1.1.0
     ✓ Update CHANGELOG.md
     ✓ Git tag: @ts-ioc-container/solidjs@1.1.0
 
@@ -583,7 +609,7 @@ Create a tag for each released package:
 📦 [1/3] Releasing ts-ioc-container@2.1.0...
   ✓ Detected 5 commits (3 feat, 2 fix)
   ✓ Calculated bump: minor (new features)
-  ✓ npm version 2.1.0
+  ✓ pnpm version 2.1.0
   ✓ Generated CHANGELOG.md
   ✓ Git tag: ts-ioc-container@2.1.0
 
@@ -591,7 +617,7 @@ Create a tag for each released package:
   ✓ Detected dependency update: ts-ioc-container 2.0.5 → 2.1.0
   ✓ Updated package.json dependencies
   ✓ Calculated bump: minor (dependency update)
-  ✓ npm version 1.6.0
+  ✓ pnpm version 1.6.0
   ✓ Generated CHANGELOG.md
   ✓ Git tag: @ts-ioc-container/react@1.6.0
 
@@ -599,7 +625,7 @@ Create a tag for each released package:
   ✓ Detected dependency update: ts-ioc-container 2.0.5 → 2.1.0
   ✓ Updated package.json dependencies
   ✓ Calculated bump: minor (dependency update)
-  ✓ npm version 1.1.0
+  ✓ pnpm version 1.1.0
   ✓ Generated CHANGELOG.md
   ✓ Git tag: @ts-ioc-container/solidjs@1.1.0
 
@@ -626,6 +652,7 @@ The CLI is designed to run in CI environments where the repository state is cont
 **Error Behavior:**
 
 If an error occurs during the release process:
+
 - Display clear error message showing what failed
 - Exit with non-zero status code
 - Leave working directory in current state for inspection
@@ -635,7 +662,7 @@ If an error occurs during the release process:
 - **Missing package.json**: Script will throw error when attempting to read file
 - **Invalid workspaces**: Script will fail when parsing workspaces field
 - **Git errors**: Git commands will fail with appropriate error messages
-- **npm version errors**: npm will fail if version already exists or invalid
+- **pnpm version errors**: pnpm will fail if version already exists or invalid
 - **Template errors**: Handlebars will fail if templates are missing or invalid
 - **Push errors**: Git push will fail with authentication or network errors
 
@@ -654,15 +681,18 @@ monorepo-semantic-release
 **Scenario:** Developer adds a new feature to core library
 
 **Setup:**
+
 - Monorepo with `ts-ioc-container` (core) and `@ts-ioc-container/react` (depends on core)
 - Developer commits: `feat(ts-ioc-container): add lazy provider support`
 
 **Execution:**
+
 ```bash
 monorepo-semantic-release --dry-run
 ```
 
 **Expected Behavior:**
+
 1. ✓ Detects 1 feat commit in `ts-ioc-container`
 2. ✓ Calculates MINOR bump: 2.0.5 → 2.1.0
 3. ✓ No changes in `@ts-ioc-container/react` (skipped)
@@ -670,6 +700,7 @@ monorepo-semantic-release --dry-run
 5. ✓ Creates tag: `ts-ioc-container@2.1.0`
 
 **Result:**
+
 - Only `ts-ioc-container` released
 - Dependent packages unchanged (they use exact version 2.0.5)
 
@@ -680,16 +711,19 @@ monorepo-semantic-release --dry-run
 **Scenario:** Core library updated, triggers updates in dependent packages
 
 **Setup:**
+
 - `ts-ioc-container@2.0.5` → released as `2.1.0` (new feature)
 - `@ts-ioc-container/react@1.5.1` depends on `ts-ioc-container@2.0.5`
 - `@ts-ioc-container/solidjs@1.0.0` depends on `ts-ioc-container@2.0.5`
 
 **Execution:**
+
 ```bash
 monorepo-semantic-release
 ```
 
 **Expected Behavior:**
+
 1. ✓ Release `ts-ioc-container@2.1.0` first
 2. ✓ Detect `@ts-ioc-container/react` has outdated dependency
 3. ✓ Update package.json: `"ts-ioc-container": "2.1.0"`
@@ -698,6 +732,7 @@ monorepo-semantic-release
 6. ✓ Generate changelogs with "update ts-ioc-container to 2.1.0"
 
 **Result:**
+
 - 3 packages released in dependency order
 - Dependency versions synchronized
 - Each package has updated changelog
@@ -709,21 +744,25 @@ monorepo-semantic-release
 **Scenario:** Core library has breaking change
 
 **Setup:**
+
 - Developer commits: `feat(ts-ioc-container)!: remove deprecated Container.bind()`
 - Commit body includes: `BREAKING CHANGE: Container.bind() removed. Use Container.addRegistration()`
 
 **Execution:**
+
 ```bash
 monorepo-semantic-release --dry-run
 ```
 
 **Expected Behavior:**
+
 1. ✓ Detects breaking change in `ts-ioc-container`
 2. ✓ Calculates MAJOR bump: 2.0.5 → 3.0.0
 3. ✓ Dependent packages get MINOR bump (dependency update): 1.5.1 → 1.6.0
 4. ✓ Changelog includes BREAKING CHANGES section with details
 
 **Result:**
+
 - Core library: MAJOR version bump
 - Dependent packages: MINOR version bump (just dependency update)
 - Clear breaking change documentation
@@ -735,6 +774,7 @@ monorepo-semantic-release --dry-run
 **Scenario:** Developer made changes to multiple packages
 
 **Setup:**
+
 ```
 Commits:
 - feat(ts-ioc-container): add feature A
@@ -743,17 +783,20 @@ Commits:
 ```
 
 **Execution:**
+
 ```bash
 monorepo-semantic-release
 ```
 
 **Expected Behavior:**
+
 1. ✓ Process in dependency order (core first)
 2. ✓ `ts-ioc-container`: 2.0.5 → 2.1.0 (feat)
 3. ✓ `@ts-ioc-container/react`: 1.5.1 → 1.6.0 (fix + dependency update = minor)
 4. ✓ `@ts-ioc-container/express`: 2.0.0 → 2.1.0 (perf + dependency update = minor)
 
 **Result:**
+
 - Multiple packages released correctly
 - Dependency updates handled automatically
 - All changelogs generated
@@ -765,16 +808,19 @@ monorepo-semantic-release
 **Scenario:** Developer wants to preview release without making changes
 
 **Setup:**
+
 - Multiple packages with various changes
 - Want to verify version bumps and changelog before actual release
 - Need to plan release communication
 
 **Execution:**
+
 ```bash
 monorepo-semantic-release --dry-run
 ```
 
 **Expected Behavior:**
+
 1. ✓ Analyze all packages and commits
 2. ✓ Calculate version bumps
 3. ✓ Generate preview of changelog content
@@ -785,6 +831,7 @@ monorepo-semantic-release --dry-run
 8. ✗ NO remote push
 
 **Console Output:**
+
 ```
 🔍 DRY-RUN MODE - No changes will be made
 
@@ -838,6 +885,7 @@ To perform the actual release, run:
 ```
 
 **Result:**
+
 - Full visibility into what would happen
 - No risk to repository state
 - Can be run multiple times safely
@@ -848,13 +896,14 @@ To perform the actual release, run:
 ## Success Criteria
 
 ✅ The CLI should:
+
 1. Detect all packages with release-worthy commits
 2. Calculate correct semantic version bumps (including dependency updates)
 3. Generate well-formatted changelogs with GitHub links
-4. Update package.json versions atomically using npm version
+4. Update package.json versions atomically using pnpm version
 5. Create properly formatted git tags (package@version)
 6. Handle internal monorepo dependencies (exact versions)
 7. Sort packages topologically (dependencies first)
 8. Update dependent packages when dependencies change
-10. Provide clear, colorful console output
-12. Work as standalone NPM package (installable in any monorepo)
+9. Provide clear, colorful console output
+10. Work as standalone NPM package (installable in any monorepo)

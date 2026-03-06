@@ -10,30 +10,30 @@ function pkg(name: string, pkgPath: string): NpmPackage {
 }
 
 describe('PackageManager.bumpVersion', () => {
-  it('does not call npm for NONE', () => {
+  it('does not call pnpm for NONE', () => {
     const pm = new PackageManager();
     pm.bumpVersion(pkg('a', '/repo/packages/a'), SemVerBumpType.NONE);
     expect(cp.execSync).not.toHaveBeenCalled();
   });
 
-  it('calls npm version major/minor/patch in package cwd', () => {
+  it('calls pnpm version major/minor/patch in package cwd', () => {
     const pm = new PackageManager();
     const p = pkg('a', '/repo/packages/a');
 
     pm.bumpVersion(p, SemVerBumpType.MAJOR);
-    expect(cp.execSync).toHaveBeenLastCalledWith('npm version major --no-git-tag-version', {
+    expect(cp.execSync).toHaveBeenLastCalledWith('pnpm version major --no-git-tag-version', {
       cwd: '/repo/packages',
       stdio: 'pipe',
     });
 
     pm.bumpVersion(p, SemVerBumpType.MINOR);
-    expect(cp.execSync).toHaveBeenLastCalledWith('npm version minor --no-git-tag-version', {
+    expect(cp.execSync).toHaveBeenLastCalledWith('pnpm version minor --no-git-tag-version', {
       cwd: '/repo/packages',
       stdio: 'pipe',
     });
 
     pm.bumpVersion(p, SemVerBumpType.PATCH);
-    expect(cp.execSync).toHaveBeenLastCalledWith('npm version patch --no-git-tag-version', {
+    expect(cp.execSync).toHaveBeenLastCalledWith('pnpm version patch --no-git-tag-version', {
       cwd: '/repo/packages',
       stdio: 'pipe',
     });

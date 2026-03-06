@@ -11,7 +11,7 @@ export class PackageManager {
 
     const arg = versionBump === SemVerBumpType.MAJOR ? 'major' : versionBump === SemVerBumpType.MINOR ? 'minor' : 'patch';
 
-    execSync(`npm version ${arg} --no-git-tag-version`, {
+    execSync(`pnpm version ${arg} --no-git-tag-version`, {
       cwd: path.dirname(pkg.path),
       stdio: 'pipe',
     });

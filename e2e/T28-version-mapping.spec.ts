@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture';
 
-describe('T28 - bump type maps to npm version increments', () => {
+describe('T28 - bump type maps to pnpm version increments', () => {
   afterEach(() => {
     disposeMonorepoFixtures();
   });
