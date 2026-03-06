@@ -15,7 +15,7 @@ permissions:
   id-token: write
 
 jobs:
-  e2e:
+  test:
     name: e2e tests
     runs-on: ubuntu-latest
     steps:
@@ -24,12 +24,15 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
+
       - run: npm ci
+      - run: npm run lint
+      - run: npm test
       - run: npm run test:e2e
 
   release:
     name: Release
-    needs: e2e
+    needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
@@ -56,4 +59,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: node scripts/release.js
+        run: npm run release
