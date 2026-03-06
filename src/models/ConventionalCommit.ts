@@ -11,9 +11,9 @@ export class ConventionalCommit {
 
   static parse(raw: string): ConventionalCommit {
     const trimmedRaw = raw.trim();
-    const firstSpace = trimmedRaw.indexOf(' ');
-    const commitHash = firstSpace === -1 ? null : trimmedRaw.slice(0, firstSpace);
-    const commitMessage = firstSpace === -1 ? trimmedRaw : trimmedRaw.slice(firstSpace + 1);
+    const hashMatch = trimmedRaw.match(/^([0-9a-f]{7,40})\s+([\s\S]+)$/i);
+    const commitHash = hashMatch ? hashMatch[1] : null;
+    const commitMessage = hashMatch ? hashMatch[2] : trimmedRaw;
 
     const match = commitMessage.match(/^(\w+)(?:\(([^)]*)\))?(!)?\s*:\s*(.+)$/);
     if (!match) {
@@ -21,7 +21,7 @@ export class ConventionalCommit {
     }
 
     const [, type, scope, bang, subject] = match;
-    const isBreaking = !!bang || raw.includes('BREAKING CHANGE');
+    const isBreaking = !!bang || commitMessage.includes('BREAKING CHANGE');
 
     return new ConventionalCommit(type, scope || null, subject, isBreaking, commitHash);
   }

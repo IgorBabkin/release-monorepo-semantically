@@ -21,12 +21,21 @@ describe('PackageManager.bumpVersion', () => {
     const p = pkg('a', '/repo/packages/a');
 
     pm.bumpVersion(p, SemVerBumpType.MAJOR);
-    expect(cp.execSync).toHaveBeenLastCalledWith('npm version major --no-git-tag-version', { cwd: p.path, stdio: 'pipe' });
+    expect(cp.execSync).toHaveBeenLastCalledWith('npm version major --no-git-tag-version', {
+      cwd: '/repo/packages',
+      stdio: 'pipe',
+    });
 
     pm.bumpVersion(p, SemVerBumpType.MINOR);
-    expect(cp.execSync).toHaveBeenLastCalledWith('npm version minor --no-git-tag-version', { cwd: p.path, stdio: 'pipe' });
+    expect(cp.execSync).toHaveBeenLastCalledWith('npm version minor --no-git-tag-version', {
+      cwd: '/repo/packages',
+      stdio: 'pipe',
+    });
 
     pm.bumpVersion(p, SemVerBumpType.PATCH);
-    expect(cp.execSync).toHaveBeenLastCalledWith('npm version patch --no-git-tag-version', { cwd: p.path, stdio: 'pipe' });
+    expect(cp.execSync).toHaveBeenLastCalledWith('npm version patch --no-git-tag-version', {
+      cwd: '/repo/packages',
+      stdio: 'pipe',
+    });
   });
 });
