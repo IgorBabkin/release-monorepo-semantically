@@ -7,23 +7,28 @@ import { ReleaseCommit } from './services/ReleaseCommit';
 import { PackageManager } from './services/PackageManager';
 import { ConsoleLogger } from './services/ConsoleLogger';
 
-try {
-  // Dependencies
-  const fsService = new NodeFileSystemService();
-  const vcs = new GitService();
-  const renderService = new HandlebarsRenderService(process.cwd());
-  const changelog = new ChangelogRenderer(renderService, fsService);
-  const releaseCommit = new ReleaseCommit(vcs, renderService);
-  const packageManager = new PackageManager();
+export function runCli(cwd = process.cwd()): number {
+  try {
+    // Dependencies
+    const fsService = new NodeFileSystemService();
+    const vcs = new GitService();
+    const renderService = new HandlebarsRenderService(cwd);
+    const changelog = new ChangelogRenderer(renderService, fsService);
+    const releaseCommit = new ReleaseCommit(vcs, renderService);
+    const packageManager = new PackageManager();
+    const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager, new ConsoleLogger('Release'));
 
-  const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager, new ConsoleLogger('Release'));
+    controller.discoverRootPackageJSON();
+    controller.discoverPackages();
+    controller.release();
 
-  controller.discoverRootPackageJSON();
-  controller.discoverPackages();
-  controller.release();
-} catch (error) {
-  console.error(error);
-  process.exit(1);
-} finally {
-  process.exit(0);
+    return 0;
+  } catch (error) {
+    console.error(error);
+    return 1;
+  }
+}
+
+if (require.main === module) {
+  process.exit(runCli());
 }

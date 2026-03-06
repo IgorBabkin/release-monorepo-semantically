@@ -11,15 +11,26 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  id-token: write # Required for OIDC
-  contents: write # Required for creating releases and tags
-  issues: write # Required for creating issue comments
-  pull-requests: write # Required for creating PR comments
-  packages: write # Required for publishing to GitHub Packages
+  contents: read
 
 jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:e2e
+
   release:
     name: Release
+    needs: verify
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
@@ -39,10 +50,6 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
-
-      - run: npm run lint
-
-      - run: npm test
 
       - run: npm run build
 

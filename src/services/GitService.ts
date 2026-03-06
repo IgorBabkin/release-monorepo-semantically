@@ -15,7 +15,7 @@ export class GitService {
 
   commit(message: string): void {
     execSync('git add .');
-    execSync(`git commit -m ${JSON.stringify(message)}`);
+    execSync(`git commit --allow-empty -m ${JSON.stringify(message)}`);
   }
 
   push(includeTags: boolean): void {
