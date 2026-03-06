@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "generatedBy": "QA_PLAN.md implementation",
+  "baseline": [
+    {
+      "id": "B01",
+      "name": "Lint",
+      "command": "npm run lint",
+      "required": true
+    },
+    {
+      "id": "B02",
+      "name": "Unit tests",
+      "command": "npm test",
+      "required": true
+    },
+    {
+      "id": "B03",
+      "name": "End-to-end tests",
+      "command": "npm run test:e2e",
+      "required": true
+    },
+    {
+      "id": "B04",
+      "name": "Full test stack",
+      "command": "npm run test:all",
+      "required": false
+    }
+  ],
+  "cases": [
+    { "id": "T01", "name": "Workspace discovery and ordering" },
+    { "id": "T02", "name": "Conventional commit validation (negative)" },
+    { "id": "T03", "name": "Feature bump path" },
+    { "id": "T04", "name": "Patch bump path" },
+    { "id": "T05", "name": "Breaking change path" },
+    { "id": "T06", "name": "Dependency update triggers bump (no scoped commits)" },
+    { "id": "T07", "name": "Combined bump precedence" },
+    { "id": "T08", "name": "Multiple package release ordering" },
+    { "id": "T09", "name": "Non-release commit filtering" },
+    { "id": "T10", "name": "Changelog section ordering and content" },
+    { "id": "T11", "name": "Release commit and tag integrity" },
+    { "id": "T12", "name": "Lockfile update" },
+    { "id": "T13", "name": "Dry-run safety" },
+    { "id": "T14", "name": "Invalid workspace/dependency failure" }
+  ]
+}
