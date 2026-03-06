@@ -1,4 +1,4 @@
-name: QA
+name: PR
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  qa:
+  pr:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

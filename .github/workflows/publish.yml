@@ -15,8 +15,8 @@ permissions:
   id-token: write
 
 jobs:
-  verify:
-    name: Verify
+  pr:
+    name: PR
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,13 +25,11 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npm run test:e2e
+      - run: npm run qa:run
 
   release:
     name: Release
-    needs: verify
+    needs: pr
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
