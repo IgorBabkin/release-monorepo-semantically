@@ -15,8 +15,8 @@ permissions:
   id-token: write
 
 jobs:
-  pr-and-main:
-    name: PR and Main
+  qa:
+    name: QA on PR and Main
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
 
   release:
     name: Release
-    needs: pr-and-main
+    needs: qa
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
