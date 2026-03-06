@@ -37,9 +37,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment:
-      name: production
-      url: https://www.npmjs.com/package/release-monorepo-semantically
     steps:
       - uses: actions/checkout@v4
         with:
@@ -77,7 +74,6 @@ jobs:
           echo "ref=$GITHUB_REF"
           echo "workflow=$GITHUB_WORKFLOW"
           echo "job=$GITHUB_JOB"
-          echo "environment=production"
 
           if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
             echo "OIDC request env is missing"
