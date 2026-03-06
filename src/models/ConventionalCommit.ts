@@ -6,18 +6,24 @@ export class ConventionalCommit {
     readonly scope: string | null,
     readonly subject: string,
     readonly isBreaking: boolean,
+    readonly hash: string | null = null,
   ) {}
 
   static parse(raw: string): ConventionalCommit {
-    const match = raw.match(/^(\w+)(?:\(([^)]*)\))?(!)?\s*:\s*(.+)$/);
+    const trimmedRaw = raw.trim();
+    const firstSpace = trimmedRaw.indexOf(' ');
+    const commitHash = firstSpace === -1 ? null : trimmedRaw.slice(0, firstSpace);
+    const commitMessage = firstSpace === -1 ? trimmedRaw : trimmedRaw.slice(firstSpace + 1);
+
+    const match = commitMessage.match(/^(\w+)(?:\(([^)]*)\))?(!)?\s*:\s*(.+)$/);
     if (!match) {
-      return new ConventionalCommit('unknown', null, raw, false);
+      return new ConventionalCommit('unknown', null, commitMessage, false, commitHash);
     }
 
     const [, type, scope, bang, subject] = match;
     const isBreaking = !!bang || raw.includes('BREAKING CHANGE');
 
-    return new ConventionalCommit(type, scope || null, subject, isBreaking);
+    return new ConventionalCommit(type, scope || null, subject, isBreaking, commitHash);
   }
 
   get bumpType(): SemVerBumpType {

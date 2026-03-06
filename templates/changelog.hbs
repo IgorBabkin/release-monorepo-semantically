@@ -6,7 +6,7 @@
   {{#each entry.breakingChanges}}
     - **{{this.scope}}:**
     {{this.subject}}
-    ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
+    {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
   {{/each}}
 
 {{/if}}
@@ -16,7 +16,7 @@
   {{#each entry.features}}
     - **{{this.scope}}:**
     {{this.subject}}
-    ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
+    {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
   {{/each}}
 
 {{/if}}
@@ -26,7 +26,7 @@
   {{#each entry.fixes}}
     - **{{this.scope}}:**
     {{this.subject}}
-    ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
+    {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
   {{/each}}
 
 {{/if}}
@@ -36,7 +36,7 @@
   {{#each entry.performance}}
     - **{{this.scope}}:**
     {{this.subject}}
-    ([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}}))
+    {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
   {{/each}}
 
 {{/if}}

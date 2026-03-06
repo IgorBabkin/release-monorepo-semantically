@@ -6,7 +6,8 @@ export class HandlebarsRenderService {
   constructor(private basePath: string) {}
 
   render(templatePath: string, data: Record<string, unknown>): string {
-    const source = readFileSync(path.resolve(this.basePath, templatePath), 'utf-8');
+    const resolvedTemplatePath = path.isAbsolute(templatePath) ? templatePath : path.resolve(this.basePath, templatePath);
+    const source = readFileSync(resolvedTemplatePath, 'utf-8');
     const template = Handlebars.compile(source);
     return template(data);
   }

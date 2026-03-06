@@ -3,10 +3,19 @@ import { ConventionalCommit } from '../models/ConventionalCommit';
 
 export class GitService {
   findManyCommitsSinceTag(sinceTag: string): ConventionalCommit[] {
-    const range = `${sinceTag}..HEAD`;
+    const range = this.tagExists(sinceTag) ? `${sinceTag}..HEAD` : 'HEAD';
     const output = execSync(`git log ${range} --format="%H %s"`, { encoding: 'utf-8' }).trim();
     if (!output) return [];
     return output.split('\n').map((c) => ConventionalCommit.parse(c));
+  }
+
+  private tagExists(tagName: string): boolean {
+    try {
+      execSync(`git rev-parse --verify --quiet refs/tags/${tagName}`, { encoding: 'utf-8' }).trim();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   createTag(tagName: string): void {
@@ -14,8 +23,9 @@ export class GitService {
   }
 
   commit(message: string): void {
+    const normalizedMessage = message.trim();
     execSync('git add .');
-    execSync(`git commit --allow-empty -m ${JSON.stringify(message)}`);
+    execSync(`git commit --allow-empty -m ${JSON.stringify(normalizedMessage)}`);
   }
 
   push(includeTags: boolean): void {
