@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   test:
-    name: Tests
+    name: Run All Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
       - run: npm run test:e2e
 
   release:
-    name: Release
+    name: Publish NPM package
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
