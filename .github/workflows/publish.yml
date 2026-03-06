@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   qa:
-    name: QA on PR and Main
+    name: QA
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
