@@ -35,10 +35,22 @@ export class MonorepoController {
   }
 
   discoverPackages(): void {
-    this.packages = this.fileSystemService.findManyByGlob(this.rootPackageJson.workspaces ?? [], process.cwd()).map((path) => {
-      const pkg = this.fileSystemService.readJson(path) as PackageJSON;
-      return NpmPackage.createFromPackage(pkg, path);
+    const workspaceEntries = this.fileSystemService.findManyByGlob(this.rootPackageJson.workspaces ?? [], process.cwd());
+    const packageJsonPaths = Array.from(
+      new Set(
+        workspaceEntries.map((entryPath) => this.resolveWorkspacePackageJsonPath(entryPath)).filter((entryPath): entryPath is string => Boolean(entryPath)),
+      ),
+    );
+
+    this.packages = packageJsonPaths.map((packageJsonPath) => {
+      const pkg = this.fileSystemService.readJson(packageJsonPath) as PackageJSON;
+      return NpmPackage.createFromPackage(pkg, packageJsonPath);
     });
+  }
+
+  private resolveWorkspacePackageJsonPath(entryPath: string): string | undefined {
+    const packageJsonPath = path.basename(entryPath) === 'package.json' ? entryPath : path.resolve(entryPath, 'package.json');
+    return this.fileSystemService.fileExists(packageJsonPath) ? packageJsonPath : undefined;
   }
 
   private getInternalPackageNames(): Set<string> {

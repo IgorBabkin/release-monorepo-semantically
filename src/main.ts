@@ -23,6 +23,21 @@ interface PackageJsonWithTemplates {
   };
 }
 
+function hasHelpFlag(args: string[]): boolean {
+  return args.includes('--help') || args.includes('-h');
+}
+
+function renderHelpText(): string {
+  return [
+    'Usage: monorepo-semantic-release [options]',
+    '',
+    'Options:',
+    '  -h, --help                              Show this help message',
+    `  --changelog-template <path>             Override changelog template (default: ${DEFAULT_CHANGELOG_TEMPLATE})`,
+    `  --release-commit-template <path>        Override release commit template (default: ${DEFAULT_RELEASE_COMMIT_TEMPLATE})`,
+  ].join('\n');
+}
+
 function parseCliTemplateArg(args: string[], name: string): string | undefined {
   const prefixed = `--${name}=`;
   for (let index = 0; index < args.length; index += 1) {
@@ -47,8 +62,11 @@ function resolveTemplateOverrides(cwd: string, fsService: NodeFileSystemService,
   };
 }
 
-export function runCli(cwd = process.cwd()): number {
-  const cliArgs = process.argv.slice(2);
+export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): number {
+  if (hasHelpFlag(cliArgs)) {
+    console.log(renderHelpText());
+    return 0;
+  }
 
   try {
     const fsService = new NodeFileSystemService();
