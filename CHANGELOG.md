@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.3...v1.5.0) (2026-03-07)
+
+
+### Features
+
+* **cli:** push and publish releases by default ([1f9d699](https://github.com/IgorBabkin/release-monorepo-semantically/commit/1f9d699cfa5e2d55d3ba0819ba3c872ea08460bb))
+
 ## [1.4.3](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.2...v1.4.3) (2026-03-07)
 
 
