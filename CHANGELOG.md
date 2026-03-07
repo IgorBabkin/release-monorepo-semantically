@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.2.0...v1.2.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* **release:** skip changelog for skipped bumps ([0f98acf](https://github.com/IgorBabkin/release-monorepo-semantically/commit/0f98acf83a8979e39e7983b3b791c109c1639a5a))
+
 # [1.2.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.1.2...v1.2.0) (2026-03-07)
 
 
