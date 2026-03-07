@@ -72,7 +72,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const fsService = new NodeFileSystemService();
     const templateOverrides = resolveTemplateOverrides(cwd, fsService, cliArgs);
     const vcs = new GitService();
-    const renderService = new HandlebarsRenderService(cwd);
+    const renderService = new HandlebarsRenderService(cwd, path.resolve(__dirname, '..'));
     const changelog = new ChangelogRenderer(renderService, fsService, templateOverrides.changelogTemplate);
     const releaseCommit = new ReleaseCommit(vcs, renderService, templateOverrides.releaseCommitTemplate);
     const packageManager = new PackageManager();
