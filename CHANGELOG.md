@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.1.0...v1.1.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* **cli:** support help with directory workspaces ([cdb51a1](https://github.com/IgorBabkin/release-monorepo-semantically/commit/cdb51a1bb421dfceb15eba8dabdade84632fbc46))
+
 # [1.1.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.0.0...v1.1.0) (2026-03-07)
 
 
