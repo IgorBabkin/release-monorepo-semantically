@@ -1,3 +1,16 @@
+# [1.4.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.3.0...v1.4.0) (2026-03-07)
+
+
+### Bug Fixes
+
+* **cli:** stream commit hook output ([c92c672](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c92c6726725b148ed462039d43bcefcb866aab10))
+
+
+### Features
+
+* **cli:** style release progress logs ([da51906](https://github.com/IgorBabkin/release-monorepo-semantically/commit/da519067eb21587f7671556db4eded2753aec105))
+* **templates:** add emoji to release artifacts ([e488110](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e48811019408a30814265cb8cf482d06cd8a5110))
+
 # [1.3.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.2.1...v1.3.0) (2026-03-07)
 
 
