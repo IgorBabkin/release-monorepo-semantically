@@ -3,7 +3,7 @@ import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { GitService } from './services/GitService';
 import { ChangelogRenderer } from './services/ChangelogRenderer';
 import { HandlebarsRenderService } from './services/HandlebarsRenderService';
-import { ReleaseCommit } from './services/ReleaseCommit';
+import { ReleaseCommitView } from './services/ReleaseCommitView';
 import { PackageManager } from './services/PackageManager';
 import { ConsoleLogger } from './services/ConsoleLogger';
 import path from 'node:path';
@@ -79,7 +79,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const vcs = new GitService();
     const renderService = new HandlebarsRenderService(cwd, path.resolve(__dirname, '..'));
     const changelog = new ChangelogRenderer(renderService, fsService, templateOverrides.changelogTemplate);
-    const releaseCommit = new ReleaseCommit(vcs, renderService, templateOverrides.releaseCommitTemplate);
+    const releaseCommit = new ReleaseCommitView(renderService, templateOverrides.releaseCommitTemplate);
     const packageManager = new PackageManager();
     const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager, new ConsoleLogger('Release'));
     const dryRun = hasDryRunFlag(cliArgs);

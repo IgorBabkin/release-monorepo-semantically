@@ -1,7 +1,7 @@
 import { NpmPackage } from './models/NpmPackage';
 import { bumpTypeToString, bumpVersion, SemVerBumpType } from './models/SemVerBumpType';
 import { PackageJSON } from './models/PackageJSON';
-import { ReleaseCommit } from './services/ReleaseCommit';
+import { ReleaseCommitView } from './services/ReleaseCommitView';
 import { ChangelogRenderer } from './services/ChangelogRenderer';
 import { sortLessDependenciesFirst } from './sortLessDependenciesFirst';
 import { PackageManager } from './services/PackageManager';
@@ -54,7 +54,7 @@ export class MonorepoController {
     private fileSystemService: NodeFileSystemService,
     private vcsService: GitService,
     private changelog: ChangelogRenderer,
-    private releaseCommit: ReleaseCommit,
+    private releaseCommitView: ReleaseCommitView,
     private packageManager: PackageManager,
     private logger: ConsoleLogger,
   ) {}
@@ -236,7 +236,8 @@ export class MonorepoController {
     }
 
     // create release commit
-    this.releaseCommit.commit({ packages: releaseCommitPackages });
+    const commitMessage = this.releaseCommitView.render({ packages: releaseCommitPackages });
+    this.vcsService.commit(commitMessage);
     this.logger.info(`releaseCommit generated`);
 
     // create git tags for every released package
