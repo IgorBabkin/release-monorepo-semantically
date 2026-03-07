@@ -37,6 +37,7 @@ jobs:
     needs: test
     environment:
       name: production
+      url: https://www.npmjs.com/package/release-monorepo-semantically
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
