@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.1.1...v1.1.2) (2026-03-07)
+
+
+### Bug Fixes
+
+* **templates:** make bundled defaults optional fallback ([5afa5fb](https://github.com/IgorBabkin/release-monorepo-semantically/commit/5afa5fbb960c85091d00226f204ef8ecd59a0742))
+
 ## [1.1.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.1.0...v1.1.1) (2026-03-07)
 
 
