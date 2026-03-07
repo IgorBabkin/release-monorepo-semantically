@@ -10,41 +10,7 @@ import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { GitService } from './services/GitService';
 import { ConsoleLogger } from './services/ConsoleLogger';
 import { ConventionalCommit } from './models/ConventionalCommit';
-
-interface DependencyVersionChange {
-  packageName: string;
-  oldVersion: string;
-  newVersion: string;
-}
-
-interface ReleaseOptions {
-  dryRun?: boolean;
-}
-
-interface ReleaseCommitChange {
-  type: string;
-  subject: string;
-  isBreaking: boolean;
-}
-
-interface ReleaseCommitDependencyUpdate {
-  packageName: string;
-  oldVersion: string;
-  newVersion: string;
-}
-
-interface ReleaseCommitPackage {
-  name: string;
-  version: string;
-  previousVersion: string;
-  commits: ReleaseCommitChange[];
-  dependencyUpdates: ReleaseCommitDependencyUpdate[];
-}
-
-interface ReleasedPackageVersion {
-  pkg: NpmPackage;
-  version: string;
-}
+import { DependencyVersionChange, ReleaseCommitPackage, ReleasedPackageVersion } from './models/ReleaseTypes';
 
 export class MonorepoController {
   private packages: NpmPackage[] = [];
@@ -203,7 +169,7 @@ export class MonorepoController {
     };
   }
 
-  release(options: ReleaseOptions = {}): void {
+  release(options: { dryRun?: boolean } = {}): void {
     const { dryRun = false } = options;
     const sorted = sortLessDependenciesFirst(this.packages.filter((p) => !p.isPrivate));
     const releasedVersions = new Map<string, string>(this.packages.map((pkg) => [pkg.name, pkg.version]));

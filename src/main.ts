@@ -13,24 +13,21 @@ import path from 'node:path';
 const DEFAULT_CHANGELOG_TEMPLATE = 'templates/changelog.hbs';
 const DEFAULT_RELEASE_COMMIT_TEMPLATE = 'templates/release-commit-msg.hbs';
 
-interface CliOptions {
-  help: boolean;
-  dryRun: boolean;
+interface TemplateOverrides {
   changelogTemplate?: string;
   releaseCommitTemplate?: string;
 }
 
-interface TemplateOverrides {
-  changelogTemplate: string;
-  releaseCommitTemplate: string;
+interface CliOptions extends TemplateOverrides {
+  help: boolean;
+  dryRun: boolean;
 }
 
 interface PackageJsonWithTemplates {
-  releaseTemplates?: {
-    changelogTemplate?: string;
-    releaseCommitTemplate?: string;
-  };
+  releaseTemplates?: TemplateOverrides;
 }
+
+type ResolvedTemplateOverrides = Required<TemplateOverrides>;
 
 function createProgram(): Command {
   return new Command()
@@ -59,11 +56,7 @@ export function parseCliOptions(args: string[]): CliOptions {
     throw error;
   }
 
-  const options = program.opts<{
-    dryRun?: boolean;
-    changelogTemplate?: string;
-    releaseCommitTemplate?: string;
-  }>();
+  const options = program.opts<CliOptions>();
 
   return {
     help: false,
@@ -73,7 +66,7 @@ export function parseCliOptions(args: string[]): CliOptions {
   };
 }
 
-function resolveTemplateOverrides(cwd: string, fsService: NodeFileSystemService, cliOptions: CliOptions): TemplateOverrides {
+function resolveTemplateOverrides(cwd: string, fsService: NodeFileSystemService, cliOptions: CliOptions): ResolvedTemplateOverrides {
   const packageJson = fsService.readJson<PackageJsonWithTemplates>(path.resolve(cwd, 'package.json'));
   const packageTemplates = packageJson.releaseTemplates ?? {};
 
