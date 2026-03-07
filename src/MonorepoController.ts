@@ -141,6 +141,7 @@ export class MonorepoController {
       versionBumpMap.set(pkg.name, versionBump);
       if (versionBump === SemVerBumpType.NONE) {
         this.logger.info(`bump(${pkg.name}) ${currentVersion} (skipped)`);
+        continue;
       } else {
         const newVersion = bumpVersion(currentVersion, versionBump);
         this.applyDependencyUpdates(pkg, dependencyUpdates);
