@@ -9,7 +9,7 @@ describe('release CLI e2e', () => {
     disposeMonorepoFixtures();
   });
 
-  it('runs release workflow in a disposable monorepo and pushes commit to origin', () => {
+  it('given a releaseable change when the cli runs then it creates local release artifacts without pushing to origin', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
 
     fixture.commit('fix(pkg-a): exercise release flow', 'pkg-a');
@@ -29,7 +29,7 @@ describe('release CLI e2e', () => {
     };
 
     expect(latestSubject).toBe('ci: release [skip-ci]');
-    expect(remoteHead).toBe(localHead);
+    expect(remoteHead).not.toBe(localHead);
     expect(typeof pkgJson.version).toBe('string');
   });
 });

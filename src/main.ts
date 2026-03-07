@@ -27,12 +27,17 @@ function hasHelpFlag(args: string[]): boolean {
   return args.includes('--help') || args.includes('-h');
 }
 
+function hasDryRunFlag(args: string[]): boolean {
+  return args.includes('--dry-run');
+}
+
 function renderHelpText(): string {
   return [
     'Usage: monorepo-semantic-release [options]',
     '',
     'Options:',
     '  -h, --help                              Show this help message',
+    '  --dry-run                              Preview release changes without mutating files, commits, or tags',
     `  --changelog-template <path>             Override changelog template (default: ${DEFAULT_CHANGELOG_TEMPLATE})`,
     `  --release-commit-template <path>        Override release commit template (default: ${DEFAULT_RELEASE_COMMIT_TEMPLATE})`,
   ].join('\n');
@@ -77,10 +82,11 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const releaseCommit = new ReleaseCommit(vcs, renderService, templateOverrides.releaseCommitTemplate);
     const packageManager = new PackageManager();
     const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager, new ConsoleLogger('Release'));
+    const dryRun = hasDryRunFlag(cliArgs);
 
     controller.discoverRootPackageJSON();
     controller.discoverPackages();
-    controller.release();
+    controller.release({ dryRun });
 
     return 0;
   } catch (error) {

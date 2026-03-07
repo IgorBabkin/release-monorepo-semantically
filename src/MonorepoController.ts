@@ -17,6 +17,10 @@ interface DependencyVersionChange {
   newVersion: string;
 }
 
+interface ReleaseOptions {
+  dryRun?: boolean;
+}
+
 export class MonorepoController {
   private packages: NpmPackage[] = [];
   private rootPackageJson!: PackageJSON;
@@ -118,7 +122,8 @@ export class MonorepoController {
     return commits.filter((commit) => commit.isReleaseTrigger() && commit.matchesScope(packageName));
   }
 
-  release(): void {
+  release(options: ReleaseOptions = {}): void {
+    const { dryRun = false } = options;
     const sorted = sortLessDependenciesFirst(this.packages.filter((p) => !p.isPrivate));
     const versionBumpMap = new Map<string, SemVerBumpType>();
     const releasedVersions = new Map<string, string>(this.packages.map((pkg) => [pkg.name, pkg.version]));
@@ -137,9 +142,9 @@ export class MonorepoController {
       if (versionBump === SemVerBumpType.NONE) {
         this.logger.info(`bump(${pkg.name}) ${currentVersion} (skipped)`);
       } else {
+        const newVersion = bumpVersion(currentVersion, versionBump);
         this.applyDependencyUpdates(pkg, dependencyUpdates);
         this.packageManager.bumpVersion(pkg, versionBump);
-        const newVersion = bumpVersion(currentVersion, versionBump);
         releasedVersions.set(pkg.name, newVersion);
 
         this.logger.info(`bump(${pkg.name}) ${currentVersion} (${bumpTypeToString(versionBump)})`);
@@ -160,6 +165,10 @@ export class MonorepoController {
       this.logger.info(`changelog(${pkg.name}) generated`);
     }
 
+    if (dryRun) {
+      return;
+    }
+
     // create release commit
     this.releaseCommit.commit({});
     this.logger.info(`releaseCommit generated`);
@@ -174,8 +183,5 @@ export class MonorepoController {
       this.vscService.createTag(`${pkg.name}@${releasedVersions.get(packageName)}`);
       this.logger.info(`createTag ${pkg.name}@${releasedVersions.get(packageName)}`);
     }
-
-    this.vscService.push(true);
-    this.logger.info('VSC pushed');
   }
 }
