@@ -19,11 +19,11 @@ describe('T25 - release commit message format', () => {
     expect(fixture.run('git log -1 --pretty=%s')).toBe('ci(release): publish [skip-ci]');
 
     const commitBody = fixture.run('git log -1 --pretty=%B');
-    expect(commitBody).toContain('## pkg-a@1.1.0');
-    expect(commitBody).toContain('- feat: add feature');
-    expect(commitBody).toContain('## pkg-b@2.0.1');
-    expect(commitBody).toContain('- fix: resolve bug');
-    expect(commitBody).toContain('Affected:');
+    expect(commitBody).toContain('## 📦 pkg-a@1.1.0');
+    expect(commitBody).toContain('- 🔹 feat: add feature');
+    expect(commitBody).toContain('## 📦 pkg-b@2.0.1');
+    expect(commitBody).toContain('- 🔹 fix: resolve bug');
+    expect(commitBody).toContain('Affected: 📌');
     expect(commitBody).toContain('pkg-a@1.1.0');
     expect(commitBody).toContain('pkg-b@2.0.1');
   });

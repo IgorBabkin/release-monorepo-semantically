@@ -2,15 +2,15 @@ ci(release): publish [skip-ci]
 {{#if packages}}
 
 {{#each packages}}
-## {{this.name}}@{{this.version}}
+## 📦 {{this.name}}@{{this.version}}
 
 {{#each this.commits}}
-- {{this.type}}{{#if this.isBreaking}}!{{/if}}: {{this.subject}}
+- 🔹 {{this.type}}{{#if this.isBreaking}}!{{/if}}: {{this.subject}}
 {{/each}}
 {{#each this.dependencyUpdates}}
-- deps: update {{this.packageName}} from {{this.oldVersion}} to {{this.newVersion}}
+- 📦 deps: update {{this.packageName}} from {{this.oldVersion}} to {{this.newVersion}}
 {{/each}}
 
 {{/each}}
-Affected: {{#each packages}}{{this.name}}@{{this.version}}{{#unless @last}},{{/unless}}{{/each}}
+Affected: 📌 {{#each packages}}{{this.name}}@{{this.version}}{{#unless @last}},{{/unless}}{{/each}}
 {{/if}}

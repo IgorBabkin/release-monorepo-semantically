@@ -15,5 +15,6 @@ describe('T18 - missing changelog file is generated during release', () => {
 
     const changelog = fixture.run('cat packages/pkg-a/CHANGELOG.md');
     expect(changelog).toContain('# [1.0.1]');
+    expect(changelog).toContain('### 🐞 Bug Fixes');
   });
 });
