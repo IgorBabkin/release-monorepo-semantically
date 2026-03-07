@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.0...v1.4.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* **release:** trigger publish ([5b220d0](https://github.com/IgorBabkin/release-monorepo-semantically/commit/5b220d02027161356a367e24a2a6547ec3f896c7))
+
 # [1.4.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.3.0...v1.4.0) (2026-03-07)
 
 
