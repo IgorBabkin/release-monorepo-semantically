@@ -10,14 +10,14 @@ describe('runCli', () => {
   });
 
   it('given --help when the cli starts then it prints usage and exits before reading repo state', () => {
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     const exitCode = runCli('/repo', ['--help']);
 
     expect(exitCode).toBe(0);
     expect(errorSpy).not.toHaveBeenCalled();
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Usage: monorepo-semantic-release [options]'));
+    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining('Usage: monorepo-semantic-release [options]'));
   });
 
   it('given --dry-run when the cli starts then release is executed in dry-run mode', () => {

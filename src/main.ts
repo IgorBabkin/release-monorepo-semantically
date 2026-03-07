@@ -42,10 +42,6 @@ function createProgram(): Command {
     .option('--release-commit-template <path>', `Override release commit template (default: ${DEFAULT_RELEASE_COMMIT_TEMPLATE})`);
 }
 
-export function renderHelpText(): string {
-  return createProgram().helpInformation();
-}
-
 export function parseCliOptions(args: string[]): CliOptions {
   const program = createProgram();
 
@@ -94,7 +90,6 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
   const errorHandler = new ErrorHandler();
 
   if (cliOptions.help) {
-    console.log(renderHelpText());
     return 0;
   }
 
