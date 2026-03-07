@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { runCli } from './main';
+import { parseCliOptions, runCli } from './main';
 import { MonorepoController } from './MonorepoController';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
+import { ErrorHandler } from './services/ErrorHandler';
 
 describe('runCli', () => {
   afterEach(() => {
@@ -30,5 +31,29 @@ describe('runCli', () => {
 
     expect(exitCode).toBe(0);
     expect(releaseSpy).toHaveBeenCalledWith({ dryRun: true });
+  });
+
+  it('given template override flags when cli options are parsed then values are read from named options', () => {
+    expect(
+      parseCliOptions(['--dry-run', '--changelog-template', 'templates/custom-changelog.hbs', '--release-commit-template=templates/custom-release.hbs']),
+    ).toEqual({
+      dryRun: true,
+      help: false,
+      changelogTemplate: 'templates/custom-changelog.hbs',
+      releaseCommitTemplate: 'templates/custom-release.hbs',
+    });
+  });
+
+  it('given a runtime error when the cli fails then it delegates error reporting to ErrorHandler', () => {
+    const expectedError = new Error('boom');
+    const handleSpy = vi.spyOn(ErrorHandler.prototype, 'handle').mockImplementation(() => undefined);
+    vi.spyOn(NodeFileSystemService.prototype, 'readJson').mockImplementation(() => {
+      throw expectedError;
+    });
+
+    const exitCode = runCli('/repo', []);
+
+    expect(exitCode).toBe(1);
+    expect(handleSpy).toHaveBeenCalledWith(expectedError);
   });
 });

@@ -6,10 +6,19 @@ import { HandlebarsRenderService } from './services/HandlebarsRenderService';
 import { ReleaseCommitView } from './services/ReleaseCommitView';
 import { PackageManager } from './services/PackageManager';
 import { ConsoleLogger } from './services/ConsoleLogger';
+import { ErrorHandler } from './services/ErrorHandler';
+import { Command } from 'commander';
 import path from 'node:path';
 
 const DEFAULT_CHANGELOG_TEMPLATE = 'templates/changelog.hbs';
 const DEFAULT_RELEASE_COMMIT_TEMPLATE = 'templates/release-commit-msg.hbs';
+
+interface CliOptions {
+  help: boolean;
+  dryRun: boolean;
+  changelogTemplate?: string;
+  releaseCommitTemplate?: string;
+}
 
 interface TemplateOverrides {
   changelogTemplate: string;
@@ -23,74 +32,87 @@ interface PackageJsonWithTemplates {
   };
 }
 
-function hasHelpFlag(args: string[]): boolean {
-  return args.includes('--help') || args.includes('-h');
+function createProgram(): Command {
+  return new Command()
+    .name('monorepo-semantic-release')
+    .allowExcessArguments(false)
+    .helpOption('-h, --help', 'Show this help message')
+    .option('--dry-run', 'Preview release changes without mutating files, commits, or tags')
+    .option('--changelog-template <path>', `Override changelog template (default: ${DEFAULT_CHANGELOG_TEMPLATE})`)
+    .option('--release-commit-template <path>', `Override release commit template (default: ${DEFAULT_RELEASE_COMMIT_TEMPLATE})`);
 }
 
-function hasDryRunFlag(args: string[]): boolean {
-  return args.includes('--dry-run');
+export function renderHelpText(): string {
+  return createProgram().helpInformation();
 }
 
-function renderHelpText(): string {
-  return [
-    'Usage: monorepo-semantic-release [options]',
-    '',
-    'Options:',
-    '  -h, --help                              Show this help message',
-    '  --dry-run                              Preview release changes without mutating files, commits, or tags',
-    `  --changelog-template <path>             Override changelog template (default: ${DEFAULT_CHANGELOG_TEMPLATE})`,
-    `  --release-commit-template <path>        Override release commit template (default: ${DEFAULT_RELEASE_COMMIT_TEMPLATE})`,
-  ].join('\n');
-}
+export function parseCliOptions(args: string[]): CliOptions {
+  const program = createProgram();
 
-function parseCliTemplateArg(args: string[], name: string): string | undefined {
-  const prefixed = `--${name}=`;
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
-    if (arg === `--${name}` && args[index + 1] && !args[index + 1].startsWith('--')) {
-      return args[index + 1];
+  try {
+    program.exitOverride();
+    program.parse(['node', 'monorepo-semantic-release', ...args], { from: 'node' });
+  } catch (error) {
+    const commanderError = error as { code?: string };
+    if (commanderError.code === 'commander.helpDisplayed') {
+      return {
+        help: true,
+        dryRun: false,
+      };
     }
-    if (arg.startsWith(prefixed)) {
-      return arg.slice(prefixed.length);
-    }
+    throw error;
   }
-  return undefined;
+
+  const options = program.opts<{
+    dryRun?: boolean;
+    changelogTemplate?: string;
+    releaseCommitTemplate?: string;
+  }>();
+
+  return {
+    help: false,
+    dryRun: options.dryRun ?? false,
+    changelogTemplate: options.changelogTemplate,
+    releaseCommitTemplate: options.releaseCommitTemplate,
+  };
 }
 
-function resolveTemplateOverrides(cwd: string, fsService: NodeFileSystemService, args: string[]): TemplateOverrides {
+function resolveTemplateOverrides(cwd: string, fsService: NodeFileSystemService, cliOptions: CliOptions): TemplateOverrides {
   const packageJson = fsService.readJson<PackageJsonWithTemplates>(path.resolve(cwd, 'package.json'));
   const packageTemplates = packageJson.releaseTemplates ?? {};
 
   return {
-    releaseCommitTemplate: parseCliTemplateArg(args, 'release-commit-template') ?? packageTemplates.releaseCommitTemplate ?? DEFAULT_RELEASE_COMMIT_TEMPLATE,
-    changelogTemplate: parseCliTemplateArg(args, 'changelog-template') ?? packageTemplates.changelogTemplate ?? DEFAULT_CHANGELOG_TEMPLATE,
+    releaseCommitTemplate: cliOptions.releaseCommitTemplate ?? packageTemplates.releaseCommitTemplate ?? DEFAULT_RELEASE_COMMIT_TEMPLATE,
+    changelogTemplate: cliOptions.changelogTemplate ?? packageTemplates.changelogTemplate ?? DEFAULT_CHANGELOG_TEMPLATE,
   };
 }
 
 export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): number {
-  if (hasHelpFlag(cliArgs)) {
+  const cliOptions = parseCliOptions(cliArgs);
+  const fsService = new NodeFileSystemService();
+  const vcs = new GitService();
+  const errorHandler = new ErrorHandler();
+
+  if (cliOptions.help) {
     console.log(renderHelpText());
     return 0;
   }
 
   try {
-    const fsService = new NodeFileSystemService();
-    const templateOverrides = resolveTemplateOverrides(cwd, fsService, cliArgs);
-    const vcs = new GitService();
+    const templateOverrides = resolveTemplateOverrides(cwd, fsService, cliOptions);
     const renderService = new HandlebarsRenderService(cwd, path.resolve(__dirname, '..'));
     const changelog = new ChangelogView(renderService, fsService, templateOverrides.changelogTemplate);
     const releaseCommit = new ReleaseCommitView(renderService, templateOverrides.releaseCommitTemplate);
     const packageManager = new PackageManager();
     const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager, new ConsoleLogger('Release'));
-    const dryRun = hasDryRunFlag(cliArgs);
 
     controller.discoverRootPackageJSON();
     controller.discoverPackages();
-    controller.release({ dryRun });
+    controller.release({ dryRun: cliOptions.dryRun });
 
     return 0;
   } catch (error) {
-    console.error(error);
+    errorHandler.handle(error);
     return 1;
   }
 }

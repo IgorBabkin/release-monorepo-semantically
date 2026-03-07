@@ -35,6 +35,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "commander": "14.0.3",
     "glob": "^10.3.10",
     "handlebars": "^4.7.8"
   },
