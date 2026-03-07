@@ -25,7 +25,10 @@ export class GitService {
   commit(message: string): void {
     const normalizedMessage = message.trim();
     execSync('git add .');
-    execSync('git commit --allow-empty -F -', { input: normalizedMessage });
+    execSync('git commit --allow-empty -F -', {
+      input: normalizedMessage,
+      stdio: ['pipe', 'inherit', 'inherit'],
+    });
   }
 
   push(includeTags: boolean): void {
