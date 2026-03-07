@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.1...v1.4.2) (2026-03-07)
+
+
+### Bug Fixes
+
+* **cli:** remove duplicate help handling ([d791077](https://github.com/IgorBabkin/release-monorepo-semantically/commit/d791077a3dc09d51970da7ace72dec0f3262253c))
+
 ## [1.4.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.0...v1.4.1) (2026-03-07)
 
 
