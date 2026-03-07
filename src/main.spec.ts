@@ -30,7 +30,18 @@ describe('runCli', () => {
     const exitCode = runCli('/repo', ['--dry-run']);
 
     expect(exitCode).toBe(0);
-    expect(releaseSpy).toHaveBeenCalledWith({ dryRun: true });
+    expect(releaseSpy).toHaveBeenCalledWith({ dryRun: true, push: true, publish: true });
+  });
+
+  it('given no push or publish flags when cli options are parsed then git push and package publish are disabled', () => {
+    expect(parseCliOptions(['--no-push', '--no-publish'])).toEqual({
+      dryRun: false,
+      help: false,
+      push: false,
+      publish: false,
+      changelogTemplate: undefined,
+      releaseCommitTemplate: undefined,
+    });
   });
 
   it('given template override flags when cli options are parsed then values are read from named options', () => {
@@ -39,6 +50,8 @@ describe('runCli', () => {
     ).toEqual({
       dryRun: true,
       help: false,
+      push: true,
+      publish: true,
       changelogTemplate: 'templates/custom-changelog.hbs',
       releaseCommitTemplate: 'templates/custom-release.hbs',
     });

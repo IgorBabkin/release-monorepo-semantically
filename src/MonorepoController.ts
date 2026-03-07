@@ -11,6 +11,9 @@ import { GitService } from './services/GitService';
 import { ConsoleLogger } from './services/ConsoleLogger';
 import { ConventionalCommit } from './models/ConventionalCommit';
 import { DependencyVersionChange, ReleaseCommitPackage, ReleasedPackageVersion } from './models/ReleaseTypes';
+import { CliOptions } from './CliOptions';
+
+type ReleaseOptions = Partial<Pick<CliOptions, 'dryRun' | 'push' | 'publish'>>;
 
 export class MonorepoController {
   private packages: NpmPackage[] = [];
@@ -113,7 +116,7 @@ export class MonorepoController {
     return commits.filter((commit) => commit.isReleaseTrigger());
   }
 
-  private logStep(step: 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG', detail: string): void {
+  private logStep(step: 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG' | 'PUSH' | 'PUBLISH', detail: string): void {
     this.logger.info(`${step.padEnd(8)} ${detail}`);
   }
 
@@ -169,8 +172,15 @@ export class MonorepoController {
     };
   }
 
-  release(options: { dryRun?: boolean } = {}): void {
-    const { dryRun = false } = options;
+  private publishPackages(releasedPackages: ReleasedPackageVersion[]): void {
+    for (const releasedPackage of releasedPackages) {
+      this.packageManager.publish(releasedPackage.pkg);
+      this.logStep('PUBLISH', `${releasedPackage.pkg.name}@${releasedPackage.version}`);
+    }
+  }
+
+  release(options: ReleaseOptions = {}): void {
+    const { dryRun = false, push = true, publish = true } = options;
     const sorted = sortLessDependenciesFirst(this.packages.filter((p) => !p.isPrivate));
     const releasedVersions = new Map<string, string>(this.packages.map((pkg) => [pkg.name, pkg.version]));
     const releasedPackages: ReleasedPackageVersion[] = [];
@@ -212,5 +222,14 @@ export class MonorepoController {
 
     // create git tags for every released package
     this.createTags(releasedPackages);
+
+    if (push) {
+      this.vcsService.push(releasedPackages.length > 0);
+      this.logStep('PUSH', `HEAD${releasedPackages.length > 0 ? ` and ${releasedPackages.length} tag(s)` : ''}`);
+    }
+
+    if (publish) {
+      this.publishPackages(releasedPackages);
+    }
   }
 }

@@ -11,6 +11,7 @@ const packageJson = JSON.parse(readFileSync(path.resolve(repoRoot, 'package.json
 };
 const packageName = packageJson.name;
 const packageBinPath = packageJson.bin['monorepo-semantic-release'];
+const realPnpmPath = execSync('command -v pnpm', { encoding: 'utf-8' }).trim();
 const tempRoots: string[] = [];
 
 interface ExecResult {
@@ -32,6 +33,7 @@ export interface MonorepoFixture {
   run: (cmd: string) => string;
   commit: (message: string, packageName: string) => void;
   tags: () => string[];
+  publishedPackages: () => string[];
   getPackageJson: (packageName: string) => {
     name: string;
     version: string;
@@ -41,13 +43,13 @@ export interface MonorepoFixture {
   release: (options?: string | string[]) => ExecResult;
 }
 
-function runCommand(cmd: string, cwd: string): string {
-  return execSync(cmd, { cwd, encoding: 'utf-8', stdio: 'pipe' }).trim();
+function runCommand(cmd: string, cwd: string, env?: NodeJS.ProcessEnv): string {
+  return execSync(cmd, { cwd, env: { ...process.env, ...env }, encoding: 'utf-8', stdio: 'pipe' }).trim();
 }
 
-function runCommandCapture(cmd: string, cwd: string): ExecResult {
+function runCommandCapture(cmd: string, cwd: string, env?: NodeJS.ProcessEnv): ExecResult {
   try {
-    const output = execSync(cmd, { cwd, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+    const output = execSync(cmd, { cwd, env: { ...process.env, ...env }, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
     return { status: 'passed', stdout: output.toString().trim(), stderr: '' };
   } catch (error) {
     const err = error as Error & { stdout?: Buffer; stderr?: Buffer; message: string };
@@ -64,13 +66,43 @@ export function createMonorepoFixture(packages: PackageFixture[], withRemote = t
   tempRoots.push(tempRoot);
 
   const remoteDir = path.join(tempRoot, 'remote.git');
+  const fixtureBinDir = path.join(tempRoot, 'bin');
+  const publishedPackagesLog = path.join(tempRoot, 'published-packages.log');
   const workDir = path.join(tempRoot, 'workspace');
+  mkdirSync(fixtureBinDir, { recursive: true });
   mkdirSync(workDir, { recursive: true });
+  writeFileSync(
+    path.join(fixtureBinDir, 'pnpm'),
+    `#!/usr/bin/env node
+const { appendFileSync, readFileSync } = require('node:fs');
+const { spawnSync } = require('node:child_process');
+const path = require('node:path');
 
-  runCommand(`git init --bare ${JSON.stringify(remoteDir)}`, tempRoot);
-  runCommand('git init', workDir);
-  runCommand('git config user.name "E2E Bot"', workDir);
-  runCommand('git config user.email "e2e@example.com"', workDir);
+const args = process.argv.slice(2);
+if (args[0] === 'publish') {
+  const pkg = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8'));
+  appendFileSync(process.env.MONOREPO_SEMREL_PUBLISH_LOG, \`\${pkg.name}@\${pkg.version}\\n\`);
+  process.exit(0);
+}
+
+const result = spawnSync(${JSON.stringify(realPnpmPath)}, args, { stdio: 'inherit' });
+if (result.error) {
+  throw result.error;
+}
+process.exit(result.status ?? 0);
+`,
+  );
+  chmodSync(path.join(fixtureBinDir, 'pnpm'), 0o755);
+  const fixtureEnv = {
+    ...process.env,
+    PATH: `${fixtureBinDir}:${process.env.PATH ?? ''}`,
+    MONOREPO_SEMREL_PUBLISH_LOG: publishedPackagesLog,
+  };
+
+  runCommand(`git init --bare ${JSON.stringify(remoteDir)}`, tempRoot, fixtureEnv);
+  runCommand('git init', workDir, fixtureEnv);
+  runCommand('git config user.name "E2E Bot"', workDir, fixtureEnv);
+  runCommand('git config user.email "e2e@example.com"', workDir, fixtureEnv);
 
   cpSync(templatesDir, path.join(workDir, 'templates'), { recursive: true });
   mkdirSync(path.join(workDir, 'node_modules', '.bin'), { recursive: true });
@@ -101,37 +133,41 @@ export function createMonorepoFixture(packages: PackageFixture[], withRemote = t
     writeFileSync(path.join(packagePath, 'README.md'), 'initial\n');
   }
 
-  runCommand('git add .', workDir);
-  runCommand('git commit -m "chore: initial fixture"', workDir);
+  runCommand('git add .', workDir, fixtureEnv);
+  runCommand('git commit -m "chore: initial fixture"', workDir, fixtureEnv);
 
   if (includeInitialTags) {
     for (const pkg of packages) {
-      runCommand(`git tag ${pkg.name}@${pkg.version}`, workDir);
+      runCommand(`git tag ${pkg.name}@${pkg.version}`, workDir, fixtureEnv);
     }
   }
 
   if (withRemote) {
-    runCommand(`git remote add origin ${JSON.stringify(remoteDir)}`, workDir);
-    runCommand('git push -u origin HEAD', workDir);
-    runCommand('git push --tags', workDir);
+    runCommand(`git remote add origin ${JSON.stringify(remoteDir)}`, workDir, fixtureEnv);
+    runCommand('git push -u origin HEAD', workDir, fixtureEnv);
+    runCommand('git push --tags', workDir, fixtureEnv);
   }
 
   return {
     remoteDir,
     workDir,
     run(cmd: string): string {
-      return runCommand(cmd, workDir);
+      return runCommand(cmd, workDir, fixtureEnv);
     },
     commit(message: string, packageName: string): void {
       const packagePath = path.join(workDir, 'packages', packageName);
       const marker = path.join(packagePath, `${Date.now()}-${Math.random().toString(36).slice(2)}.txt`);
       writeFileSync(marker, `${message}\n`);
-      runCommand('git add .', workDir);
-      runCommand(`git commit -m ${JSON.stringify(message)}`, workDir);
+      runCommand('git add .', workDir, fixtureEnv);
+      runCommand(`git commit -m ${JSON.stringify(message)}`, workDir, fixtureEnv);
     },
     tags(): string[] {
-      const tagOutput = runCommand('git tag --list', workDir);
+      const tagOutput = runCommand('git tag --list', workDir, fixtureEnv);
       return tagOutput ? tagOutput.split('\n').filter(Boolean) : [];
+    },
+    publishedPackages(): string[] {
+      const output = runCommandCapture(`cat ${JSON.stringify(publishedPackagesLog)}`, workDir, fixtureEnv);
+      return output.status === 'passed' && output.stdout ? output.stdout.split('\n').filter(Boolean) : [];
     },
     getPackageJson(packageName: string) {
       return JSON.parse(readFileSync(path.join(workDir, 'packages', packageName, 'package.json'), 'utf-8')) as {
@@ -143,11 +179,11 @@ export function createMonorepoFixture(packages: PackageFixture[], withRemote = t
     },
     release(options?: string | string[]) {
       if (!options) {
-        return runCommandCapture('./node_modules/.bin/monorepo-semantic-release', workDir);
+        return runCommandCapture('./node_modules/.bin/monorepo-semantic-release', workDir, fixtureEnv);
       }
 
       const commandArgs = Array.isArray(options) ? options.map((argument) => JSON.stringify(argument)).join(' ') : JSON.stringify(options);
-      return runCommandCapture(`./node_modules/.bin/monorepo-semantic-release ${commandArgs}`, workDir);
+      return runCommandCapture(`./node_modules/.bin/monorepo-semantic-release ${commandArgs}`, workDir, fixtureEnv);
     },
   };
 }

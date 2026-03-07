@@ -102,8 +102,18 @@ monorepo-semantic-release --dry-run
 
 - Simulates the entire release process without making any changes
 - Shows exactly what would be released, version bumps, and changelogs
-- No file modifications, no git commits, no git tags, no pushes
+- No file modifications, no git commits, no git tags, no pushes, no publishes
 - Safe to run repeatedly for planning and verification
+
+**`--no-push`** (optional)
+
+- Skips pushing the release commit and tags to the configured Git remote
+- Still creates local commit and tags unless `--dry-run` is also used
+
+**`--no-publish`** (optional)
+
+- Skips publishing bumped packages after the release commit and tags are created
+- Useful for local verification or split CI pipelines
 
 **Examples:**
 
@@ -145,6 +155,10 @@ Root Release Script (monorepo-semantic-release)
   ↓
 6. Create single release commit: ci: release [skip-ci]
    (includes all packages and changes)
+  ↓
+7. Push the release commit and tags to the remote unless `--no-push` is used
+  ↓
+8. Publish bumped packages unless `--no-publish` is used
 ```
 
 ### Sequential Processing (IMPORTANT)

@@ -8,7 +8,7 @@ describe('T29 - failed push leaves actionable release failure', () => {
     disposeMonorepoFixtures();
   });
 
-  it('given an invalid remote when release runs then release still succeeds locally', () => {
+  it('given an invalid remote when release runs then push failure aborts the release before publish', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
     const brokenRemote = path.join(fixture.workDir, 'broken-remote');
     writeFileSync(brokenRemote, 'not a git remote');
@@ -17,8 +17,9 @@ describe('T29 - failed push leaves actionable release failure', () => {
     fixture.commit('feat(pkg-a): push failure expected', 'pkg-a');
     const outcome = fixture.release();
 
-    expect(outcome.status).toBe('passed');
+    expect(outcome.status).toBe('failed');
     expect(fixture.getPackageJson('pkg-a').version).toBe('1.1.0');
     expect(fixture.tags()).toContain('pkg-a@1.1.0');
+    expect(fixture.publishedPackages()).toEqual([]);
   });
 });

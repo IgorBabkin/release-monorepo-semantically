@@ -70,6 +70,7 @@ The intended release flow is sequential and dependency-aware:
 5. Determine the version bump from scoped commits plus internal dependency updates.
 6. Update internal dependency versions exactly, bump package versions, and render changelogs.
 7. Create one release commit and then create tags for released packages.
+8. Push the release commit and tags, then publish released packages, unless disabled with CLI flags.
 
 Do not parallelize per-package release processing. Later packages depend on version changes made to earlier ones.
 
@@ -101,7 +102,7 @@ Expected outcomes:
 - The changelog template is `templates/changelog.hbs`.
 - The release commit template is `templates/release-commit-msg.hbs`.
 - Respect CLI and `package.json` template overrides implemented in `src/index.ts`.
-- `--dry-run` must not mutate files, create commits, or create tags.
+- `--dry-run` must not mutate files, create commits, create tags, push, or publish.
 
 ## Implementation Notes
 

@@ -16,4 +16,11 @@ export class PackageManager {
       stdio: 'pipe',
     });
   }
+
+  publish(pkg: NpmPackage): void {
+    execSync('pnpm publish --no-git-checks', {
+      cwd: path.dirname(pkg.path),
+      stdio: 'pipe',
+    });
+  }
 }

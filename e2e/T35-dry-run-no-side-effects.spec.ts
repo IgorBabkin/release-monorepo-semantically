@@ -18,6 +18,7 @@ describe('T35 - dry run skips commit and tags only', () => {
     expect(outcome.status).toBe('passed');
     expect(fixture.run('git rev-parse HEAD')).toBe(beforeHead);
     expect(new Set(fixture.tags())).toEqual(beforeTags);
+    expect(fixture.publishedPackages()).toEqual([]);
     expect(fixture.getPackageJson('pkg-a').version).toBe('1.1.0');
   });
 });

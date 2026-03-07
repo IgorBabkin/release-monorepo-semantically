@@ -9,7 +9,7 @@ describe('release CLI e2e', () => {
     disposeMonorepoFixtures();
   });
 
-  it('given a releaseable change when the cli runs then it creates local release artifacts without pushing to origin', () => {
+  it('given a releaseable change when the cli runs then it pushes tags and publishes bumped packages by default', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
 
     fixture.commit('fix(pkg-a): exercise release flow', 'pkg-a');
@@ -29,7 +29,8 @@ describe('release CLI e2e', () => {
     };
 
     expect(latestSubject).toBe('ci(release): publish [skip-ci]');
-    expect(remoteHead).not.toBe(localHead);
+    expect(remoteHead).toBe(localHead);
+    expect(fixture.publishedPackages()).toEqual(['pkg-a@1.0.1']);
     expect(typeof pkgJson.version).toBe('string');
   });
 });

@@ -54,6 +54,7 @@ describe('MonorepoController.release', () => {
       findManyCommitsSinceTag: vi.fn().mockReturnValue([]),
       createTag: vi.fn(),
       commit: vi.fn(),
+      push: vi.fn(),
     };
     const changelog = {
       addLog: vi.fn(),
@@ -64,6 +65,7 @@ describe('MonorepoController.release', () => {
     };
     const packageManager = {
       bumpVersion: vi.fn(),
+      publish: vi.fn(),
     };
     const logger = {
       info: vi.fn(),
@@ -118,6 +120,7 @@ describe('MonorepoController.release', () => {
         ),
       createTag: vi.fn(),
       commit: vi.fn(),
+      push: vi.fn(),
     };
     const changelog = {
       addLog: vi.fn(),
@@ -128,6 +131,7 @@ describe('MonorepoController.release', () => {
     };
     const packageManager = {
       bumpVersion: vi.fn(),
+      publish: vi.fn(),
     };
     const logger = {
       info: vi.fn(),
@@ -180,5 +184,122 @@ describe('MonorepoController.release', () => {
       ],
     });
     expect(vcs.commit).toHaveBeenCalledWith('release commit message');
+  });
+
+  it('given released packages when release runs then it pushes tags and publishes packages by default', () => {
+    const fileSystemService = {
+      readJson: vi.fn((filePath: string) => {
+        if (filePath === '/repo/packages/pkg-a/package.json') {
+          return { name: 'pkg-a', version: '1.0.0' };
+        }
+        return undefined;
+      }),
+      writeJson: vi.fn(),
+    };
+    const vcs = {
+      findManyCommitsSinceTag: vi.fn().mockReturnValue([ConventionalCommit.parse('fix(pkg-a): release me')]),
+      createTag: vi.fn(),
+      commit: vi.fn(),
+      push: vi.fn(),
+    };
+    const changelog = {
+      addLog: vi.fn(),
+      render: vi.fn(),
+    };
+    const releaseCommitView = {
+      render: vi.fn().mockReturnValue('release commit message'),
+    };
+    const packageManager = {
+      bumpVersion: vi.fn(),
+      publish: vi.fn(),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+
+    const controller = new MonorepoController(
+      fileSystemService as never,
+      vcs as never,
+      changelog as never,
+      releaseCommitView as never,
+      packageManager as never,
+      logger as never,
+    );
+
+    (controller as unknown as { packages: NpmPackage[] }).packages = [
+      NpmPackage.createFromPackage(
+        {
+          name: 'pkg-a',
+          version: '1.0.0',
+        },
+        '/repo/packages/pkg-a/package.json',
+      ),
+    ];
+
+    controller.release();
+
+    expect(vcs.push).toHaveBeenCalledWith(true);
+    expect(packageManager.publish).toHaveBeenCalledTimes(1);
+    expect(packageManager.publish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'pkg-a',
+      }),
+    );
+  });
+
+  it('given no push and no publish options when release runs then remote mutations are skipped', () => {
+    const fileSystemService = {
+      readJson: vi.fn((filePath: string) => {
+        if (filePath === '/repo/packages/pkg-a/package.json') {
+          return { name: 'pkg-a', version: '1.0.0' };
+        }
+        return undefined;
+      }),
+      writeJson: vi.fn(),
+    };
+    const vcs = {
+      findManyCommitsSinceTag: vi.fn().mockReturnValue([ConventionalCommit.parse('fix(pkg-a): release me')]),
+      createTag: vi.fn(),
+      commit: vi.fn(),
+      push: vi.fn(),
+    };
+    const changelog = {
+      addLog: vi.fn(),
+      render: vi.fn(),
+    };
+    const releaseCommitView = {
+      render: vi.fn().mockReturnValue('release commit message'),
+    };
+    const packageManager = {
+      bumpVersion: vi.fn(),
+      publish: vi.fn(),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+
+    const controller = new MonorepoController(
+      fileSystemService as never,
+      vcs as never,
+      changelog as never,
+      releaseCommitView as never,
+      packageManager as never,
+      logger as never,
+    );
+
+    (controller as unknown as { packages: NpmPackage[] }).packages = [
+      NpmPackage.createFromPackage(
+        {
+          name: 'pkg-a',
+          version: '1.0.0',
+        },
+        '/repo/packages/pkg-a/package.json',
+      ),
+    ];
+
+    controller.release({ push: false, publish: false });
+
+    expect(vcs.push).not.toHaveBeenCalled();
+    expect(packageManager.publish).not.toHaveBeenCalled();
   });
 });

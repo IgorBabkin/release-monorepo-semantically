@@ -39,3 +39,16 @@ describe('PackageManager.bumpVersion', () => {
     });
   });
 });
+
+describe('PackageManager.publish', () => {
+  it('publishes the package from its package directory', () => {
+    const pm = new PackageManager();
+
+    pm.publish(pkg('a', '/repo/packages/a/package.json'));
+
+    expect(cp.execSync).toHaveBeenLastCalledWith('pnpm publish --no-git-checks', {
+      cwd: '/repo/packages/a',
+      stdio: 'pipe',
+    });
+  });
+});

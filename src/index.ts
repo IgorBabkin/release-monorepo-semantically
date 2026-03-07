@@ -9,19 +9,10 @@ import { ConsoleLogger } from './services/ConsoleLogger';
 import { ErrorHandler } from './services/ErrorHandler';
 import { Command } from 'commander';
 import path from 'node:path';
+import { CliOptions, TemplateOverrides } from './CliOptions';
 
 const DEFAULT_CHANGELOG_TEMPLATE = 'templates/changelog.hbs';
 const DEFAULT_RELEASE_COMMIT_TEMPLATE = 'templates/release-commit-msg.hbs';
-
-interface TemplateOverrides {
-  changelogTemplate?: string;
-  releaseCommitTemplate?: string;
-}
-
-interface CliOptions extends TemplateOverrides {
-  help: boolean;
-  dryRun: boolean;
-}
 
 interface PackageJsonWithTemplates {
   releaseTemplates?: TemplateOverrides;
@@ -35,6 +26,8 @@ function createProgram(): Command {
     .allowExcessArguments(false)
     .helpOption('-h, --help', 'Show this help message')
     .option('--dry-run', 'Preview release changes without mutating files, commits, or tags')
+    .option('--no-push', 'Skip pushing the release commit and tags to the Git remote')
+    .option('--no-publish', 'Skip publishing bumped packages')
     .option('--changelog-template <path>', `Override changelog template (default: ${DEFAULT_CHANGELOG_TEMPLATE})`)
     .option('--release-commit-template <path>', `Override release commit template (default: ${DEFAULT_RELEASE_COMMIT_TEMPLATE})`);
 }
@@ -51,6 +44,8 @@ export function parseCliOptions(args: string[]): CliOptions {
       return {
         help: true,
         dryRun: false,
+        push: true,
+        publish: true,
       };
     }
     throw error;
@@ -61,6 +56,8 @@ export function parseCliOptions(args: string[]): CliOptions {
   return {
     help: false,
     dryRun: options.dryRun ?? false,
+    push: options.push ?? true,
+    publish: options.publish ?? true,
     changelogTemplate: options.changelogTemplate,
     releaseCommitTemplate: options.releaseCommitTemplate,
   };
@@ -96,7 +93,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
 
     controller.discoverRootPackageJSON();
     controller.discoverPackages();
-    controller.release({ dryRun: cliOptions.dryRun });
+    controller.release({ dryRun: cliOptions.dryRun, push: cliOptions.push, publish: cliOptions.publish });
 
     return 0;
   } catch (error) {
