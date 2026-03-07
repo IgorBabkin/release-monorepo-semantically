@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { parseCliOptions, runCli } from './main';
+import { parseCliOptions, runCli } from './index';
 import { MonorepoController } from './MonorepoController';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { ErrorHandler } from './services/ErrorHandler';

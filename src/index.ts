@@ -105,6 +105,8 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
   }
 }
 
+export default runCli;
+
 if (require.main === module) {
   process.exit(runCli());
 }

@@ -8,7 +8,7 @@ This repository contains a TypeScript CLI for semantic versioning and release ma
 
 Core entrypoints and modules:
 
-- `src/main.ts` wires the CLI, template overrides, and `--dry-run`.
+- `src/index.ts` wires the CLI, template overrides, and `--dry-run`.
 - `src/MonorepoController.ts` coordinates discovery, version bumping, changelog rendering, tagging, and release commit creation.
 - `src/services/` contains filesystem, git, rendering, package manager, and logging services.
 - `templates/changelog.hbs` and `templates/release-commit-msg.hbs` define generated output.
@@ -100,7 +100,7 @@ Expected outcomes:
 - Tag format must be exactly `<package-name>@<version>`.
 - The changelog template is `templates/changelog.hbs`.
 - The release commit template is `templates/release-commit-msg.hbs`.
-- Respect CLI and `package.json` template overrides implemented in `src/main.ts`.
+- Respect CLI and `package.json` template overrides implemented in `src/index.ts`.
 - `--dry-run` must not mutate files, create commits, or create tags.
 
 ## Implementation Notes

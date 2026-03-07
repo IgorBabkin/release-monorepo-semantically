@@ -4,9 +4,9 @@
   "description": "cli commands to manage versioning of package in monorepo and generate changelog",
   "license": "ISC",
   "author": "",
-  "main": "dist/main.js",
+  "main": "dist/index.js",
   "bin": {
-    "monorepo-semantic-release": "dist/bin/release.js"
+    "monorepo-semantic-release": "bin/release.mjs"
   },
   "files": [
     "dist",
@@ -26,7 +26,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/main.js",
+    "start": "node dist/index.js",
     "lint": "eslint src/",
     "commitlint": "commitlint --edit",
     "test": "vitest run",
