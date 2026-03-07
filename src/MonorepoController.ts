@@ -21,13 +21,38 @@ interface ReleaseOptions {
   dryRun?: boolean;
 }
 
+interface ReleaseCommitChange {
+  type: string;
+  subject: string;
+  isBreaking: boolean;
+}
+
+interface ReleaseCommitDependencyUpdate {
+  packageName: string;
+  oldVersion: string;
+  newVersion: string;
+}
+
+interface ReleaseCommitPackage {
+  name: string;
+  version: string;
+  previousVersion: string;
+  commits: ReleaseCommitChange[];
+  dependencyUpdates: ReleaseCommitDependencyUpdate[];
+}
+
+interface ReleasedPackageVersion {
+  pkg: NpmPackage;
+  version: string;
+}
+
 export class MonorepoController {
   private packages: NpmPackage[] = [];
   private rootPackageJson!: PackageJSON;
 
   constructor(
     private fileSystemService: NodeFileSystemService,
-    private vscService: GitService,
+    private vcsService: GitService,
     private changelog: ChangelogRenderer,
     private releaseCommit: ReleaseCommit,
     private packageManager: PackageManager,
@@ -118,52 +143,92 @@ export class MonorepoController {
     return Math.max(SemVerBumpType.NONE, ...commits.map((commit) => (commit.isBreaking ? SemVerBumpType.MAJOR : commit.bumpType)), versionBumpFromDependency);
   }
 
-  private collectReleaseCommits(commits: ConventionalCommit[], packageName: string): ConventionalCommit[] {
-    return commits.filter((commit) => commit.isReleaseTrigger() && commit.matchesScope(packageName));
+  private collectReleaseCommits(commits: ConventionalCommit[]): ConventionalCommit[] {
+    return commits.filter((commit) => commit.isReleaseTrigger());
+  }
+
+  private renderChangelog(
+    pkg: NpmPackage,
+    currentVersion: string,
+    packageVersion: string,
+    dependencyUpdates: DependencyVersionChange[],
+    releaseCommits: ConventionalCommit[],
+  ): void {
+    for (const commit of releaseCommits) {
+      this.changelog.addLog(commit);
+    }
+
+    this.changelog.render({
+      packageName: pkg.name,
+      packageVersion,
+      previousVersion: currentVersion,
+      packagePath: this.getPackageDir(pkg),
+      dependencyUpdates,
+    });
+    this.logger.info(`changelog(${pkg.name}) generated`);
+  }
+
+  private createTags(releasedPackages: ReleasedPackageVersion[]): void {
+    for (const releasedPackage of releasedPackages) {
+      this.vcsService.createTag(`${releasedPackage.pkg.name}@${releasedPackage.version}`);
+      this.logger.info(`createTag ${releasedPackage.pkg.name}@${releasedPackage.version}`);
+    }
+  }
+
+  private toReleaseCommitPackage(
+    pkg: NpmPackage,
+    previousVersion: string,
+    version: string,
+    commits: ConventionalCommit[],
+    dependencyUpdates: DependencyVersionChange[],
+  ): ReleaseCommitPackage {
+    return {
+      name: pkg.name,
+      version,
+      previousVersion,
+      commits: commits.map((commit) => ({
+        type: commit.type,
+        subject: commit.subject,
+        isBreaking: commit.isBreaking,
+      })),
+      dependencyUpdates: dependencyUpdates.map((dependencyUpdate) => ({
+        packageName: dependencyUpdate.packageName,
+        oldVersion: dependencyUpdate.oldVersion,
+        newVersion: dependencyUpdate.newVersion,
+      })),
+    };
   }
 
   release(options: ReleaseOptions = {}): void {
     const { dryRun = false } = options;
     const sorted = sortLessDependenciesFirst(this.packages.filter((p) => !p.isPrivate));
-    const versionBumpMap = new Map<string, SemVerBumpType>();
     const releasedVersions = new Map<string, string>(this.packages.map((pkg) => [pkg.name, pkg.version]));
+    const releasedPackages: ReleasedPackageVersion[] = [];
+    const releaseCommitPackages: ReleaseCommitPackage[] = [];
 
     for (const pkg of sorted) {
       const currentVersion = releasedVersions.get(pkg.name) ?? pkg.version;
-      const commits = this.vscService.findManyCommitsSinceTag(`${pkg.name}@${currentVersion}`);
+      const commits = this.vcsService.findManyCommitsSinceTag(`${pkg.name}@${currentVersion}`);
+      const scopedCommits = commits.filter((commit) => commit.matchesScope(pkg.name));
       const dependencyUpdates = this.getDependencyUpdates(pkg, releasedVersions);
       const versionBumpFromDependencies = this.isNonEmptyChangeSet(dependencyUpdates) ? SemVerBumpType.MINOR : SemVerBumpType.NONE;
-      const versionBump = this.parseVersionBump(
-        commits.filter((commit) => commit.matchesScope(pkg.name)),
-        versionBumpFromDependencies,
-      );
+      const versionBump = this.parseVersionBump(scopedCommits, versionBumpFromDependencies);
 
-      versionBumpMap.set(pkg.name, versionBump);
       if (versionBump === SemVerBumpType.NONE) {
         this.logger.info(`bump(${pkg.name}) ${currentVersion} (skipped)`);
         continue;
-      } else {
-        const newVersion = bumpVersion(currentVersion, versionBump);
-        this.applyDependencyUpdates(pkg, dependencyUpdates);
-        this.packageManager.bumpVersion(pkg, versionBump);
-        releasedVersions.set(pkg.name, newVersion);
-
-        this.logger.info(`bump(${pkg.name}) ${currentVersion} (${bumpTypeToString(versionBump)})`);
       }
 
-      const releaseCommits = this.collectReleaseCommits(commits, pkg.name);
-      for (const commit of releaseCommits) {
-        this.changelog.addLog(commit);
-      }
+      const newVersion = bumpVersion(currentVersion, versionBump);
+      const releaseCommits = this.collectReleaseCommits(scopedCommits);
+      this.applyDependencyUpdates(pkg, dependencyUpdates);
+      this.packageManager.bumpVersion(pkg, versionBump);
+      releasedVersions.set(pkg.name, newVersion);
+      releasedPackages.push({ pkg, version: newVersion });
+      releaseCommitPackages.push(this.toReleaseCommitPackage(pkg, currentVersion, newVersion, releaseCommits, dependencyUpdates));
 
-      this.changelog.render({
-        packageName: pkg.name,
-        packageVersion: releasedVersions.get(pkg.name)!,
-        previousVersion: currentVersion,
-        packagePath: this.getPackageDir(pkg),
-        dependencyUpdates,
-      });
-      this.logger.info(`changelog(${pkg.name}) generated`);
+      this.logger.info(`bump(${pkg.name}) ${currentVersion} (${bumpTypeToString(versionBump)})`);
+      this.renderChangelog(pkg, currentVersion, newVersion, dependencyUpdates, releaseCommits);
     }
 
     if (dryRun) {
@@ -171,18 +236,10 @@ export class MonorepoController {
     }
 
     // create release commit
-    this.releaseCommit.commit({});
+    this.releaseCommit.commit({ packages: releaseCommitPackages });
     this.logger.info(`releaseCommit generated`);
 
     // create git tags for every released package
-    for (const [packageName, versionBump] of versionBumpMap) {
-      if (versionBump === SemVerBumpType.NONE) {
-        continue;
-      }
-
-      const pkg = this.packages.find((p) => p.name === packageName)!;
-      this.vscService.createTag(`${pkg.name}@${releasedVersions.get(packageName)}`);
-      this.logger.info(`createTag ${pkg.name}@${releasedVersions.get(packageName)}`);
-    }
+    this.createTags(releasedPackages);
   }
 }

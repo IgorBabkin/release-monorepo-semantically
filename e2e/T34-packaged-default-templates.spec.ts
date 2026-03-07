@@ -16,6 +16,6 @@ describe('T34 - packaged default templates are used when local templates are abs
     const outcome = fixture.release();
 
     expect(outcome.status).toBe('passed');
-    expect(fixture.run('git log -1 --pretty=%s')).toBe('ci: release [skip-ci]');
+    expect(fixture.run('git log -1 --pretty=%s')).toBe('ci(release): publish [skip-ci]');
   });
 });

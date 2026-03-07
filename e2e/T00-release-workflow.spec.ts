@@ -28,7 +28,7 @@ describe('release CLI e2e', () => {
       version: string;
     };
 
-    expect(latestSubject).toBe('ci: release [skip-ci]');
+    expect(latestSubject).toBe('ci(release): publish [skip-ci]');
     expect(remoteHead).not.toBe(localHead);
     expect(typeof pkgJson.version).toBe('string');
   });
