@@ -14,6 +14,6 @@ jobs:
           node-version-file: '.nvmrc'
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec lint
+      - run: pnpm run lint
       - run: pnpm test
-      - run: pnpm exec test:e2e
+      - run: pnpm run test:e2e
