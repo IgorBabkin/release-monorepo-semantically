@@ -5,7 +5,12 @@ import path from 'node:path';
 
 const repoRoot = process.cwd();
 const templatesDir = path.resolve(repoRoot, 'templates');
-const packageName = 'release-monorepo-semantically';
+const packageJson = JSON.parse(readFileSync(path.resolve(repoRoot, 'package.json'), 'utf-8')) as {
+  name: string;
+  bin: Record<string, string>;
+};
+const packageName = packageJson.name;
+const packageBinPath = packageJson.bin['monorepo-semantic-release'];
 const tempRoots: string[] = [];
 
 interface ExecResult {
@@ -71,7 +76,7 @@ export function createMonorepoFixture(packages: PackageFixture[], withRemote = t
   mkdirSync(path.join(workDir, 'node_modules', '.bin'), { recursive: true });
   symlinkSync(repoRoot, path.join(workDir, 'node_modules', packageName), 'dir');
   const binPath = path.join(workDir, 'node_modules', '.bin', 'monorepo-semantic-release');
-  writeFileSync(binPath, `#!/usr/bin/env node\nrequire("../${packageName}/dist/bin/release.js");\n`);
+  writeFileSync(binPath, `#!/usr/bin/env node\nimport(${JSON.stringify(`../${packageName}/${packageBinPath}`)});\n`);
   chmodSync(binPath, 0o755);
 
   const rootPackageJson = {
