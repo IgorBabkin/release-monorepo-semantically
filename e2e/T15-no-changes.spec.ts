@@ -17,7 +17,7 @@ describe('T15 - no changes since last release', () => {
 
     expect(fixture.getPackageJson('pkg-a').version).toBe(beforeVersion);
     expect(new Set(fixture.tags())).toEqual(beforeTags);
-    expect(outcome.stdout).toContain('[Release] bump(pkg-a) 1.0.0 (skipped)');
-    expect(outcome.stdout).not.toContain('[Release] changelog(pkg-a) generated');
+    expect(outcome.stdout).toContain('[Release] ⚠ SKIP     pkg-a@1.0.0');
+    expect(outcome.stdout).not.toContain('[Release] 📝 WRITE    pkg-a CHANGELOG.md');
   });
 });

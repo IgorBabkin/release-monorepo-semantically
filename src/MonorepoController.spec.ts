@@ -53,13 +53,14 @@ describe('MonorepoController.release', () => {
     const vcs = {
       findManyCommitsSinceTag: vi.fn().mockReturnValue([]),
       createTag: vi.fn(),
+      commit: vi.fn(),
     };
     const changelog = {
       addLog: vi.fn(),
       render: vi.fn(),
     };
-    const releaseCommit = {
-      commit: vi.fn(),
+    const releaseCommitView = {
+      render: vi.fn().mockReturnValue('release commit message'),
     };
     const packageManager = {
       bumpVersion: vi.fn(),
@@ -72,7 +73,7 @@ describe('MonorepoController.release', () => {
       fileSystemService as never,
       vcs as never,
       changelog as never,
-      releaseCommit as never,
+      releaseCommitView as never,
       packageManager as never,
       logger as never,
     );
@@ -90,9 +91,10 @@ describe('MonorepoController.release', () => {
     controller.release();
 
     expect(changelog.render).not.toHaveBeenCalled();
-    expect(logger.info).toHaveBeenCalledWith('bump(pkg-a) 1.0.0 (skipped)');
-    expect(logger.info).not.toHaveBeenCalledWith('changelog(pkg-a) generated');
-    expect(releaseCommit.commit).toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith('SKIP     pkg-a@1.0.0');
+    expect(logger.info).not.toHaveBeenCalledWith('WRITE    pkg-a CHANGELOG.md');
+    expect(releaseCommitView.render).toHaveBeenCalledWith({ packages: [] });
+    expect(vcs.commit).toHaveBeenCalledWith('release commit message');
   });
 
   it('given multiple bumped packages when release runs then release commit receives all package changes', () => {
@@ -115,13 +117,14 @@ describe('MonorepoController.release', () => {
           tag === 'pkg-a@1.0.0' ? [ConventionalCommit.parse('feat(pkg-a): add feature')] : [ConventionalCommit.parse('fix(pkg-b): resolve bug')],
         ),
       createTag: vi.fn(),
+      commit: vi.fn(),
     };
     const changelog = {
       addLog: vi.fn(),
       render: vi.fn(),
     };
-    const releaseCommit = {
-      commit: vi.fn(),
+    const releaseCommitView = {
+      render: vi.fn().mockReturnValue('release commit message'),
     };
     const packageManager = {
       bumpVersion: vi.fn(),
@@ -134,7 +137,7 @@ describe('MonorepoController.release', () => {
       fileSystemService as never,
       vcs as never,
       changelog as never,
-      releaseCommit as never,
+      releaseCommitView as never,
       packageManager as never,
       logger as never,
     );
@@ -158,7 +161,7 @@ describe('MonorepoController.release', () => {
 
     controller.release();
 
-    expect(releaseCommit.commit).toHaveBeenCalledWith({
+    expect(releaseCommitView.render).toHaveBeenCalledWith({
       packages: [
         {
           name: 'pkg-a',
@@ -176,5 +179,6 @@ describe('MonorepoController.release', () => {
         },
       ],
     });
+    expect(vcs.commit).toHaveBeenCalledWith('release commit message');
   });
 });

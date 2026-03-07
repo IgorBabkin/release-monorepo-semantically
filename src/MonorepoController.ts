@@ -147,6 +147,10 @@ export class MonorepoController {
     return commits.filter((commit) => commit.isReleaseTrigger());
   }
 
+  private logStep(step: 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG', detail: string): void {
+    this.logger.info(`${step.padEnd(8)} ${detail}`);
+  }
+
   private renderChangelog(
     pkg: NpmPackage,
     currentVersion: string,
@@ -165,13 +169,13 @@ export class MonorepoController {
       packagePath: this.getPackageDir(pkg),
       dependencyUpdates,
     });
-    this.logger.info(`changelog(${pkg.name}) generated`);
+    this.logStep('WRITE', `${pkg.name} CHANGELOG.md`);
   }
 
   private createTags(releasedPackages: ReleasedPackageVersion[]): void {
     for (const releasedPackage of releasedPackages) {
       this.vcsService.createTag(`${releasedPackage.pkg.name}@${releasedPackage.version}`);
-      this.logger.info(`createTag ${releasedPackage.pkg.name}@${releasedPackage.version}`);
+      this.logStep('TAG', `${releasedPackage.pkg.name}@${releasedPackage.version}`);
     }
   }
 
@@ -215,7 +219,7 @@ export class MonorepoController {
       const versionBump = this.parseVersionBump(scopedCommits, versionBumpFromDependencies);
 
       if (versionBump === SemVerBumpType.NONE) {
-        this.logger.info(`bump(${pkg.name}) ${currentVersion} (skipped)`);
+        this.logStep('SKIP', `${pkg.name}@${currentVersion}`);
         continue;
       }
 
@@ -227,7 +231,7 @@ export class MonorepoController {
       releasedPackages.push({ pkg, version: newVersion });
       releaseCommitPackages.push(this.toReleaseCommitPackage(pkg, currentVersion, newVersion, releaseCommits, dependencyUpdates));
 
-      this.logger.info(`bump(${pkg.name}) ${currentVersion} (${bumpTypeToString(versionBump)})`);
+      this.logStep('BUMP', `${pkg.name} ${currentVersion} -> ${newVersion} (${bumpTypeToString(versionBump)})`);
       this.renderChangelog(pkg, currentVersion, newVersion, dependencyUpdates, releaseCommits);
     }
 
@@ -238,7 +242,7 @@ export class MonorepoController {
     // create release commit
     const commitMessage = this.releaseCommitView.render({ packages: releaseCommitPackages });
     this.vcsService.commit(commitMessage);
-    this.logger.info(`releaseCommit generated`);
+    this.logStep('COMMIT', commitMessage.split('\n', 1)[0]);
 
     // create git tags for every released package
     this.createTags(releasedPackages);
