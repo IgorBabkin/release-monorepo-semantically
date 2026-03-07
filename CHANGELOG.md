@@ -1,3 +1,10 @@
+## [1.4.3](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.2...v1.4.3) (2026-03-07)
+
+
+### Bug Fixes
+
+* **cli:** repair packaged bin entrypoint ([63f2f65](https://github.com/IgorBabkin/release-monorepo-semantically/commit/63f2f65b101186f8d543b586c45a9c43503a3335))
+
 ## [1.4.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.1...v1.4.2) (2026-03-07)
 
 
