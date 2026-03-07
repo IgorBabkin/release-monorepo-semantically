@@ -2,7 +2,7 @@ import { NpmPackage } from './models/NpmPackage';
 import { bumpTypeToString, bumpVersion, SemVerBumpType } from './models/SemVerBumpType';
 import { PackageJSON } from './models/PackageJSON';
 import { ReleaseCommitView } from './services/ReleaseCommitView';
-import { ChangelogRenderer } from './services/ChangelogRenderer';
+import { ChangelogView } from './services/ChangelogView';
 import { sortLessDependenciesFirst } from './sortLessDependenciesFirst';
 import { PackageManager } from './services/PackageManager';
 import path from 'node:path';
@@ -53,7 +53,7 @@ export class MonorepoController {
   constructor(
     private fileSystemService: NodeFileSystemService,
     private vcsService: GitService,
-    private changelog: ChangelogRenderer,
+    private changelog: ChangelogView,
     private releaseCommitView: ReleaseCommitView,
     private packageManager: PackageManager,
     private logger: ConsoleLogger,

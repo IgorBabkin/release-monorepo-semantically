@@ -17,7 +17,7 @@ interface RenderOptions {
   dependencyUpdates?: DependencyVersionChange[];
 }
 
-export class ChangelogRenderer {
+export class ChangelogView {
   private commits: ConventionalCommit[] = [];
   private readonly changelogTemplatePath: string;
 

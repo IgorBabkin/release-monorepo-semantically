@@ -1,7 +1,7 @@
 import { MonorepoController } from './MonorepoController';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { GitService } from './services/GitService';
-import { ChangelogRenderer } from './services/ChangelogRenderer';
+import { ChangelogView } from './services/ChangelogView';
 import { HandlebarsRenderService } from './services/HandlebarsRenderService';
 import { ReleaseCommitView } from './services/ReleaseCommitView';
 import { PackageManager } from './services/PackageManager';
@@ -78,7 +78,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const templateOverrides = resolveTemplateOverrides(cwd, fsService, cliArgs);
     const vcs = new GitService();
     const renderService = new HandlebarsRenderService(cwd, path.resolve(__dirname, '..'));
-    const changelog = new ChangelogRenderer(renderService, fsService, templateOverrides.changelogTemplate);
+    const changelog = new ChangelogView(renderService, fsService, templateOverrides.changelogTemplate);
     const releaseCommit = new ReleaseCommitView(renderService, templateOverrides.releaseCommitTemplate);
     const packageManager = new PackageManager();
     const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager, new ConsoleLogger('Release'));
