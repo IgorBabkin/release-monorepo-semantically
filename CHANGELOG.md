@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.2.1...v1.3.0) (2026-03-07)
+
+
+### Bug Fixes
+
+* **templates:** preserve handlebars formatting ([8e2fa19](https://github.com/IgorBabkin/release-monorepo-semantically/commit/8e2fa19496e03c9ee0c1c5db6a4e18143920db12))
+
+
+### Features
+
+* **release:** publish aggregated release commit details ([228d98e](https://github.com/IgorBabkin/release-monorepo-semantically/commit/228d98e1e40b6b08b0fc91fbf420d9b1a8df0401))
+
 ## [1.2.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.2.0...v1.2.1) (2026-03-07)
 
 
