@@ -35,6 +35,8 @@ jobs:
   release:
     name: Publish NPM package
     needs: test
+    environment:
+      name: production
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
