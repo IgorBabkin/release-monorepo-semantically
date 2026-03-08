@@ -1,7 +1,7 @@
 import { ReleaseCompletePluginContext, ReleasePlugin } from './ReleasePlugin';
 import { GithubService } from '../services/GithubService';
 import { ConsoleLogger } from '../services/ConsoleLogger';
-import { ConventionalCommit } from '../models/ConventionalCommit';
+import { GithubReleaseView } from '../services/GithubReleaseView';
 
 export interface GithubPluginConfig {
   isGithubActions: boolean;
@@ -14,6 +14,7 @@ export class GithubPlugin implements ReleasePlugin {
     private readonly githubService: GithubService,
     private readonly logger: ConsoleLogger,
     private readonly config: GithubPluginConfig,
+    private readonly githubReleaseView: GithubReleaseView,
   ) {}
 
   onReleaseComplete(context: ReleaseCompletePluginContext): void {
@@ -40,40 +41,15 @@ export class GithubPlugin implements ReleasePlugin {
         token: this.config.token,
         tagName: `${pkg.name}@${version}`,
         title: `${pkg.name} v${version}`,
-        notes: this.buildReleaseNotes(pkg, version, context.releasedVersions, context.releasedCommits.get(pkg.name) ?? []),
+        notes: this.githubReleaseView.render({
+          packageName: pkg.name,
+          version,
+          commits: context.releasedCommits.get(pkg.name) ?? [],
+          dependencyUpdates: pkg.getDependencyUpdates(context.releasedVersions),
+        }),
         prerelease: version.includes('-'),
       });
       this.logger.info(`RELEASE  ${pkg.name}@${version}`);
     }
-  }
-
-  private buildReleaseNotes(
-    pkg: ReleaseCompletePluginContext['releasedPackages'][number],
-    version: string,
-    releasedVersions: Map<string, string>,
-    commits: ConventionalCommit[],
-  ): string {
-    const lines: string[] = [`## ${pkg.name}@${version}`];
-
-    if (commits.length > 0) {
-      lines.push('', '### Changes');
-      for (const commit of commits) {
-        lines.push(`- ${commit.type}${commit.isBreaking ? '!' : ''}: ${commit.subject}`);
-      }
-    }
-
-    const dependencyUpdates = pkg.getDependencyUpdates(releasedVersions);
-    if (dependencyUpdates.length > 0) {
-      lines.push('', '### Dependencies');
-      for (const dependency of dependencyUpdates) {
-        lines.push(`- update ${dependency.packageName} from ${dependency.oldVersion} to ${dependency.newVersion}`);
-      }
-    }
-
-    if (commits.length === 0 && dependencyUpdates.length === 0) {
-      lines.push('', '- No direct changes in this release');
-    }
-
-    return lines.join('\n');
   }
 }

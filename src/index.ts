@@ -16,6 +16,7 @@ import { NpmPlugin } from './plugins/NpmPlugin';
 import { PackageJsonPlugin } from './plugins/PackageJsonPlugin';
 import { GithubPlugin } from './plugins/GithubPlugin';
 import { GithubService } from './services/GithubService';
+import { GithubReleaseView } from './services/GithubReleaseView';
 
 interface PackageJsonWithTemplates {
   releaseTemplates?: TemplateOverrides;
@@ -93,6 +94,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const renderService = new HandlebarsRenderService(cwd, path.resolve(__dirname, '..'));
     const changelogView = new ChangelogView(templateOverrides.changelogTemplate, renderService);
     const releaseCommitView = new ReleaseCommitView(templateOverrides.releaseCommitTemplate, renderService);
+    const githubReleaseView = new GithubReleaseView(undefined, renderService);
     const packageManager = new PackageManager();
     const githubService = new GithubService();
     const githubConfig = {
@@ -105,7 +107,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
         new PackageJsonPlugin(fsService, logger),
         new ChangelogPlugin('CHANGELOG.md', changelogView, fsService, logger),
         new GitPlugin(vcsService, releaseCommitView, logger),
-        new GithubPlugin(githubService, logger, githubConfig),
+        new GithubPlugin(githubService, logger, githubConfig, githubReleaseView),
         new NpmPlugin(packageManager, logger),
       ],
       fsService,

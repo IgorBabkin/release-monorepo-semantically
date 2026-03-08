@@ -1,0 +1,21 @@
+## {{packageName}}@{{version}}
+{{#if commits}}
+
+### Changes
+{{#each commits}}
+- {{this.type}}{{#if this.isBreaking}}!{{/if}}: {{this.subject}}
+{{/each}}
+{{/if}}
+{{#if dependencyUpdates}}
+
+### Dependencies
+{{#each dependencyUpdates}}
+- update {{this.packageName}} from {{this.oldVersion}} to {{this.newVersion}}
+{{/each}}
+{{/if}}
+{{#unless commits}}
+{{#unless dependencyUpdates}}
+
+- No direct changes in this release
+{{/unless}}
+{{/unless}}

@@ -12,11 +12,19 @@ describe('GithubPlugin', () => {
     const logger = {
       info: vi.fn(),
     };
-    const plugin = new GithubPlugin(github as never, logger as never, {
-      isGithubActions: true,
-      repository: 'acme/repo',
-      token: 'token',
-    });
+    const githubReleaseView = {
+      render: vi.fn().mockReturnValue('rendered release notes'),
+    };
+    const plugin = new GithubPlugin(
+      github as never,
+      logger as never,
+      {
+        isGithubActions: true,
+        repository: 'acme/repo',
+        token: 'token',
+      },
+      githubReleaseView as never,
+    );
 
     const pkg = NpmPackage.createFromPackage(
       {
@@ -48,11 +56,21 @@ describe('GithubPlugin', () => {
         token: 'token',
         tagName: 'pkg-a@1.0.1',
         title: 'pkg-a v1.0.1',
+        notes: 'rendered release notes',
       }),
     );
-    const body = (github.createRelease as ReturnType<typeof vi.fn>).mock.calls[0][0].notes as string;
-    expect(body).toContain('fix: bug fix');
-    expect(body).toContain('update pkg-b from ^1.0.0 to 1.1.0');
+    expect(githubReleaseView.render).toHaveBeenCalledWith({
+      packageName: 'pkg-a',
+      version: '1.0.1',
+      commits: [ConventionalCommit.parse('fix(pkg-a): bug fix')],
+      dependencyUpdates: [
+        {
+          packageName: 'pkg-b',
+          oldVersion: '^1.0.0',
+          newVersion: '1.1.0',
+        },
+      ],
+    });
     expect(logger.info).toHaveBeenCalledWith('RELEASE  pkg-a@1.0.1');
   });
 
@@ -64,11 +82,19 @@ describe('GithubPlugin', () => {
     const logger = {
       info: vi.fn(),
     };
-    const plugin = new GithubPlugin(github as never, logger as never, {
-      isGithubActions: true,
-      repository: 'acme/repo',
-      token: 'token',
-    });
+    const githubReleaseView = {
+      render: vi.fn(),
+    };
+    const plugin = new GithubPlugin(
+      github as never,
+      logger as never,
+      {
+        isGithubActions: true,
+        repository: 'acme/repo',
+        token: 'token',
+      },
+      githubReleaseView as never,
+    );
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
     plugin.onReleaseComplete?.({
@@ -89,11 +115,16 @@ describe('GithubPlugin', () => {
       releasedCommits: new Map(),
     });
 
-    const pluginWithMissingConfig = new GithubPlugin(github as never, logger as never, {
-      isGithubActions: false,
-      repository: undefined,
-      token: undefined,
-    });
+    const pluginWithMissingConfig = new GithubPlugin(
+      github as never,
+      logger as never,
+      {
+        isGithubActions: false,
+        repository: undefined,
+        token: undefined,
+      },
+      githubReleaseView as never,
+    );
     pluginWithMissingConfig.onReleaseComplete?.({
       dryRun: false,
       noPush: false,
@@ -104,5 +135,6 @@ describe('GithubPlugin', () => {
     });
 
     expect(github.createRelease).not.toHaveBeenCalled();
+    expect(githubReleaseView.render).not.toHaveBeenCalled();
   });
 });
