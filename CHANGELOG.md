@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.7.0...v1.7.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* **core:** align controller and cli options module naming ([86e7ce4](https://github.com/IgorBabkin/release-monorepo-semantically/commit/86e7ce43e338627c4e86bd8ddace74d821808cfa))
+
 # [1.7.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.6.2...v1.7.0) (2026-03-08)
 
 
