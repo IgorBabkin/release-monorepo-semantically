@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.6.1...v1.6.2) (2026-03-08)
+
+
+### Bug Fixes
+
+* **dry-run:** do not mutate anything ([8f935e9](https://github.com/IgorBabkin/release-monorepo-semantically/commit/8f935e9d72dcad7e8a5d1e188b6845b467a7c2bd))
+
 ## [1.6.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.6.0...v1.6.1) (2026-03-08)
 
 
