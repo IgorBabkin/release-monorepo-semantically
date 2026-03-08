@@ -137,7 +137,7 @@ You can choose which plugins run and in what order with `plugins`.
   "release": {
     "plugins": [
       { "name": "package-json" },
-      { "name": "changelog", "template": "templates/changelog.hbs" },
+      { "name": "changelog", "template": "templates/changelog.hbs", "changelogName": "CHANGELOG.md" },
       { "name": "git", "template": "templates/release-commit-msg.hbs" },
       { "name": "github", "template": "templates/github-release-notes.hbs" },
       { "name": "npm" }
@@ -152,7 +152,7 @@ You can choose which plugins run and in what order with `plugins`.
 {
   "plugins": [
     { "name": "package-json" },
-    { "name": "changelog", "template": "templates/changelog.hbs" },
+    { "name": "changelog", "template": "templates/changelog.hbs", "changelogName": "CHANGELOG.md" },
     { "name": "git", "template": "templates/release-commit-msg.hbs" },
     { "name": "github", "template": "templates/github-release-notes.hbs" },
     { "name": "npm" }
@@ -161,7 +161,8 @@ You can choose which plugins run and in what order with `plugins`.
 ```
 
 Default order: `["package-json", "changelog", "git", "github", "npm"]`.
-For `changelog`, `git`, and `github` plugins, `template` is required.
+For `changelog`, `git`, and `github` plugins, `template` is required.  
+For `changelog`, `changelogName` is optional and defaults to `CHANGELOG.md`.
 
 ## Development
 

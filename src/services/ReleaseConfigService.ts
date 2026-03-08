@@ -12,6 +12,7 @@ const pluginSchema = z
     name: z.enum(RELEASE_PLUGIN_NAMES),
     disabled: z.boolean().optional(),
     template: z.string().trim().min(1).optional(),
+    changelogName: z.string().trim().min(1).optional(),
   })
   .passthrough();
 const pluginsSchema = z

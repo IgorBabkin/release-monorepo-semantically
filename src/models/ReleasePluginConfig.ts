@@ -6,6 +6,7 @@ export interface ReleasePluginConfig {
   name: ReleasePluginName;
   disabled?: boolean;
   template?: string;
+  changelogName?: string;
   [key: string]: unknown;
 }
 

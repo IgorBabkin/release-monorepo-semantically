@@ -6,13 +6,16 @@ import { NodeFileSystemService } from '../services/NodeFileSystemService';
 import { ReleasePluginConfig } from '../models/ReleasePluginConfig';
 
 export class ChangelogPlugin implements ReleasePlugin {
+  private readonly changelogName: string;
+
   constructor(
-    private readonly changelogName: string,
     private readonly view: ChangelogView,
     private readonly fs: NodeFileSystemService,
     private readonly logger: ConsoleLogger,
     private readonly pluginConfig: ReleasePluginConfig = { name: 'changelog' },
-  ) {}
+  ) {
+    this.changelogName = pluginConfig.changelogName ?? 'CHANGELOG.md';
+  }
 
   onPackageReleased({ dryRun, pkg, releasedCommits, releasedVersions, releasedPackages }: PackageReleasedPluginContext): void {
     if (this.pluginConfig.disabled) {

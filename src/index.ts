@@ -44,7 +44,6 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
           return new PackageJsonPlugin(fsService, logger, pluginConfig);
         case 'changelog':
           return new ChangelogPlugin(
-            'CHANGELOG.md',
             new ChangelogView(pluginConfig.template ?? templateOverrides.changelogTemplate, renderService),
             fsService,
             logger,

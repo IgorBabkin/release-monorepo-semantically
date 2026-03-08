@@ -143,7 +143,7 @@ describe('ReleaseConfigService', () => {
         release: {
           plugins: [
             { name: 'package-json' },
-            { name: 'changelog', template: 'templates/custom-changelog.hbs' },
+            { name: 'changelog', template: 'templates/custom-changelog.hbs', changelogName: 'HISTORY.md' },
             { name: 'git', template: 'templates/custom-release.hbs' },
             { name: 'npm', disabled: true },
           ],
@@ -155,7 +155,7 @@ describe('ReleaseConfigService', () => {
 
     expect(service.resolvePlugins('/repo')).toEqual([
       { name: 'package-json' },
-      { name: 'changelog', template: 'templates/custom-changelog.hbs' },
+      { name: 'changelog', template: 'templates/custom-changelog.hbs', changelogName: 'HISTORY.md' },
       { name: 'git', template: 'templates/custom-release.hbs' },
       { name: 'npm', disabled: true },
     ]);

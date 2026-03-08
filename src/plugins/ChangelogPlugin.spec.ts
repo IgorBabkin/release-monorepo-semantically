@@ -16,7 +16,7 @@ describe('ChangelogPlugin', () => {
     const logger = {
       info: vi.fn(),
     };
-    const plugin = new ChangelogPlugin('CHANGELOG.md', view as never, fs as never, logger as never);
+    const plugin = new ChangelogPlugin(view as never, fs as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
     plugin.onPackageReleased?.({
@@ -48,7 +48,7 @@ describe('ChangelogPlugin', () => {
       info: vi.fn(),
     };
 
-    const plugin = new ChangelogPlugin('CHANGELOG.md', view as never, fs as never, logger as never);
+    const plugin = new ChangelogPlugin(view as never, fs as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const commits = [ConventionalCommit.parse('fix(pkg-a): patch')];
 
@@ -87,7 +87,7 @@ describe('ChangelogPlugin', () => {
       info: vi.fn(),
     };
 
-    const plugin = new ChangelogPlugin('CHANGELOG.md', view as never, fs as never, logger as never);
+    const plugin = new ChangelogPlugin(view as never, fs as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const commits = [ConventionalCommit.parse('fix(pkg-a): patch')];
 
@@ -110,5 +110,39 @@ describe('ChangelogPlugin', () => {
     });
     expect(fs.writeFile).toHaveBeenCalledWith('/repo/packages/pkg-a/CHANGELOG.md', 'new changelog');
     expect(logger.info).toHaveBeenCalledWith('WRITE    pkg-a CHANGELOG.md');
+  });
+
+  it('given changelogName plugin config when package is released then configured changelog filename is used', () => {
+    const view = {
+      render: vi.fn().mockReturnValue('new changelog'),
+    };
+    const fs = {
+      fileExists: vi.fn().mockReturnValue(false),
+      readFile: vi.fn(),
+      writeFile: vi.fn(),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+
+    const plugin = new ChangelogPlugin(view as never, fs as never, logger as never, {
+      name: 'changelog',
+      template: 'templates/custom.hbs',
+      changelogName: 'HISTORY.md',
+    });
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+
+    plugin.onPackageReleased?.({
+      dryRun: false,
+      noPush: false,
+      noPublish: false,
+      pkg,
+      releasedVersions: new Map([['pkg-a', '1.0.1']]),
+      releasedPackages: [pkg],
+      releasedCommits: [ConventionalCommit.parse('fix(pkg-a): patch')],
+    });
+
+    expect(fs.writeFile).toHaveBeenCalledWith('/repo/packages/pkg-a/HISTORY.md', 'new changelog');
+    expect(logger.info).toHaveBeenCalledWith('WRITE    pkg-a HISTORY.md');
   });
 });
