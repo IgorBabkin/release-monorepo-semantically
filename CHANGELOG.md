@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.6.2...v1.7.0) (2026-03-08)
+
+
+### Features
+
+* **cli:** extract config handling services and validate github env ([230bd3d](https://github.com/IgorBabkin/release-monorepo-semantically/commit/230bd3d257e11a431f2131b8284178b81740aa87))
+
 ## [1.6.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.6.1...v1.6.2) (2026-03-08)
 
 
