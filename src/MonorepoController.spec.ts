@@ -3,6 +3,7 @@ import { MonorepoController } from './MonorepoController';
 import { NpmPackage } from './models/NpmPackage';
 import { ConventionalCommit } from './models/ConventionalCommit';
 import { ReleasePlugin } from './plugins/ReleasePlugin';
+import { DirtyWorkingTreeException } from './exceptions/DomainException';
 
 describe('MonorepoController.discoverPackages', () => {
   it('given workspace package json files when packages are discovered then private packages are excluded', () => {
@@ -32,6 +33,7 @@ describe('MonorepoController.release', () => {
     };
     const vsc = {
       findManyCommitsSinceTag: vi.fn().mockReturnValue([]),
+      isWorkingTreeClean: vi.fn().mockReturnValue(true),
     };
     const logger = {
       info: vi.fn(),
@@ -67,6 +69,7 @@ describe('MonorepoController.release', () => {
         .mockImplementation((tag: string) =>
           tag === 'pkg-a@1.0.0' ? [ConventionalCommit.parse('feat(pkg-a): add feature')] : [ConventionalCommit.parse('fix(pkg-b): resolve bug')],
         ),
+      isWorkingTreeClean: vi.fn().mockReturnValue(true),
     };
     const logger = {
       info: vi.fn(),
@@ -90,5 +93,26 @@ describe('MonorepoController.release', () => {
     expect(finalizeArg.releasedVersions.get('pkg-b')).toBe('2.0.1');
     expect(finalizeArg.releasedCommits.get('pkg-a')).toHaveLength(1);
     expect(finalizeArg.releasedCommits.get('pkg-b')).toHaveLength(1);
+  });
+
+  it('given dirty working tree when a non-dry-run release starts then it fails before plugin hooks mutate state', () => {
+    const plugin: ReleasePlugin = {
+      onPackageReleased: vi.fn(),
+      onReleaseComplete: vi.fn(),
+    };
+    const vsc = {
+      findManyCommitsSinceTag: vi.fn().mockReturnValue([ConventionalCommit.parse('fix(pkg-a): patch')]),
+      isWorkingTreeClean: vi.fn().mockReturnValue(false),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+    const controller = new MonorepoController([plugin], {} as never, vsc as never, logger as never);
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a/package.json');
+    (controller as unknown as { packageSortedList: NpmPackage[] }).packageSortedList = [pkg];
+
+    expect(() => controller.release()).toThrow(DirtyWorkingTreeException);
+    expect(plugin.onPackageReleased).not.toHaveBeenCalled();
+    expect(plugin.onReleaseComplete).not.toHaveBeenCalled();
   });
 });

@@ -12,7 +12,12 @@ export class ChangelogPlugin implements ReleasePlugin {
     private readonly logger: ConsoleLogger,
   ) {}
 
-  onPackageReleased({ pkg, releasedCommits, releasedVersions, releasedPackages }: PackageReleasedPluginContext): void {
+  onPackageReleased({ dryRun, pkg, releasedCommits, releasedVersions, releasedPackages }: PackageReleasedPluginContext): void {
+    if (dryRun) {
+      this.logger.info(`SKIP     ${pkg.name} ${this.changelogName} (dry-run)`);
+      return;
+    }
+
     const changelogFile = path.resolve(pkg.dirname, this.changelogName);
     const content = this.view.render({
       pkg,

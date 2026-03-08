@@ -22,6 +22,11 @@ export class GitService {
     execSync(`git tag ${tagName}`);
   }
 
+  isWorkingTreeClean(): boolean {
+    const output = execSync('git status --porcelain', { encoding: 'utf-8' }).trim();
+    return output.length === 0;
+  }
+
   commit(message: string): void {
     const normalizedMessage = message.trim();
     execSync('git add .');

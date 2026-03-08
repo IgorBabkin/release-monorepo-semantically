@@ -31,3 +31,9 @@ export class TemplateMethodNotFunctionException extends DomainException {
     super('TEMPLATE_METHOD_NOT_FUNCTION', `Method ${methodName} is not a function`);
   }
 }
+
+export class DirtyWorkingTreeException extends DomainException {
+  constructor() {
+    super('DIRTY_WORKING_TREE', 'Release requires a clean working tree (commit or stash local changes first)');
+  }
+}

@@ -8,13 +8,22 @@ export class NpmPlugin implements ReleasePlugin {
     private logger: ConsoleLogger,
   ) {}
 
-  onPackageReleased({ pkg, releasedVersions }: PackageReleasedPluginContext) {
+  onPackageReleased({ dryRun, pkg, releasedVersions }: PackageReleasedPluginContext) {
+    if (dryRun) {
+      this.logger.info(`SKIP     ${pkg.name} version bump (dry-run)`);
+      return;
+    }
     const newVersion = releasedVersions.get(pkg.name)!;
     this.packageManager.bumpVersion(pkg.dirname, newVersion);
   }
 
   onReleaseComplete({ dryRun, noPublish, releasedPackages, releasedVersions }: ReleaseCompletePluginContext): void {
-    if (dryRun || noPublish) {
+    if (dryRun) {
+      this.logger.info('SKIP     npm publish (dry-run)');
+      return;
+    }
+
+    if (noPublish) {
       return;
     }
 

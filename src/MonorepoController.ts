@@ -7,6 +7,7 @@ import { ConsoleLogger } from './services/ConsoleLogger';
 import { CliOptions } from './CliOptions';
 import { ReleasePlugin } from './plugins/ReleasePlugin';
 import { ConventionalCommit } from './models/ConventionalCommit';
+import { DirtyWorkingTreeException } from './exceptions/DomainException';
 
 type ReleaseOptions = Partial<Pick<CliOptions, 'dryRun' | 'noPush' | 'noPublish'>>;
 
@@ -32,6 +33,7 @@ export class MonorepoController {
     const { dryRun = false, noPush = false, noPublish = false } = options;
     const releasedVersions = new Map<string, string>();
     const releasedCommits = new Map<string, ConventionalCommit[]>();
+    let releaseStarted = false;
 
     for (const pkg of this.packageSortedList) {
       const pkgReleaseCommits = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag()).filter((c) => c.matchesScope(pkg.name) && c.isReleaseTrigger());
@@ -44,6 +46,11 @@ export class MonorepoController {
       if (versionBump === SemVerBumpType.NONE) {
         this.logStep('SKIP', `${pkg.name}@${pkg.version}`);
         continue;
+      }
+
+      if (!releaseStarted) {
+        this.ensureWritableReleaseState(dryRun);
+        releaseStarted = true;
       }
 
       const newVersion = pkg.getNewVersion(versionBump);
@@ -78,5 +85,15 @@ export class MonorepoController {
 
   private logStep(step: 'SKIP' | 'BUMP', detail: string): void {
     this.logger.info(`${step.padEnd(8)} ${detail}`);
+  }
+
+  private ensureWritableReleaseState(dryRun: boolean): void {
+    if (dryRun) {
+      return;
+    }
+
+    if (!this.vsc.isWorkingTreeClean()) {
+      throw new DirtyWorkingTreeException();
+    }
   }
 }

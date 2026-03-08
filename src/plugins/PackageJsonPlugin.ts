@@ -8,7 +8,12 @@ export class PackageJsonPlugin implements ReleasePlugin {
     private readonly logger: ConsoleLogger,
   ) {}
 
-  onPackageReleased({ pkg, releasedVersions }: PackageReleasedPluginContext) {
+  onPackageReleased({ dryRun, pkg, releasedVersions }: PackageReleasedPluginContext) {
+    if (dryRun) {
+      this.logger.info(`SKIP     ${pkg.name} package.json (dry-run)`);
+      return;
+    }
+
     const changes = pkg.getDependencyUpdates(releasedVersions);
     if (changes.length === 0) {
       return;

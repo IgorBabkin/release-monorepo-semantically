@@ -136,5 +136,6 @@ describe('GithubPlugin', () => {
 
     expect(github.createRelease).not.toHaveBeenCalled();
     expect(githubReleaseView.render).not.toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith('SKIP     github releases (dry-run)');
   });
 });

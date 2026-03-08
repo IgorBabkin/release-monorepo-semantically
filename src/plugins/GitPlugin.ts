@@ -12,6 +12,7 @@ export class GitPlugin implements ReleasePlugin {
 
   onReleaseComplete(context: ReleaseCompletePluginContext): void {
     if (context.dryRun) {
+      this.logger.info('SKIP     git commit/tag/push (dry-run)');
       return;
     }
     this.commitChanges(context);

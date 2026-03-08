@@ -30,6 +30,7 @@ describe('GitPlugin', () => {
     expect(vcs.commit).not.toHaveBeenCalled();
     expect(vcs.createTag).not.toHaveBeenCalled();
     expect(vcs.push).not.toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith('SKIP     git commit/tag/push (dry-run)');
   });
 
   it('given no push option when release completes then commit and tags are created but push is skipped', () => {
@@ -59,5 +60,39 @@ describe('GitPlugin', () => {
     expect(vcs.commit).toHaveBeenCalledWith('release commit message');
     expect(vcs.createTag).toHaveBeenCalledWith('pkg-a@1.0.1');
     expect(vcs.push).not.toHaveBeenCalled();
+  });
+
+  it('given released package when release completes then it commits, creates tags and pushes', () => {
+    const vcs = {
+      commit: vi.fn(),
+      createTag: vi.fn(),
+      push: vi.fn(),
+    };
+    const releaseCommitView = {
+      render: vi.fn().mockReturnValue('release commit message'),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+    const plugin = new GitPlugin(vcs as never, releaseCommitView as never, logger as never);
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+    const releasedVersions = new Map([['pkg-a', '1.0.1']]);
+    const context = {
+      dryRun: false,
+      noPush: false,
+      noPublish: true,
+      releasedPackages: [pkg],
+      releasedVersions,
+      releasedCommits: new Map([['pkg-a', []]]),
+    };
+
+    plugin.onReleaseComplete?.(context);
+
+    expect(releaseCommitView.render).toHaveBeenCalledWith(context);
+    expect(vcs.commit).toHaveBeenCalledWith('release commit message');
+    expect(vcs.createTag).toHaveBeenCalledWith('pkg-a@1.0.1');
+    expect(vcs.push).toHaveBeenCalledWith(true);
+    expect(logger.info).toHaveBeenCalledWith('TAG      pkg-a@1.0.1');
+    expect(logger.info).toHaveBeenCalledWith('PUSH     HEAD and 1 tag(s)');
   });
 });

@@ -19,7 +19,12 @@ export class GithubPlugin implements ReleasePlugin {
   ) {}
 
   onReleaseComplete(context: ReleaseCompletePluginContext): void {
-    if (context.dryRun || context.noPush) {
+    if (context.dryRun) {
+      this.logger.info('SKIP     github releases (dry-run)');
+      return;
+    }
+
+    if (context.noPush) {
       return;
     }
 

@@ -1,4 +1,4 @@
-# [{{lookup releasedVersions pkg.name}}](https://github.com/IgorBabkin/ts-ioc-container/compare/{{pkg.name}}@{{pkg.version}}...{{pkg.name}}@{{lookup releasedVersions pkg.name}}) ({{now}})
+# {{lookup releasedVersions pkg.name}} ({{now}})
 
 {{#if (hasBreakingChanges releasedCommits)}}
   ### 💥 BREAKING CHANGES
@@ -6,7 +6,7 @@
   {{#each (findBreakingChanges releasedCommits)}}
     - **{{this.scope}}:**
     {{this.subject}}
-    {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
+    {{#if this.hash}}({{this.hash}}){{/if}}
   {{/each}}
 
 {{/if}}
@@ -16,7 +16,7 @@
   {{#each (findFeatures releasedCommits)}}
     - **{{this.scope}}:**
     {{this.subject}}
-    {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
+    {{#if this.hash}}({{this.hash}}){{/if}}
   {{/each}}
 
 {{/if}}
@@ -26,7 +26,7 @@
   {{#each (findFixes releasedCommits)}}
     - **{{this.scope}}:**
     {{this.subject}}
-    {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
+    {{#if this.hash}}({{this.hash}}){{/if}}
   {{/each}}
 
 {{/if}}
@@ -36,7 +36,7 @@
   {{#each (findPerformance releasedCommits)}}
     - **{{this.scope}}:**
     {{this.subject}}
-    {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
+    {{#if this.hash}}({{this.hash}}){{/if}}
   {{/each}}
 
 {{/if}}

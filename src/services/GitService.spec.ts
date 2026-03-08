@@ -70,4 +70,14 @@ describe('GitService', () => {
 
     expect(execSync).toHaveBeenCalledWith('git tag pkg-a@1.0.1');
   });
+
+  it('given git status output when checking tree cleanliness then it returns true only for empty status', () => {
+    vi.mocked(execSync).mockReturnValueOnce('').mockReturnValueOnce(' M package.json\n');
+    const service = new GitService();
+
+    expect(service.isWorkingTreeClean()).toBe(true);
+    expect(service.isWorkingTreeClean()).toBe(false);
+    expect(execSync).toHaveBeenNthCalledWith(1, 'git status --porcelain', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git status --porcelain', { encoding: 'utf-8' });
+  });
 });
