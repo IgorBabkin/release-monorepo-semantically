@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NpmPackage } from './models/NpmPackage';
+import { NpmPackage } from '../models/NpmPackage';
 import { sortLessDependenciesFirst } from './sortLessDependenciesFirst';
 
 function createPkg(name: string, deps: Record<string, string> = {}): NpmPackage {

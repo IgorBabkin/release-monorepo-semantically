@@ -1,5 +1,5 @@
 import { PackageJSON } from './PackageJSON';
-import { Sortable } from '../sortLessDependenciesFirst';
+import { Sortable } from '../utils/sortLessDependenciesFirst';
 import { DependencyVersionChange } from './ReleaseTypes';
 import { SemVerBumpType } from './SemVerBumpType';
 import { MissingDependencyVersionException } from '../exceptions/DomainException';

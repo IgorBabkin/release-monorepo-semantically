@@ -1,6 +1,6 @@
 import { NpmPackage } from './models/NpmPackage';
 import { aggregateBumpTypes, bumpTypeToString, SemVerBumpType } from './models/SemVerBumpType';
-import { sortLessDependenciesFirst } from './sortLessDependenciesFirst';
+import { sortLessDependenciesFirst } from './utils/sortLessDependenciesFirst';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { GitService } from './services/GitService';
 import { ConsoleLogger } from './services/ConsoleLogger';

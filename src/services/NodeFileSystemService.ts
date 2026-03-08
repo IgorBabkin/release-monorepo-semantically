@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { globSync } from 'glob';
 import { PackageJSON } from '../models/PackageJSON';
 import path from 'node:path';
-import { isPresent, uniqBy } from '../utils';
+import { isPresent, uniqBy } from '../utils/utils';
 
 export class NodeFileSystemService {
   readJson<T = unknown>(filePath: string): T {
