@@ -15,9 +15,10 @@ import { PackageJsonPlugin } from './plugins/PackageJsonPlugin';
 import { GithubPlugin } from './plugins/GithubPlugin';
 import { GithubService } from './services/GithubService';
 import { GithubReleaseView } from './services/GithubReleaseView';
-import { ReleaseConfigService, ReleasePluginName } from './services/ReleaseConfigService';
+import { ReleaseConfigService } from './services/ReleaseConfigService';
 import { CliOptionsService } from './services/CliOptionsService';
 import { ReleasePlugin } from './plugins/ReleasePlugin';
+import { ReleasePluginConfig } from './models/ReleasePluginConfig';
 
 export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): number {
   const cliOptionsService = new CliOptionsService();
@@ -35,19 +36,34 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const logger = new ConsoleLogger('Release');
     const templateOverrides = releaseConfigService.resolveTemplateOverrides(cwd, cliOptions);
     const renderService = new HandlebarsRenderService(cwd, path.resolve(__dirname, '..'));
-    const changelogView = new ChangelogView(templateOverrides.changelogTemplate, renderService);
-    const releaseCommitView = new ReleaseCommitView(templateOverrides.releaseCommitTemplate, renderService);
-    const githubReleaseView = new GithubReleaseView(undefined, renderService);
     const packageManager = new PackageManager();
     const githubService = new GithubService();
-    const pluginsByName: Record<ReleasePluginName, ReleasePlugin> = {
-      'package-json': new PackageJsonPlugin(fsService, logger),
-      changelog: new ChangelogPlugin('CHANGELOG.md', changelogView, fsService, logger),
-      git: new GitPlugin(vcsService, releaseCommitView, logger),
-      github: GithubPlugin.createFromEnv(githubService, logger, githubReleaseView),
-      npm: new NpmPlugin(packageManager, logger),
+    const buildPlugin = (pluginConfig: ReleasePluginConfig): ReleasePlugin => {
+      switch (pluginConfig.name) {
+        case 'package-json':
+          return new PackageJsonPlugin(fsService, logger, pluginConfig);
+        case 'changelog':
+          return new ChangelogPlugin(
+            'CHANGELOG.md',
+            new ChangelogView(pluginConfig.template ?? templateOverrides.changelogTemplate, renderService),
+            fsService,
+            logger,
+            pluginConfig,
+          );
+        case 'git':
+          return new GitPlugin(
+            vcsService,
+            new ReleaseCommitView(pluginConfig.template ?? templateOverrides.releaseCommitTemplate, renderService),
+            logger,
+            pluginConfig,
+          );
+        case 'github':
+          return GithubPlugin.createFromEnv(githubService, logger, new GithubReleaseView(pluginConfig.template, renderService), pluginConfig);
+        case 'npm':
+          return new NpmPlugin(packageManager, logger, pluginConfig);
+      }
     };
-    const plugins = releaseConfigService.resolvePluginOrder(cwd).map((pluginName) => pluginsByName[pluginName]);
+    const plugins = releaseConfigService.resolvePlugins(cwd).map(buildPlugin);
     const controller = new Controller(plugins, fsService, vcsService, logger);
 
     controller.discoverPackages(cwd);

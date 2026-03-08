@@ -135,7 +135,13 @@ You can choose which plugins run and in what order with `plugins`.
 ```json
 {
   "release": {
-    "plugins": ["package-json", "changelog", "git", "github", "npm"]
+    "plugins": [
+      { "name": "package-json" },
+      { "name": "changelog", "template": "templates/changelog.hbs" },
+      { "name": "git", "template": "templates/release-commit-msg.hbs" },
+      { "name": "github", "template": "templates/github-release-notes.hbs" },
+      { "name": "npm" }
+    ]
   }
 }
 ```
@@ -144,11 +150,18 @@ You can choose which plugins run and in what order with `plugins`.
 
 ```json
 {
-  "plugins": ["package-json", "changelog", "git", "github", "npm"]
+  "plugins": [
+    { "name": "package-json" },
+    { "name": "changelog", "template": "templates/changelog.hbs" },
+    { "name": "git", "template": "templates/release-commit-msg.hbs" },
+    { "name": "github", "template": "templates/github-release-notes.hbs" },
+    { "name": "npm" }
+  ]
 }
 ```
 
 Default order: `["package-json", "changelog", "git", "github", "npm"]`.
+For `changelog`, `git`, and `github` plugins, `template` is required.
 
 ## Development
 

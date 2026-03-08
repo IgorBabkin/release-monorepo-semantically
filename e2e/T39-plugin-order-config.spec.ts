@@ -14,12 +14,21 @@ describe('plugin order via release config', () => {
     const rootPackageJsonPath = path.join(fixture.workDir, 'package.json');
     const rootPackageJson = JSON.parse(readFileSync(rootPackageJsonPath, 'utf-8')) as {
       release?: {
-        plugins?: string[];
+        plugins?: Array<{
+          name: string;
+          template?: string;
+          disabled?: boolean;
+        }>;
       };
       [key: string]: unknown;
     };
     rootPackageJson.release = {
-      plugins: ['package-json', 'changelog', 'npm', 'git'],
+      plugins: [
+        { name: 'package-json' },
+        { name: 'changelog', template: 'templates/changelog.hbs' },
+        { name: 'npm' },
+        { name: 'git', template: 'templates/release-commit-msg.hbs' },
+      ],
     };
     writeFileSync(rootPackageJsonPath, `${JSON.stringify(rootPackageJson, null, 2)}\n`);
 

@@ -51,7 +51,10 @@ describe('runCli', () => {
   it('given configured plugin order when the cli starts then controller receives plugins in that order', () => {
     const observedPluginConstructors: string[] = [];
     vi.spyOn(NodeFileSystemService.prototype, 'readJson').mockReturnValue({});
-    vi.spyOn(ReleaseConfigService.prototype, 'resolvePluginOrder').mockReturnValue(['git', 'changelog']);
+    vi.spyOn(ReleaseConfigService.prototype, 'resolvePlugins').mockReturnValue([
+      { name: 'git', template: 'templates/custom-release.hbs' },
+      { name: 'changelog', template: 'templates/custom-changelog.hbs' },
+    ]);
     vi.spyOn(Controller.prototype, 'discoverPackages').mockImplementation(function mockDiscoverPackages(this: {
       plugins: Array<{ constructor: { name: string } }>;
     }) {

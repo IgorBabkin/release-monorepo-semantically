@@ -2,15 +2,21 @@ import { ReleaseCommitView } from '../services/ReleaseCommitView';
 import { GitService } from '../services/GitService';
 import { ConsoleLogger } from '../services/ConsoleLogger';
 import { ReleaseCompletePluginContext, ReleasePlugin } from './ReleasePlugin';
+import { ReleasePluginConfig } from '../models/ReleasePluginConfig';
 
 export class GitPlugin implements ReleasePlugin {
   constructor(
     private vcsService: GitService,
     private releaseCommitView: ReleaseCommitView,
     private logger: ConsoleLogger,
+    private readonly pluginConfig: ReleasePluginConfig = { name: 'git' },
   ) {}
 
   onReleaseComplete(context: ReleaseCompletePluginContext): void {
+    if (this.pluginConfig.disabled) {
+      return;
+    }
+
     if (context.dryRun) {
       this.logger.info('SKIP     git commit/tag/push (dry-run)');
       return;

@@ -3,6 +3,7 @@ import { ChangelogView } from '../services/ChangelogView';
 import { ConsoleLogger } from '../services/ConsoleLogger';
 import { PackageReleasedPluginContext, ReleasePlugin } from './ReleasePlugin';
 import { NodeFileSystemService } from '../services/NodeFileSystemService';
+import { ReleasePluginConfig } from '../models/ReleasePluginConfig';
 
 export class ChangelogPlugin implements ReleasePlugin {
   constructor(
@@ -10,9 +11,14 @@ export class ChangelogPlugin implements ReleasePlugin {
     private readonly view: ChangelogView,
     private readonly fs: NodeFileSystemService,
     private readonly logger: ConsoleLogger,
+    private readonly pluginConfig: ReleasePluginConfig = { name: 'changelog' },
   ) {}
 
   onPackageReleased({ dryRun, pkg, releasedCommits, releasedVersions, releasedPackages }: PackageReleasedPluginContext): void {
+    if (this.pluginConfig.disabled) {
+      return;
+    }
+
     if (dryRun) {
       this.logger.info(`SKIP     ${pkg.name} ${this.changelogName} (dry-run)`);
       return;

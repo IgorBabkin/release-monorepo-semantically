@@ -1,14 +1,20 @@
 import { PackageManager } from '../services/PackageManager';
 import { ConsoleLogger } from '../services/ConsoleLogger';
 import { PackageReleasedPluginContext, ReleaseCompletePluginContext, ReleasePlugin } from './ReleasePlugin';
+import { ReleasePluginConfig } from '../models/ReleasePluginConfig';
 
 export class NpmPlugin implements ReleasePlugin {
   constructor(
     private packageManager: PackageManager,
     private logger: ConsoleLogger,
+    private readonly pluginConfig: ReleasePluginConfig = { name: 'npm' },
   ) {}
 
   onPackageReleased({ dryRun, pkg, releasedVersions }: PackageReleasedPluginContext) {
+    if (this.pluginConfig.disabled) {
+      return;
+    }
+
     if (dryRun) {
       this.logger.info(`SKIP     ${pkg.name} version bump (dry-run)`);
       return;
@@ -18,6 +24,10 @@ export class NpmPlugin implements ReleasePlugin {
   }
 
   onReleaseComplete({ dryRun, noPublish, releasedPackages, releasedVersions }: ReleaseCompletePluginContext): void {
+    if (this.pluginConfig.disabled) {
+      return;
+    }
+
     if (dryRun) {
       this.logger.info('SKIP     npm publish (dry-run)');
       return;

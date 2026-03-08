@@ -15,11 +15,17 @@ describe('GithubPlugin', () => {
     const githubReleaseView = {
       render: vi.fn().mockReturnValue('rendered release notes'),
     };
-    const plugin = GithubPlugin.createFromEnv(github as never, logger as never, githubReleaseView as never, {
-      GITHUB_ACTIONS: ' true ',
-      GITHUB_REPOSITORY: ' acme/repo ',
-      GITHUB_TOKEN: ' token ',
-    });
+    const plugin = GithubPlugin.createFromEnv(
+      github as never,
+      logger as never,
+      githubReleaseView as never,
+      { name: 'github', template: 'templates/github-release-notes.hbs' },
+      {
+        GITHUB_ACTIONS: ' true ',
+        GITHUB_REPOSITORY: ' acme/repo ',
+        GITHUB_TOKEN: ' token ',
+      },
+    );
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
     plugin.onReleaseComplete?.({
@@ -50,11 +56,17 @@ describe('GithubPlugin', () => {
     const githubReleaseView = {
       render: vi.fn(),
     };
-    const plugin = GithubPlugin.createFromEnv(github as never, logger as never, githubReleaseView as never, {
-      GITHUB_ACTIONS: 'true',
-      GITHUB_REPOSITORY: 'invalid-repository',
-      GITHUB_TOKEN: '   ',
-    });
+    const plugin = GithubPlugin.createFromEnv(
+      github as never,
+      logger as never,
+      githubReleaseView as never,
+      { name: 'github', template: 'templates/github-release-notes.hbs' },
+      {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_REPOSITORY: 'invalid-repository',
+        GITHUB_TOKEN: '   ',
+      },
+    );
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
     plugin.onReleaseComplete?.({

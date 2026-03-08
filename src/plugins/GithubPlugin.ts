@@ -4,6 +4,7 @@ import { ConsoleLogger } from '../services/ConsoleLogger';
 import { GithubReleaseView } from '../services/GithubReleaseView';
 import { GithubCliUnavailableException } from '../exceptions/DomainException';
 import { z } from 'zod';
+import { ReleasePluginConfig } from '../models/ReleasePluginConfig';
 
 export interface GithubPluginConfig {
   isGithubActions: boolean;
@@ -23,9 +24,10 @@ export class GithubPlugin implements ReleasePlugin {
     githubService: GithubService,
     logger: ConsoleLogger,
     githubReleaseView: GithubReleaseView,
+    pluginConfig: ReleasePluginConfig = { name: 'github' },
     env: NodeJS.ProcessEnv = process.env,
   ): GithubPlugin {
-    return new GithubPlugin(githubService, logger, GithubPlugin.readConfigFromEnv(env), githubReleaseView);
+    return new GithubPlugin(githubService, logger, GithubPlugin.readConfigFromEnv(env), githubReleaseView, pluginConfig);
   }
 
   constructor(
@@ -33,9 +35,14 @@ export class GithubPlugin implements ReleasePlugin {
     private readonly logger: ConsoleLogger,
     private readonly config: GithubPluginConfig,
     private readonly githubReleaseView: GithubReleaseView,
+    private readonly pluginConfig: ReleasePluginConfig = { name: 'github' },
   ) {}
 
   onReleaseComplete(context: ReleaseCompletePluginContext): void {
+    if (this.pluginConfig.disabled) {
+      return;
+    }
+
     if (context.dryRun) {
       this.logger.info('SKIP     github releases (dry-run)');
       return;
