@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { ReleaseConfigService } from './ReleaseConfigService';
 import { DEFAULT_CHANGELOG_TEMPLATE } from './ChangelogView';
 import { DEFAULT_RELEASE_COMMIT_TEMPLATE } from './ReleaseCommitView';
+import { InvalidReleasePluginsConfigException } from '../exceptions/DomainException';
+import { DEFAULT_RELEASE_PLUGIN_ORDER } from './ReleaseConfigService';
 
 describe('ReleaseConfigService', () => {
   it('given cli options when template overrides are resolved then cli values have highest priority', () => {
@@ -133,5 +135,61 @@ describe('ReleaseConfigService', () => {
       changelogTemplate: DEFAULT_CHANGELOG_TEMPLATE,
       releaseCommitTemplate: DEFAULT_RELEASE_COMMIT_TEMPLATE,
     });
+  });
+
+  it('given package config with release plugin order when plugin order is resolved then configured order is returned', () => {
+    const fsService = {
+      readJson: vi.fn().mockReturnValue({
+        release: {
+          plugins: ['package-json', 'changelog', 'npm', 'git'],
+        },
+      }),
+      fileExists: vi.fn().mockReturnValue(false),
+    };
+    const service = new ReleaseConfigService(fsService as never);
+
+    expect(service.resolvePluginOrder('/repo')).toEqual(['package-json', 'changelog', 'npm', 'git']);
+  });
+
+  it('given both config file and package plugin order when plugin order is resolved then file config has precedence', () => {
+    const fsService = {
+      readJson: vi.fn((filePath: string) => {
+        if (filePath.endsWith('package.json')) {
+          return {
+            plugins: ['package-json', 'changelog', 'git'],
+          };
+        }
+
+        return {
+          plugins: ['package-json', 'changelog', 'npm', 'git'],
+        };
+      }),
+      fileExists: vi.fn().mockReturnValue(true),
+    };
+    const service = new ReleaseConfigService(fsService as never);
+
+    expect(service.resolvePluginOrder('/repo')).toEqual(['package-json', 'changelog', 'npm', 'git']);
+  });
+
+  it('given no configured plugin order when plugin order is resolved then defaults are returned', () => {
+    const fsService = {
+      readJson: vi.fn().mockReturnValue({}),
+      fileExists: vi.fn().mockReturnValue(false),
+    };
+    const service = new ReleaseConfigService(fsService as never);
+
+    expect(service.resolvePluginOrder('/repo')).toEqual(DEFAULT_RELEASE_PLUGIN_ORDER);
+  });
+
+  it('given invalid release plugin id when plugin order is resolved then a config exception is raised', () => {
+    const fsService = {
+      readJson: vi.fn().mockReturnValue({
+        plugins: ['package-json', 'unknown-plugin'],
+      }),
+      fileExists: vi.fn().mockReturnValue(false),
+    };
+    const service = new ReleaseConfigService(fsService as never);
+
+    expect(() => service.resolvePluginOrder('/repo')).toThrow(InvalidReleasePluginsConfigException);
   });
 });

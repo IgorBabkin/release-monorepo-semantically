@@ -15,8 +15,9 @@ import { PackageJsonPlugin } from './plugins/PackageJsonPlugin';
 import { GithubPlugin } from './plugins/GithubPlugin';
 import { GithubService } from './services/GithubService';
 import { GithubReleaseView } from './services/GithubReleaseView';
-import { ReleaseConfigService } from './services/ReleaseConfigService';
+import { ReleaseConfigService, ReleasePluginName } from './services/ReleaseConfigService';
 import { CliOptionsService } from './services/CliOptionsService';
+import { ReleasePlugin } from './plugins/ReleasePlugin';
 
 export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): number {
   const cliOptionsService = new CliOptionsService();
@@ -39,18 +40,15 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const githubReleaseView = new GithubReleaseView(undefined, renderService);
     const packageManager = new PackageManager();
     const githubService = new GithubService();
-    const controller = new Controller(
-      [
-        new PackageJsonPlugin(fsService, logger),
-        new ChangelogPlugin('CHANGELOG.md', changelogView, fsService, logger),
-        new GitPlugin(vcsService, releaseCommitView, logger),
-        GithubPlugin.createFromEnv(githubService, logger, githubReleaseView),
-        new NpmPlugin(packageManager, logger),
-      ],
-      fsService,
-      vcsService,
-      logger,
-    );
+    const pluginsByName: Record<ReleasePluginName, ReleasePlugin> = {
+      'package-json': new PackageJsonPlugin(fsService, logger),
+      changelog: new ChangelogPlugin('CHANGELOG.md', changelogView, fsService, logger),
+      git: new GitPlugin(vcsService, releaseCommitView, logger),
+      github: GithubPlugin.createFromEnv(githubService, logger, githubReleaseView),
+      npm: new NpmPlugin(packageManager, logger),
+    };
+    const plugins = releaseConfigService.resolvePluginOrder(cwd).map((pluginName) => pluginsByName[pluginName]);
+    const controller = new Controller(plugins, fsService, vcsService, logger);
 
     controller.discoverPackages(cwd);
     controller.release({ dryRun: cliOptions.dryRun, noPush: cliOptions.noPush, noPublish: cliOptions.noPublish });

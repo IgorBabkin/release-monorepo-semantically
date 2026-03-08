@@ -37,3 +37,9 @@ export class DirtyWorkingTreeException extends DomainException {
     super('DIRTY_WORKING_TREE', 'Release requires a clean working tree (commit or stash local changes first)');
   }
 }
+
+export class InvalidReleasePluginsConfigException extends DomainException {
+  constructor(reason: string) {
+    super('INVALID_RELEASE_PLUGINS_CONFIG', `Invalid release plugin configuration: ${reason}. Allowed plugin ids: package-json, changelog, git, github, npm`);
+  }
+}

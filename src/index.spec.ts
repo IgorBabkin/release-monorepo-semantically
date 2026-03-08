@@ -4,6 +4,7 @@ import { Controller } from './Controller';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { ExceptionHandler } from './services/ExceptionHandler';
 import { CliOptionsService } from './services/CliOptionsService';
+import { ReleaseConfigService } from './services/ReleaseConfigService';
 
 describe('runCli', () => {
   afterEach(() => {
@@ -45,6 +46,23 @@ describe('runCli', () => {
 
     expect(exitCode).toBe(0);
     expect(parseSpy).toHaveBeenCalledWith(['--help']);
+  });
+
+  it('given configured plugin order when the cli starts then controller receives plugins in that order', () => {
+    const observedPluginConstructors: string[] = [];
+    vi.spyOn(NodeFileSystemService.prototype, 'readJson').mockReturnValue({});
+    vi.spyOn(ReleaseConfigService.prototype, 'resolvePluginOrder').mockReturnValue(['git', 'changelog']);
+    vi.spyOn(Controller.prototype, 'discoverPackages').mockImplementation(function mockDiscoverPackages(this: {
+      plugins: Array<{ constructor: { name: string } }>;
+    }) {
+      observedPluginConstructors.push(...this.plugins.map((plugin) => plugin.constructor.name));
+    });
+    vi.spyOn(Controller.prototype, 'release').mockImplementation(() => undefined);
+
+    const exitCode = runCli('/repo', ['--dry-run']);
+
+    expect(exitCode).toBe(0);
+    expect(observedPluginConstructors).toEqual(['GitPlugin', 'ChangelogPlugin']);
   });
 
   it('given a runtime error when the cli fails then it delegates error reporting to ExceptionHandler', () => {

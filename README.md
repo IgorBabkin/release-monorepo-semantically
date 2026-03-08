@@ -126,6 +126,30 @@ Release lifecycle is implemented by plugins:
 - `GithubPlugin`: creates GitHub Releases
 - `NpmPlugin`: bumps package version and publishes
 
+## Plugin selection and order
+
+You can choose which plugins run and in what order with `plugins`.
+
+`package.json`:
+
+```json
+{
+  "release": {
+    "plugins": ["package-json", "changelog", "git", "github", "npm"]
+  }
+}
+```
+
+`.semantic-release.json`:
+
+```json
+{
+  "plugins": ["package-json", "changelog", "git", "github", "npm"]
+}
+```
+
+Default order: `["package-json", "changelog", "git", "github", "npm"]`.
+
 ## Development
 
 ```bash
