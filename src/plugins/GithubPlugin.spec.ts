@@ -4,6 +4,73 @@ import { NpmPackage } from '../models/NpmPackage';
 import { ConventionalCommit } from '../models/ConventionalCommit';
 
 describe('GithubPlugin', () => {
+  it('given valid env values when plugin is created from env then github release config is normalized and used', () => {
+    const github = {
+      isCliAvailable: vi.fn().mockReturnValue(true),
+      createRelease: vi.fn(),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+    const githubReleaseView = {
+      render: vi.fn().mockReturnValue('rendered release notes'),
+    };
+    const plugin = GithubPlugin.createFromEnv(github as never, logger as never, githubReleaseView as never, {
+      GITHUB_ACTIONS: ' true ',
+      GITHUB_REPOSITORY: ' acme/repo ',
+      GITHUB_TOKEN: ' token ',
+    });
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+
+    plugin.onReleaseComplete?.({
+      dryRun: false,
+      noPush: false,
+      noPublish: false,
+      releasedPackages: [pkg],
+      releasedVersions: new Map([['pkg-a', '1.0.1']]),
+      releasedCommits: new Map(),
+    });
+
+    expect(github.createRelease).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repository: 'acme/repo',
+        token: 'token',
+      }),
+    );
+  });
+
+  it('given invalid env values when plugin is created from env then github releases are skipped', () => {
+    const github = {
+      isCliAvailable: vi.fn().mockReturnValue(true),
+      createRelease: vi.fn(),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+    const githubReleaseView = {
+      render: vi.fn(),
+    };
+    const plugin = GithubPlugin.createFromEnv(github as never, logger as never, githubReleaseView as never, {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_REPOSITORY: 'invalid-repository',
+      GITHUB_TOKEN: '   ',
+    });
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+
+    plugin.onReleaseComplete?.({
+      dryRun: false,
+      noPush: false,
+      noPublish: false,
+      releasedPackages: [pkg],
+      releasedVersions: new Map([['pkg-a', '1.0.1']]),
+      releasedCommits: new Map(),
+    });
+
+    expect(github.isCliAvailable).not.toHaveBeenCalled();
+    expect(github.createRelease).not.toHaveBeenCalled();
+    expect(githubReleaseView.render).not.toHaveBeenCalled();
+  });
+
   it('given github actions and released packages when release completes then github releases are created', () => {
     const github = {
       isCliAvailable: vi.fn().mockReturnValue(true),

@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { parseCliOptions, runCli } from './index';
+import { runCli } from './index';
 import { MonorepoController } from './MonorepoController';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { ExceptionHandler } from './services/ExceptionHandler';
+import { CliOptionsService } from './services/CliOptionsService';
 
 describe('runCli', () => {
   afterEach(() => {
@@ -32,28 +33,18 @@ describe('runCli', () => {
     expect(releaseSpy).toHaveBeenCalledWith({ dryRun: true, noPush: false, noPublish: false });
   });
 
-  it('given no push or publish flags when cli options are parsed then git push and package publish are disabled', () => {
-    expect(parseCliOptions(['--no-push', '--no-publish'])).toEqual({
+  it('given cli starts when options are parsed then it delegates parsing to CliOptionsService', () => {
+    const parseSpy = vi.spyOn(CliOptionsService.prototype, 'parse').mockReturnValue({
+      help: true,
       dryRun: false,
-      help: false,
-      noPush: true,
-      noPublish: true,
-      changelogTemplate: undefined,
-      releaseCommitTemplate: undefined,
-    });
-  });
-
-  it('given template override flags when cli options are parsed then values are read from named options', () => {
-    expect(
-      parseCliOptions(['--dry-run', '--changelog-template', 'templates/custom-changelog.hbs', '--release-commit-template=templates/custom-release.hbs']),
-    ).toEqual({
-      dryRun: true,
-      help: false,
       noPush: false,
       noPublish: false,
-      changelogTemplate: 'templates/custom-changelog.hbs',
-      releaseCommitTemplate: 'templates/custom-release.hbs',
     });
+
+    const exitCode = runCli('/repo', ['--help']);
+
+    expect(exitCode).toBe(0);
+    expect(parseSpy).toHaveBeenCalledWith(['--help']);
   });
 
   it('given a runtime error when the cli fails then it delegates error reporting to ExceptionHandler', () => {

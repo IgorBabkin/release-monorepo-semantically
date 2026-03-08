@@ -65,7 +65,22 @@ Options:
 
 ## Template overrides
 
-You can override templates via CLI options or root `package.json`:
+You can override templates via CLI options, a root `package.json` section, or `.semantic-release.json`.
+
+`package.json`:
+
+```json
+{
+  "release": {
+    "releaseTemplates": {
+      "changelogTemplate": "templates/changelog.hbs",
+      "releaseCommitTemplate": "templates/release-commit-msg.hbs"
+    }
+  }
+}
+```
+
+`.semantic-release.json`:
 
 ```json
 {
@@ -75,6 +90,8 @@ You can override templates via CLI options or root `package.json`:
   }
 }
 ```
+
+Precedence (highest to lowest): CLI flags, `.semantic-release.json`, `package.json` config, built-in defaults.
 
 Built-in templates:
 

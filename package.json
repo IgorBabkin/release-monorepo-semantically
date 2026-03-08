@@ -39,7 +39,8 @@
   "dependencies": {
     "commander": "14.0.3",
     "glob": "^10.3.10",
-    "handlebars": "^4.7.8"
+    "handlebars": "^4.7.8",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",

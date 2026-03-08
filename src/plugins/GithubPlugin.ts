@@ -3,6 +3,7 @@ import { GithubService } from '../services/GithubService';
 import { ConsoleLogger } from '../services/ConsoleLogger';
 import { GithubReleaseView } from '../services/GithubReleaseView';
 import { GithubCliUnavailableException } from '../exceptions/DomainException';
+import { z } from 'zod';
 
 export interface GithubPluginConfig {
   isGithubActions: boolean;
@@ -10,7 +11,23 @@ export interface GithubPluginConfig {
   token?: string;
 }
 
+const githubActionsSchema = z.string().trim().toLowerCase();
+const githubRepositorySchema = z
+  .string()
+  .trim()
+  .regex(/^[^/\s]+\/[^/\s]+$/);
+const githubTokenSchema = z.string().trim().min(1);
+
 export class GithubPlugin implements ReleasePlugin {
+  static createFromEnv(
+    githubService: GithubService,
+    logger: ConsoleLogger,
+    githubReleaseView: GithubReleaseView,
+    env: NodeJS.ProcessEnv = process.env,
+  ): GithubPlugin {
+    return new GithubPlugin(githubService, logger, GithubPlugin.readConfigFromEnv(env), githubReleaseView);
+  }
+
   constructor(
     private readonly githubService: GithubService,
     private readonly logger: ConsoleLogger,
@@ -57,5 +74,17 @@ export class GithubPlugin implements ReleasePlugin {
       });
       this.logger.info(`RELEASE  ${pkg.name}@${version}`);
     }
+  }
+
+  private static readConfigFromEnv(env: NodeJS.ProcessEnv): GithubPluginConfig {
+    const githubActionsParse = githubActionsSchema.safeParse(env.GITHUB_ACTIONS);
+    const repositoryParse = githubRepositorySchema.safeParse(env.GITHUB_REPOSITORY);
+    const tokenParse = githubTokenSchema.safeParse(env.GITHUB_TOKEN);
+
+    return {
+      isGithubActions: githubActionsParse.success && githubActionsParse.data === 'true',
+      repository: repositoryParse.success ? repositoryParse.data : undefined,
+      token: tokenParse.success ? tokenParse.data : undefined,
+    };
   }
 }
