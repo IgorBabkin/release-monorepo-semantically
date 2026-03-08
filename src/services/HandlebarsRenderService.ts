@@ -39,17 +39,16 @@ export class HandlebarsRenderService {
     }
 
     const filterByType = (commits: ConventionalCommit[], type: string): ConventionalCommit[] => commits.filter((commit) => commit.type === type);
-    const asArray = (value: unknown): ConventionalCommit[] => (Array.isArray(value) ? (value as ConventionalCommit[]) : []);
 
     Handlebars.registerHelper('now', () => new Date().toISOString().slice(0, 10));
-    Handlebars.registerHelper('hasBreakingChanges', (commits: unknown) => asArray(commits).some((commit) => commit.isBreaking));
-    Handlebars.registerHelper('findBreakingChanges', (commits: unknown) => asArray(commits).filter((commit) => commit.isBreaking));
-    Handlebars.registerHelper('hasFeatures', (commits: unknown) => filterByType(asArray(commits), 'feat').length > 0);
-    Handlebars.registerHelper('findFeatures', (commits: unknown) => filterByType(asArray(commits), 'feat'));
-    Handlebars.registerHelper('hasFixes', (commits: unknown) => filterByType(asArray(commits), 'fix').length > 0);
-    Handlebars.registerHelper('findFixes', (commits: unknown) => filterByType(asArray(commits), 'fix'));
-    Handlebars.registerHelper('hasPerfomance', (commits: unknown) => filterByType(asArray(commits), 'perf').length > 0);
-    Handlebars.registerHelper('findPerfomance', (commits: unknown) => filterByType(asArray(commits), 'perf'));
+    Handlebars.registerHelper('hasBreakingChanges', (commits: ConventionalCommit[]) => commits.some((commit) => commit.isBreaking));
+    Handlebars.registerHelper('findBreakingChanges', (commits: ConventionalCommit[]) => commits.filter((commit) => commit.isBreaking));
+    Handlebars.registerHelper('hasFeatures', (commits: ConventionalCommit[]) => filterByType(commits, 'feat').length > 0);
+    Handlebars.registerHelper('findFeatures', (commits: ConventionalCommit[]) => filterByType(commits, 'feat'));
+    Handlebars.registerHelper('hasFixes', (commits: ConventionalCommit[]) => filterByType(commits, 'fix').length > 0);
+    Handlebars.registerHelper('findFixes', (commits: ConventionalCommit[]) => filterByType(commits, 'fix'));
+    Handlebars.registerHelper('hasPerfomance', (commits: ConventionalCommit[]) => filterByType(commits, 'perf').length > 0);
+    Handlebars.registerHelper('findPerfomance', (commits: ConventionalCommit[]) => filterByType(commits, 'perf'));
     Handlebars.registerHelper('lookup', (container: unknown, key: unknown) => {
       if (container instanceof Map) {
         return container.get(String(key));
