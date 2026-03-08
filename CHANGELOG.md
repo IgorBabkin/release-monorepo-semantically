@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.6.0...v1.6.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* **readme:** add project usage and release documentation ([e83f6f3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e83f6f37455b7c33bb6c79c56670f14df76fa5c1))
+
 # [1.6.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.5.2...v1.6.0) (2026-03-08)
 
 
