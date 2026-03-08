@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import Handlebars from 'handlebars';
 import path from 'node:path';
 import { ConventionalCommit } from '../models/ConventionalCommit';
+import { TemplateInvocationTargetException, TemplateMethodNotFunctionException } from '../exceptions/DomainException';
 
 let helpersRegistered = false;
 
@@ -66,12 +67,12 @@ export class HandlebarsRenderService {
     Handlebars.registerHelper('call', (target: unknown, methodName: unknown, ...args: unknown[]) => {
       const options = args.pop();
       if (!target || typeof target !== 'object') {
-        throw new Error(`Cannot call method ${String(methodName)} on non-object target`);
+        throw new TemplateInvocationTargetException(String(methodName));
       }
 
       const method = (target as Record<string, unknown>)[String(methodName)];
       if (typeof method !== 'function') {
-        throw new Error(`Method ${String(methodName)} is not a function`);
+        throw new TemplateMethodNotFunctionException(String(methodName));
       }
 
       void options;

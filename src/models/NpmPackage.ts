@@ -2,6 +2,7 @@ import { PackageJSON } from './PackageJSON';
 import { Sortable } from '../sortLessDependenciesFirst';
 import { DependencyVersionChange } from './ReleaseTypes';
 import { SemVerBumpType } from './SemVerBumpType';
+import { MissingDependencyVersionException } from '../exceptions/DomainException';
 
 export class NpmPackage implements Sortable {
   static createFromPackage(pkgJson: PackageJSON, pkgDirname: string): NpmPackage {
@@ -32,7 +33,7 @@ export class NpmPackage implements Sortable {
   private findDependencyVersionByNameOrFail(depName: string): string {
     const dependencyVersion = this.dependencies[depName] ?? this.devDependencies[depName];
     if (!dependencyVersion) {
-      throw new Error(`Dependency ${depName} not found in ${this.name}`);
+      throw new MissingDependencyVersionException(this.name, depName);
     }
     return dependencyVersion;
   }

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { parseCliOptions, runCli } from './index';
 import { MonorepoController } from './MonorepoController';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
-import { ErrorHandler } from './services/ErrorHandler';
+import { ExceptionHandler } from './services/ExceptionHandler';
 
 describe('runCli', () => {
   afterEach(() => {
@@ -56,9 +56,9 @@ describe('runCli', () => {
     });
   });
 
-  it('given a runtime error when the cli fails then it delegates error reporting to ErrorHandler', () => {
+  it('given a runtime error when the cli fails then it delegates error reporting to ExceptionHandler', () => {
     const expectedError = new Error('boom');
-    const handleSpy = vi.spyOn(ErrorHandler.prototype, 'handle').mockImplementation(() => undefined);
+    const handleSpy = vi.spyOn(ExceptionHandler.prototype, 'handle').mockImplementation(() => undefined);
     vi.spyOn(NodeFileSystemService.prototype, 'readJson').mockImplementation(() => {
       throw expectedError;
     });

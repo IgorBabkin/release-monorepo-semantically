@@ -6,7 +6,7 @@ import { HandlebarsRenderService } from './services/HandlebarsRenderService';
 import { DEFAULT_RELEASE_COMMIT_TEMPLATE, ReleaseCommitView } from './services/ReleaseCommitView';
 import { PackageManager } from './services/PackageManager';
 import { ConsoleLogger } from './services/ConsoleLogger';
-import { ErrorHandler } from './services/ErrorHandler';
+import { ExceptionHandler } from './services/ExceptionHandler';
 import { Command } from 'commander';
 import path from 'node:path';
 import { CliOptions, TemplateOverrides } from './CliOptions';
@@ -82,7 +82,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
   const cliOptions = parseCliOptions(cliArgs);
   const fsService = new NodeFileSystemService();
   const vcsService = new GitService();
-  const errorHandler = new ErrorHandler();
+  const exceptionHandler = new ExceptionHandler();
 
   if (cliOptions.help) {
     return 0;
@@ -120,7 +120,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
 
     return 0;
   } catch (error) {
-    errorHandler.handle(error);
+    exceptionHandler.handle(error);
     return 1;
   }
 }

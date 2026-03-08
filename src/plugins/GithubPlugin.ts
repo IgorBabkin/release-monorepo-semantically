@@ -2,6 +2,7 @@ import { ReleaseCompletePluginContext, ReleasePlugin } from './ReleasePlugin';
 import { GithubService } from '../services/GithubService';
 import { ConsoleLogger } from '../services/ConsoleLogger';
 import { GithubReleaseView } from '../services/GithubReleaseView';
+import { GithubCliUnavailableException } from '../exceptions/DomainException';
 
 export interface GithubPluginConfig {
   isGithubActions: boolean;
@@ -27,7 +28,7 @@ export class GithubPlugin implements ReleasePlugin {
     }
 
     if (!this.githubService.isCliAvailable()) {
-      throw new Error('GitHub release creation requires `gh` CLI when running in GitHub Actions');
+      throw new GithubCliUnavailableException();
     }
 
     for (const pkg of context.releasedPackages) {
