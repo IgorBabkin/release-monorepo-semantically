@@ -41,3 +41,7 @@ export class ConventionalCommit {
     return this.scope === packageName;
   }
 }
+
+export function calcBumpTypeByCommits(...commits: ConventionalCommit[]): SemVerBumpType {
+  return Math.max(...commits.map((c) => c.bumpType), SemVerBumpType.NONE);
+}

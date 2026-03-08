@@ -1,0 +1,27 @@
+import path from 'node:path';
+import { ChangelogView } from '../services/ChangelogView';
+import { ConsoleLogger } from '../services/ConsoleLogger';
+import { PackageReleasedPluginContext, ReleasePlugin } from './ReleasePlugin';
+import { NodeFileSystemService } from '../services/NodeFileSystemService';
+
+export class ChangelogPlugin implements ReleasePlugin {
+  constructor(
+    private readonly changelogName: string,
+    private readonly view: ChangelogView,
+    private readonly fs: NodeFileSystemService,
+    private readonly logger: ConsoleLogger,
+  ) {}
+
+  onPackageReleased({ pkg, releasedCommits, releasedVersions, releasedPackages }: PackageReleasedPluginContext): void {
+    const changelogFile = path.resolve(path.dirname(pkg.dirname), this.changelogName);
+    const content = this.view.render({
+      pkg,
+      releasedPackages,
+      releasedVersions,
+      releasedCommits,
+      existing: this.fs.fileExists(changelogFile) ? this.fs.readFile(changelogFile) : '',
+    });
+    this.fs.writeFile(changelogFile, content);
+    this.logger.info(`WRITE    ${pkg.name} ${this.changelogName}`);
+  }
+}

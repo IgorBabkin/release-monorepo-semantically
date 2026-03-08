@@ -3,6 +3,7 @@ import { MonorepoController } from './MonorepoController';
 import { PackageJSON } from './models/PackageJSON';
 import { NpmPackage } from './models/NpmPackage';
 import { ConventionalCommit } from './models/ConventionalCommit';
+import { ReleasePlugin } from './plugins/ReleasePlugin';
 
 describe('MonorepoController.discoverPackages', () => {
   it('given directory workspaces when packages are discovered then package.json files are resolved', () => {
@@ -301,5 +302,70 @@ describe('MonorepoController.release', () => {
 
     expect(vcs.push).not.toHaveBeenCalled();
     expect(packageManager.publish).not.toHaveBeenCalled();
+  });
+
+  it('given custom plugins when release runs then controller delegates package and finalize hooks', () => {
+    const fileSystemService = {
+      readJson: vi.fn((filePath: string) => {
+        if (filePath === '/repo/packages/pkg-a/package.json') {
+          return { name: 'pkg-a', version: '1.0.0' };
+        }
+        return undefined;
+      }),
+      writeJson: vi.fn(),
+    };
+    const vcs = {
+      findManyCommitsSinceTag: vi.fn().mockReturnValue([ConventionalCommit.parse('fix(pkg-a): release me')]),
+      createTag: vi.fn(),
+      commit: vi.fn(),
+      push: vi.fn(),
+    };
+    const packageManager = {
+      bumpVersion: vi.fn(),
+      publish: vi.fn(),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+    const plugin: ReleasePlugin = {
+      onPackageReleased: vi.fn(),
+      onReleaseComplete: vi.fn(),
+    };
+
+    const controller = new MonorepoController(
+      fileSystemService as never,
+      vcs as never,
+      {} as never,
+      {} as never,
+      packageManager as never,
+      logger as never,
+      [plugin],
+    );
+
+    (controller as unknown as { packages: NpmPackage[] }).packages = [
+      NpmPackage.createFromPackage(
+        {
+          name: 'pkg-a',
+          version: '1.0.0',
+        },
+        '/repo/packages/pkg-a/package.json',
+      ),
+    ];
+
+    controller.release();
+
+    expect(plugin.onPackageReleased).toHaveBeenCalledTimes(1);
+    expect(plugin.onReleaseComplete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        push: true,
+        publish: true,
+        releasedPackages: [
+          {
+            version: '1.0.1',
+            pkg: expect.objectContaining({ name: 'pkg-a' }),
+          },
+        ],
+      }),
+    );
   });
 });

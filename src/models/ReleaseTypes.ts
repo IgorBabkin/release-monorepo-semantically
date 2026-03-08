@@ -14,8 +14,7 @@ export interface ReleaseCommitChange {
 
 export interface ReleaseCommitPackage {
   name: string;
-  version: string;
-  previousVersion: string;
+  newVersion: string;
   commits: ReleaseCommitChange[];
   dependencyUpdates: DependencyVersionChange[];
 }

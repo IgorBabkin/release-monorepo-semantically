@@ -1,16 +1,16 @@
 ci(release): publish [skip-ci]
 {{#if packages}}
 
-{{#each packages}}
-## 📦 {{this.name}}@{{this.version}}
+{{#each releasedPackages}}
+## 📦 {{this.name}}@{{lookup releasedVersions this.name}}
 
-{{#each this.commits}}
+{{#each lookup releasedCommits this.name}}
 - 🔹 {{this.type}}{{#if this.isBreaking}}!{{/if}}: {{this.subject}}
 {{/each}}
-{{#each this.dependencyUpdates}}
-- 📦 deps: update {{this.packageName}} from {{this.oldVersion}} to {{this.newVersion}}
+{{#each call this "getDependencyUpdates" releasedVersions}}
+- 📦 feat({{this.packageName}}): update from {{this.oldVersion}} to {{this.newVersion}}
 {{/each}}
 
 {{/each}}
-Affected: 📌 {{#each packages}}{{this.name}}@{{this.version}}{{#unless @last}},{{/unless}}{{/each}}
+Affected: 📌 {{#each releasedPackages}}{{this.name}}{{#unless @last}},{{/unless}}{{/each}}
 {{/if}}

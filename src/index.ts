@@ -10,6 +10,10 @@ import { ErrorHandler } from './services/ErrorHandler';
 import { Command } from 'commander';
 import path from 'node:path';
 import { CliOptions, TemplateOverrides } from './CliOptions';
+import { ChangelogPlugin } from './plugins/ChangelogPlugin';
+import { GitPlugin } from './plugins/GitPlugin';
+import { NpmPlugin } from './plugins/NpmPlugin';
+import { PackageJsonPlugin } from './plugins/PackageJsonPlugin';
 
 const DEFAULT_CHANGELOG_TEMPLATE = 'templates/changelog.hbs';
 const DEFAULT_RELEASE_COMMIT_TEMPLATE = 'templates/release-commit-msg.hbs';
@@ -76,7 +80,7 @@ function resolveTemplateOverrides(cwd: string, fsService: NodeFileSystemService,
 export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): number {
   const cliOptions = parseCliOptions(cliArgs);
   const fsService = new NodeFileSystemService();
-  const vcs = new GitService();
+  const vcsService = new GitService();
   const errorHandler = new ErrorHandler();
 
   if (cliOptions.help) {
@@ -86,10 +90,19 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
   try {
     const templateOverrides = resolveTemplateOverrides(cwd, fsService, cliOptions);
     const renderService = new HandlebarsRenderService(cwd, path.resolve(__dirname, '..'));
-    const changelog = new ChangelogView(renderService, fsService, templateOverrides.changelogTemplate);
-    const releaseCommit = new ReleaseCommitView(renderService, templateOverrides.releaseCommitTemplate);
+    const changelogView = new ChangelogView(templateOverrides.changelogTemplate, renderService);
+    const releaseCommitView = new ReleaseCommitView(templateOverrides.releaseCommitTemplate, renderService);
     const packageManager = new PackageManager();
-    const controller = new MonorepoController(fsService, vcs, changelog, releaseCommit, packageManager, new ConsoleLogger('Release'));
+    const controller = new MonorepoController(
+      [
+        new PackageJsonPlugin(fsService, new ConsoleLogger('PackageJsonPlugin')),
+        new ChangelogPlugin('CHANGELOG.md', changelogView, fsService, new ConsoleLogger('ChangelogPlugin')),
+        new NpmPlugin(packageManager, new ConsoleLogger('NpmPlugin')),
+        new GitPlugin(vcsService, releaseCommitView, new ConsoleLogger('GitPlugin')),
+      ],
+      fsService,
+      vcsService,
+    );
 
     controller.discoverRootPackageJSON();
     controller.discoverPackages();
