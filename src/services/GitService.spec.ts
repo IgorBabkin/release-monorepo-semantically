@@ -22,4 +22,52 @@ describe('GitService', () => {
       stdio: ['pipe', 'inherit', 'inherit'],
     });
   });
+
+  it('given an existing tag when commit history is queried then commits are read from tag range', () => {
+    vi.mocked(execSync).mockReturnValueOnce('refs/tags/pkg-a@1.0.0\n').mockReturnValueOnce('abcd123 fix(pkg-a): bug fix\n');
+
+    const service = new GitService();
+
+    const commits = service.findManyCommitsSinceTag('pkg-a@1.0.0');
+
+    expect(execSync).toHaveBeenNthCalledWith(1, 'git rev-parse --verify --quiet refs/tags/pkg-a@1.0.0', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git log pkg-a@1.0.0..HEAD --format="%H %s"', { encoding: 'utf-8' });
+    expect(commits).toHaveLength(1);
+    expect(commits[0].type).toBe('fix');
+    expect(commits[0].hash).toBe('abcd123');
+  });
+
+  it('given a missing tag when commit history is queried then full history is read from HEAD', () => {
+    vi.mocked(execSync)
+      .mockImplementationOnce(() => {
+        throw new Error('missing tag');
+      })
+      .mockReturnValueOnce('');
+
+    const service = new GitService();
+
+    const commits = service.findManyCommitsSinceTag('pkg-a@1.0.0');
+
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git log HEAD --format="%H %s"', { encoding: 'utf-8' });
+    expect(commits).toEqual([]);
+  });
+
+  it('given push with and without tags when push runs then tag push is conditional', () => {
+    const service = new GitService();
+
+    service.push(false);
+    service.push(true);
+
+    expect(execSync).toHaveBeenNthCalledWith(1, 'git push');
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git push');
+    expect(execSync).toHaveBeenNthCalledWith(3, 'git push --tags');
+  });
+
+  it('given a tag name when createTag runs then git tag command is executed', () => {
+    const service = new GitService();
+
+    service.createTag('pkg-a@1.0.1');
+
+    expect(execSync).toHaveBeenCalledWith('git tag pkg-a@1.0.1');
+  });
 });
