@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.5.1...v1.5.2) (2026-03-08)
+
+
+### Bug Fixes
+
+* **render:** add package json write logs and performance helper names ([3bee8df](https://github.com/IgorBabkin/release-monorepo-semantically/commit/3bee8df674e971f1f770a555e2c74818638007bb))
+
 ## [1.5.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.5.0...v1.5.1) (2026-03-08)
 
 
