@@ -1,3 +1,11 @@
+# [1.8.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.7.1...v1.8.0) (2026-03-08)
+
+
+### Features
+
+* **config:** support configurable release plugins order ([599d470](https://github.com/IgorBabkin/release-monorepo-semantically/commit/599d4708cd705dc0dfd4e0ffac39adffac6d13aa))
+* **config:** support object-based plugin configs ([bbb66cb](https://github.com/IgorBabkin/release-monorepo-semantically/commit/bbb66cbb1cf2c0fbb0a369b606595eb1e62ddf3c))
+
 ## [1.7.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.7.0...v1.7.1) (2026-03-08)
 
 
