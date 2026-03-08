@@ -1,3 +1,12 @@
+## [1.5.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.5.0...v1.5.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* **model:** restore commit hash field compatibility ([627a5bd](https://github.com/IgorBabkin/release-monorepo-semantically/commit/627a5bd7d8ca4bb22da9d3b3d418d949907e550f))
+* **release:** resolve plugin/template regressions ([087d68d](https://github.com/IgorBabkin/release-monorepo-semantically/commit/087d68d4611db65f04f18acaae43c79df7dfec7b))
+* **render:** add handlebars helper registrations ([c27ccfc](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c27ccfcf13a48061400ce125ad333f4c1a0445b8))
+
 # [1.5.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.3...v1.5.0) (2026-03-07)
 
 
