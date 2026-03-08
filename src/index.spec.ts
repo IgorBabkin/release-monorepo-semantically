@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runCli } from './index';
-import { MonorepoController } from './MonorepoController';
+import { Controller } from './Controller';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { ExceptionHandler } from './services/ExceptionHandler';
 import { CliOptionsService } from './services/CliOptionsService';
@@ -22,8 +22,8 @@ describe('runCli', () => {
   });
 
   it('given --dry-run when the cli starts then release is executed in dry-run mode', () => {
-    const releaseSpy = vi.spyOn(MonorepoController.prototype, 'release').mockImplementation(() => undefined);
-    vi.spyOn(MonorepoController.prototype, 'discoverPackages').mockImplementation(() => undefined);
+    const releaseSpy = vi.spyOn(Controller.prototype, 'release').mockImplementation(() => undefined);
+    vi.spyOn(Controller.prototype, 'discoverPackages').mockImplementation(() => undefined);
     vi.spyOn(NodeFileSystemService.prototype, 'readJson').mockReturnValue({});
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 

@@ -4,14 +4,14 @@ import { sortLessDependenciesFirst } from './utils/sortLessDependenciesFirst';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { GitService } from './services/GitService';
 import { ConsoleLogger } from './services/ConsoleLogger';
-import { CliOptions } from './CliOptions';
+import { CliOptions } from './models/CliOptions';
 import { ReleasePlugin } from './plugins/ReleasePlugin';
 import { ConventionalCommit } from './models/ConventionalCommit';
 import { DirtyWorkingTreeException } from './exceptions/DomainException';
 
 type ReleaseOptions = Partial<Pick<CliOptions, 'dryRun' | 'noPush' | 'noPublish'>>;
 
-export class MonorepoController {
+export class Controller {
   private packageSortedList: NpmPackage[] = [];
 
   constructor(

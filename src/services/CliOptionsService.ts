@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { CliOptions } from '../CliOptions';
+import { CliOptions } from '../models/CliOptions';
 import { DEFAULT_CHANGELOG_TEMPLATE } from './ChangelogView';
 import { DEFAULT_RELEASE_COMMIT_TEMPLATE } from './ReleaseCommitView';
 

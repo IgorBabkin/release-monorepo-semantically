@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { CliOptions, TemplateOverrides } from '../CliOptions';
+import { CliOptions, TemplateOverrides } from '../models/CliOptions';
 import { DEFAULT_CHANGELOG_TEMPLATE } from './ChangelogView';
 import { NodeFileSystemService } from './NodeFileSystemService';
 import { DEFAULT_RELEASE_COMMIT_TEMPLATE } from './ReleaseCommitView';

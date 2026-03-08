@@ -1,4 +1,4 @@
-import { MonorepoController } from './MonorepoController';
+import { Controller } from './Controller';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { GitService } from './services/GitService';
 import { ChangelogView } from './services/ChangelogView';
@@ -39,7 +39,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const githubReleaseView = new GithubReleaseView(undefined, renderService);
     const packageManager = new PackageManager();
     const githubService = new GithubService();
-    const controller = new MonorepoController(
+    const controller = new Controller(
       [
         new PackageJsonPlugin(fsService, logger),
         new ChangelogPlugin('CHANGELOG.md', changelogView, fsService, logger),

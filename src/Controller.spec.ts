@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MonorepoController } from './MonorepoController';
+import { Controller } from './Controller';
 import { NpmPackage } from './models/NpmPackage';
 import { ConventionalCommit } from './models/ConventionalCommit';
 import { ReleasePlugin } from './plugins/ReleasePlugin';
@@ -15,7 +15,7 @@ describe('MonorepoController.discoverPackages', () => {
       ]),
     };
 
-    const controller = new MonorepoController([], fs as never, {} as never, {} as never);
+    const controller = new Controller([], fs as never, {} as never, {} as never);
 
     controller.discoverPackages('/repo');
 
@@ -38,7 +38,7 @@ describe('MonorepoController.release', () => {
     const logger = {
       info: vi.fn(),
     };
-    const controller = new MonorepoController([plugin], {} as never, vsc as never, logger as never);
+    const controller = new Controller([plugin], {} as never, vsc as never, logger as never);
 
     (controller as unknown as { packageSortedList: NpmPackage[] }).packageSortedList = [
       NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a/package.json'),
@@ -74,7 +74,7 @@ describe('MonorepoController.release', () => {
     const logger = {
       info: vi.fn(),
     };
-    const controller = new MonorepoController([plugin], {} as never, vsc as never, logger as never);
+    const controller = new Controller([plugin], {} as never, vsc as never, logger as never);
 
     const pkgA = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a/package.json');
     const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0' }, '/repo/packages/pkg-b/package.json');
@@ -107,7 +107,7 @@ describe('MonorepoController.release', () => {
     const logger = {
       info: vi.fn(),
     };
-    const controller = new MonorepoController([plugin], {} as never, vsc as never, logger as never);
+    const controller = new Controller([plugin], {} as never, vsc as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a/package.json');
     (controller as unknown as { packageSortedList: NpmPackage[] }).packageSortedList = [pkg];
 
