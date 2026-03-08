@@ -12,8 +12,8 @@ export interface ReleasePluginConfig {
 
 export const DEFAULT_RELEASE_PLUGINS: readonly ReleasePluginConfig[] = [
   { name: 'package-json' },
-  { name: 'changelog' },
-  { name: 'git' },
-  { name: 'github' },
+  { name: 'changelog', template: 'templates/changelog.hbs' },
+  { name: 'git', template: 'templates/release-commit-msg.hbs' },
+  { name: 'github', template: 'templates/github-release-notes.hbs' },
   { name: 'npm' },
 ];
