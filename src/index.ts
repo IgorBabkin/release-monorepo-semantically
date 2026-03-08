@@ -1,9 +1,9 @@
 import { MonorepoController } from './MonorepoController';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { GitService } from './services/GitService';
-import { ChangelogView } from './services/ChangelogView';
+import { ChangelogView, DEFAULT_CHANGELOG_TEMPLATE } from './services/ChangelogView';
 import { HandlebarsRenderService } from './services/HandlebarsRenderService';
-import { ReleaseCommitView } from './services/ReleaseCommitView';
+import { DEFAULT_RELEASE_COMMIT_TEMPLATE, ReleaseCommitView } from './services/ReleaseCommitView';
 import { PackageManager } from './services/PackageManager';
 import { ConsoleLogger } from './services/ConsoleLogger';
 import { ErrorHandler } from './services/ErrorHandler';
@@ -14,9 +14,6 @@ import { ChangelogPlugin } from './plugins/ChangelogPlugin';
 import { GitPlugin } from './plugins/GitPlugin';
 import { NpmPlugin } from './plugins/NpmPlugin';
 import { PackageJsonPlugin } from './plugins/PackageJsonPlugin';
-
-const DEFAULT_CHANGELOG_TEMPLATE = 'templates/changelog.hbs';
-const DEFAULT_RELEASE_COMMIT_TEMPLATE = 'templates/release-commit-msg.hbs';
 
 interface PackageJsonWithTemplates {
   releaseTemplates?: TemplateOverrides;
@@ -48,20 +45,21 @@ export function parseCliOptions(args: string[]): CliOptions {
       return {
         help: true,
         dryRun: false,
-        noPush: true,
-        noPublish: true,
+        noPush: false,
+        noPublish: false,
       };
     }
     throw error;
   }
 
   const options = program.opts<CliOptions>();
+  const commanderOptions = options as CliOptions & { push?: boolean; publish?: boolean };
 
   return {
     help: false,
     dryRun: options.dryRun ?? false,
-    noPush: options.noPush ?? true,
-    noPublish: options.noPublish ?? true,
+    noPush: commanderOptions.push === false,
+    noPublish: commanderOptions.publish === false,
     changelogTemplate: options.changelogTemplate,
     releaseCommitTemplate: options.releaseCommitTemplate,
   };
@@ -88,6 +86,7 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
   }
 
   try {
+    const logger = new ConsoleLogger('Release');
     const templateOverrides = resolveTemplateOverrides(cwd, fsService, cliOptions);
     const renderService = new HandlebarsRenderService(cwd, path.resolve(__dirname, '..'));
     const changelogView = new ChangelogView(templateOverrides.changelogTemplate, renderService);
@@ -95,14 +94,14 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const packageManager = new PackageManager();
     const controller = new MonorepoController(
       [
-        new PackageJsonPlugin(fsService, new ConsoleLogger('PackageJsonPlugin')),
-        new ChangelogPlugin('CHANGELOG.md', changelogView, fsService, new ConsoleLogger('ChangelogPlugin')),
-        new NpmPlugin(packageManager, new ConsoleLogger('NpmPlugin')),
-        new GitPlugin(vcsService, releaseCommitView, new ConsoleLogger('GitPlugin')),
+        new PackageJsonPlugin(fsService, logger),
+        new ChangelogPlugin('CHANGELOG.md', changelogView, fsService, logger),
+        new GitPlugin(vcsService, releaseCommitView, logger),
+        new NpmPlugin(packageManager, logger),
       ],
       fsService,
       vcsService,
-      new ConsoleLogger('Controller')
+      logger,
     );
 
     controller.discoverPackages(cwd);

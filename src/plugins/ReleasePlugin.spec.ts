@@ -20,7 +20,7 @@ describe('ChangelogPlugin', () => {
     };
 
     const plugin = new ChangelogPlugin('CHANGELOG.md', view as never, fs as never, logger as never);
-    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a/package.json');
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const commit = ConventionalCommit.parse('fix(pkg-a): patch');
     const releasedVersions = new Map([['pkg-a', '1.0.1']]);
 
@@ -61,12 +61,12 @@ describe('GitPlugin', () => {
     };
 
     const plugin = new GitPlugin(vcs as never, releaseCommitView as never, logger as never);
-    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a/package.json');
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const releasedVersions = new Map([['pkg-a', '1.0.1']]);
 
     plugin.onReleaseComplete?.({
       dryRun: false,
-      noPush: true,
+      noPush: false,
       noPublish: true,
       releasedPackages: [pkg],
       releasedVersions,
@@ -75,7 +75,7 @@ describe('GitPlugin', () => {
 
     expect(releaseCommitView.render).toHaveBeenCalledWith({
       dryRun: false,
-      noPush: true,
+      noPush: false,
       noPublish: true,
       releasedPackages: [pkg],
       releasedVersions,
@@ -100,18 +100,18 @@ describe('NpmPlugin', () => {
     };
 
     const plugin = new NpmPlugin(packageManager as never, logger as never);
-    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a/package.json');
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
     plugin.onReleaseComplete?.({
       dryRun: false,
       noPush: true,
-      noPublish: true,
+      noPublish: false,
       releasedPackages: [pkg],
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedCommits: new Map(),
     });
 
-    expect(packageManager.publish).toHaveBeenCalledWith('/repo/packages/pkg-a/package.json');
+    expect(packageManager.publish).toHaveBeenCalledWith('/repo/packages/pkg-a');
     expect(logger.info).toHaveBeenCalledWith('PUBLISH  pkg-a@1.0.1');
   });
 });

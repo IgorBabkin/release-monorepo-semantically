@@ -2,9 +2,11 @@ import { ConventionalCommit } from '../models/ConventionalCommit';
 import { HandlebarsRenderService } from './HandlebarsRenderService';
 import { NpmPackage } from '../models/NpmPackage';
 
+export const DEFAULT_CHANGELOG_TEMPLATE = 'templates/changelog.hbs';
+
 export class ChangelogView {
   constructor(
-    private readonly changelogTemplatePath = 'templates/changelog.hbs',
+    private readonly changelogTemplatePath = DEFAULT_CHANGELOG_TEMPLATE,
     private readonly renderService: HandlebarsRenderService,
   ) {}
 
@@ -21,16 +23,29 @@ export class ChangelogView {
     releasedCommits: ConventionalCommit[];
     existing: string;
   }): string {
-    // const breakingChanges = commits.filter((commit) => commit.isBreaking);
-    // const features = commits.filter((commit) => commit.type === 'feat');
-    // const fixes = commits.filter((commit) => commit.type === 'fix');
-    // const performance = commits.filter((commit) => commit.type === 'perf');
+    const nextVersion = releasedVersions.get(pkg.name) ?? pkg.version;
+    const dependencyUpdates = pkg.getDependencyUpdates(releasedVersions);
+    const breakingChanges = releasedCommits.filter((commit) => commit.isBreaking);
+    const features = releasedCommits.filter((commit) => commit.type === 'feat');
+    const fixes = releasedCommits.filter((commit) => commit.type === 'fix');
+    const performance = releasedCommits.filter((commit) => commit.type === 'perf');
 
     return this.renderService.render(this.changelogTemplatePath, {
       pkg,
       releasedCommits,
       releasedPackages,
       releasedVersions,
+      // Keep backward-compatible data for user-provided templates.
+      entry: {
+        version: nextVersion,
+        oldVersion: pkg.version,
+        date: new Date().toISOString().slice(0, 10),
+        breakingChanges,
+        features,
+        fixes,
+        performance,
+        dependencyUpdates,
+      },
       existing,
     });
   }

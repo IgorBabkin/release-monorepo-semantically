@@ -11,6 +11,9 @@ export class GitPlugin implements ReleasePlugin {
   ) {}
 
   onReleaseComplete(context: ReleaseCompletePluginContext): void {
+    if (context.dryRun) {
+      return;
+    }
     this.commitChanges(context);
     this.createTags(context);
     this.pushChanges(context);
@@ -30,7 +33,7 @@ export class GitPlugin implements ReleasePlugin {
   }
 
   private pushChanges({ noPush, releasedPackages }: ReleaseCompletePluginContext) {
-    if (!noPush) {
+    if (noPush) {
       return;
     }
     this.vcsService.push(releasedPackages.length > 0);

@@ -11,7 +11,7 @@ export class NodeFileSystemService {
   }
 
   writeToPackageJsonOrFail(dirname: string, data: unknown): void {
-    writeFileSync(path.resolve(dirname, 'package.json'), JSON.stringify(data, null, 2) + '\n', 'utf-8');
+    writeFileSync(this.resolvePackageJsonPath(dirname), JSON.stringify(data, null, 2) + '\n', 'utf-8');
   }
 
   readFile(filePath: string): string {
@@ -33,16 +33,20 @@ export class NodeFileSystemService {
         .map((entryPath) => this.resolveWorkspacePackageJsonPath(entryPath))
         .filter<string>(isPresent)
         .map((pkgPath) => {
-          const content = readFileSync(path.resolve(path.dirname(pkgPath), 'package.json'), 'utf-8');
-          return [pkgPath, JSON.parse(content)];
+          const content = readFileSync(pkgPath, 'utf-8');
+          return [path.dirname(pkgPath), JSON.parse(content)];
         }),
       (a, b) => a[0] === b[0],
     );
   }
 
   readPackageJsonOrFail(pkgPath: string): PackageJSON {
-    const content = readFileSync(path.resolve(path.dirname(pkgPath), 'package.json'), 'utf-8');
+    const content = readFileSync(this.resolvePackageJsonPath(pkgPath), 'utf-8');
     return JSON.parse(content);
+  }
+
+  private resolvePackageJsonPath(inputPath: string): string {
+    return path.basename(inputPath) === 'package.json' ? inputPath : path.resolve(inputPath, 'package.json');
   }
 
   private resolveWorkspacePackageJsonPath(entryPath: string): string | undefined {

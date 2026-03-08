@@ -13,7 +13,7 @@ export class ChangelogPlugin implements ReleasePlugin {
   ) {}
 
   onPackageReleased({ pkg, releasedCommits, releasedVersions, releasedPackages }: PackageReleasedPluginContext): void {
-    const changelogFile = path.resolve(path.dirname(pkg.dirname), this.changelogName);
+    const changelogFile = path.resolve(pkg.dirname, this.changelogName);
     const content = this.view.render({
       pkg,
       releasedPackages,

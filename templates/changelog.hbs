@@ -1,49 +1,49 @@
 # [{{lookup releasedVersions pkg.name}}](https://github.com/IgorBabkin/ts-ioc-container/compare/{{pkg.name}}@{{pkg.version}}...{{pkg.name}}@{{lookup releasedVersions pkg.name}}) ({{now}})
 
-{{#if hasBreakingChanges releasedCommits}}
+{{#if (hasBreakingChanges releasedCommits)}}
   ### 💥 BREAKING CHANGES
 
-  {{#each findBreakingChanges releasedCommits}}
+  {{#each (findBreakingChanges releasedCommits)}}
     - **{{this.scope}}:**
     {{this.subject}}
     {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
   {{/each}}
 
 {{/if}}
-{{#if hasFeatures releasedCommits}}
+{{#if (hasFeatures releasedCommits)}}
   ### ✨ Features
 
-  {{#each findFeatures releasedCommits}}
+  {{#each (findFeatures releasedCommits)}}
     - **{{this.scope}}:**
     {{this.subject}}
     {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
   {{/each}}
 
 {{/if}}
-{{#if hasFixes releasedCommits}}
+{{#if (hasFixes releasedCommits)}}
   ### 🐞 Bug Fixes
 
-  {{#each findFixes releasedCommits}}
+  {{#each (findFixes releasedCommits)}}
     - **{{this.scope}}:**
     {{this.subject}}
     {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
   {{/each}}
 
 {{/if}}
-{{#if hasPerfomance releasedCommits}}
+{{#if (hasPerfomance releasedCommits)}}
   ### ⚡ Performance Improvements
 
-  {{#each findPerfomance releasedCommits}}
+  {{#each (findPerfomance releasedCommits)}}
     - **{{this.scope}}:**
     {{this.subject}}
     {{#if this.hash}}([{{this.hash}}](https://github.com/IgorBabkin/ts-ioc-container/commit/{{this.hash}})){{/if}}
   {{/each}}
 
 {{/if}}
-{{#if call this "hasDependencyUpdates" releasedVersions}}
+{{#if (call pkg "hasDependencyUpdates" releasedVersions)}}
   ### 📦 Dependencies
 
-  {{#each call this "getDependencyUpdates" releasedVersions}}
+  {{#each (call pkg "getDependencyUpdates" releasedVersions)}}
     - 📦 update
     {{this.packageName}}
     to

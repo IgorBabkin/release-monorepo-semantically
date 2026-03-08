@@ -13,8 +13,8 @@ export class NpmPlugin implements ReleasePlugin {
     this.packageManager.bumpVersion(pkg.dirname, newVersion);
   }
 
-  onReleaseComplete({ noPublish, releasedPackages, releasedVersions }: ReleaseCompletePluginContext): void {
-    if (!noPublish) {
+  onReleaseComplete({ dryRun, noPublish, releasedPackages, releasedVersions }: ReleaseCompletePluginContext): void {
+    if (dryRun || noPublish) {
       return;
     }
 

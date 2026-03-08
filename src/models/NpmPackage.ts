@@ -4,8 +4,8 @@ import { DependencyVersionChange } from './ReleaseTypes';
 import { SemVerBumpType } from './SemVerBumpType';
 
 export class NpmPackage implements Sortable {
-  static createFromPackage(pkgJson: PackageJSON, pkgPath: string): NpmPackage {
-    return new NpmPackage(pkgJson.name, pkgPath, pkgJson.version, pkgJson.private ?? false, pkgJson.dependencies ?? {}, pkgJson.devDependencies ?? {});
+  static createFromPackage(pkgJson: PackageJSON, pkgDirname: string): NpmPackage {
+    return new NpmPackage(pkgJson.name, pkgDirname, pkgJson.version, pkgJson.private ?? false, pkgJson.dependencies ?? {}, pkgJson.devDependencies ?? {});
   }
 
   constructor(

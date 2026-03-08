@@ -29,7 +29,7 @@ describe('runCli', () => {
     const exitCode = runCli('/repo', ['--dry-run']);
 
     expect(exitCode).toBe(0);
-    expect(releaseSpy).toHaveBeenCalledWith({ dryRun: true, noPush: true, noPublish: true });
+    expect(releaseSpy).toHaveBeenCalledWith({ dryRun: true, noPush: false, noPublish: false });
   });
 
   it('given no push or publish flags when cli options are parsed then git push and package publish are disabled', () => {
@@ -49,8 +49,8 @@ describe('runCli', () => {
     ).toEqual({
       dryRun: true,
       help: false,
-      noPush: true,
-      noPublish: true,
+      noPush: false,
+      noPublish: false,
       changelogTemplate: 'templates/custom-changelog.hbs',
       releaseCommitTemplate: 'templates/custom-release.hbs',
     });
