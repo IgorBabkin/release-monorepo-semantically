@@ -47,8 +47,13 @@ export class HandlebarsRenderService {
     Handlebars.registerHelper('findFeatures', (commits: ConventionalCommit[]) => filterByType(commits, 'feat'));
     Handlebars.registerHelper('hasFixes', (commits: ConventionalCommit[]) => filterByType(commits, 'fix').length > 0);
     Handlebars.registerHelper('findFixes', (commits: ConventionalCommit[]) => filterByType(commits, 'fix'));
-    Handlebars.registerHelper('hasPerfomance', (commits: ConventionalCommit[]) => filterByType(commits, 'perf').length > 0);
-    Handlebars.registerHelper('findPerfomance', (commits: ConventionalCommit[]) => filterByType(commits, 'perf'));
+    const hasPerformance = (commits: ConventionalCommit[]) => filterByType(commits, 'perf').length > 0;
+    const findPerformance = (commits: ConventionalCommit[]) => filterByType(commits, 'perf');
+    Handlebars.registerHelper('hasPerformance', hasPerformance);
+    Handlebars.registerHelper('findPerformance', findPerformance);
+    // Backward-compatible aliases for older templates.
+    Handlebars.registerHelper('hasPerfomance', hasPerformance);
+    Handlebars.registerHelper('findPerfomance', findPerformance);
     Handlebars.registerHelper('lookup', (container: unknown, key: unknown) => {
       if (container instanceof Map) {
         return container.get(String(key));

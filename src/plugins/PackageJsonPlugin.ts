@@ -23,5 +23,6 @@ export class PackageJsonPlugin implements ReleasePlugin {
     }
 
     this.fileSystemService.writeToPackageJsonOrFail(pkg.dirname, packageJson);
+    this.logger.info(`WRITE    ${pkg.name} package.json`);
   }
 }
