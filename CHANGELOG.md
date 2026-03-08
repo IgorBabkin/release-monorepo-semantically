@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.5.2...v1.6.0) (2026-03-08)
+
+
+### Features
+
+* **github:** add automated GitHub release plugin and e2e stubs ([cf07c8c](https://github.com/IgorBabkin/release-monorepo-semantically/commit/cf07c8c69b18a84e4d23055981baa00bbcfbbc1f))
+
 ## [1.5.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.5.1...v1.5.2) (2026-03-08)
 
 
