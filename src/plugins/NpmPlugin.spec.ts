@@ -1,0 +1,64 @@
+import { describe, expect, it, vi } from 'vitest';
+import { NpmPlugin } from './NpmPlugin';
+import { NpmPackage } from '../models/NpmPackage';
+
+describe('NpmPlugin', () => {
+  it('given package release when onPackageReleased runs then version is bumped in package directory', () => {
+    const packageManager = {
+      bumpVersion: vi.fn(),
+      publish: vi.fn(),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+
+    const plugin = new NpmPlugin(packageManager as never, logger as never);
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+
+    plugin.onPackageReleased?.({
+      dryRun: false,
+      noPush: false,
+      noPublish: false,
+      pkg,
+      releasedVersions: new Map([['pkg-a', '1.0.1']]),
+      releasedPackages: [pkg],
+      releasedCommits: [],
+    });
+
+    expect(packageManager.bumpVersion).toHaveBeenCalledWith('/repo/packages/pkg-a', '1.0.1');
+  });
+
+  it('given dry run or noPublish when release completes then package publish is skipped', () => {
+    const packageManager = {
+      bumpVersion: vi.fn(),
+      publish: vi.fn(),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+
+    const plugin = new NpmPlugin(packageManager as never, logger as never);
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+
+    plugin.onReleaseComplete?.({
+      dryRun: true,
+      noPush: false,
+      noPublish: false,
+      releasedPackages: [pkg],
+      releasedVersions: new Map([['pkg-a', '1.0.1']]),
+      releasedCommits: new Map(),
+    });
+
+    plugin.onReleaseComplete?.({
+      dryRun: false,
+      noPush: false,
+      noPublish: true,
+      releasedPackages: [pkg],
+      releasedVersions: new Map([['pkg-a', '1.0.1']]),
+      releasedCommits: new Map(),
+    });
+
+    expect(packageManager.publish).not.toHaveBeenCalled();
+    expect(logger.info).not.toHaveBeenCalled();
+  });
+});
