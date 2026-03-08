@@ -22,7 +22,6 @@ describe('runCli', () => {
 
   it('given --dry-run when the cli starts then release is executed in dry-run mode', () => {
     const releaseSpy = vi.spyOn(MonorepoController.prototype, 'release').mockImplementation(() => undefined);
-    vi.spyOn(MonorepoController.prototype, 'discoverRootPackageJSON').mockImplementation(() => undefined);
     vi.spyOn(MonorepoController.prototype, 'discoverPackages').mockImplementation(() => undefined);
     vi.spyOn(NodeFileSystemService.prototype, 'readJson').mockReturnValue({});
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -30,15 +29,15 @@ describe('runCli', () => {
     const exitCode = runCli('/repo', ['--dry-run']);
 
     expect(exitCode).toBe(0);
-    expect(releaseSpy).toHaveBeenCalledWith({ dryRun: true, push: true, publish: true });
+    expect(releaseSpy).toHaveBeenCalledWith({ dryRun: true, noPush: true, noPublish: true });
   });
 
   it('given no push or publish flags when cli options are parsed then git push and package publish are disabled', () => {
     expect(parseCliOptions(['--no-push', '--no-publish'])).toEqual({
       dryRun: false,
       help: false,
-      push: false,
-      publish: false,
+      noPush: true,
+      noPublish: true,
       changelogTemplate: undefined,
       releaseCommitTemplate: undefined,
     });
@@ -50,8 +49,8 @@ describe('runCli', () => {
     ).toEqual({
       dryRun: true,
       help: false,
-      push: true,
-      publish: true,
+      noPush: true,
+      noPublish: true,
       changelogTemplate: 'templates/custom-changelog.hbs',
       releaseCommitTemplate: 'templates/custom-release.hbs',
     });

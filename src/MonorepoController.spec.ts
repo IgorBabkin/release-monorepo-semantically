@@ -1,371 +1,94 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MonorepoController } from './MonorepoController';
-import { PackageJSON } from './models/PackageJSON';
 import { NpmPackage } from './models/NpmPackage';
 import { ConventionalCommit } from './models/ConventionalCommit';
 import { ReleasePlugin } from './plugins/ReleasePlugin';
 
 describe('MonorepoController.discoverPackages', () => {
-  it('given directory workspaces when packages are discovered then package.json files are resolved', () => {
-    const packageJsonByPath = new Map<string, PackageJSON>([
-      [
-        '/repo/packages/a/package.json',
-        {
-          name: 'pkg-a',
-          version: '1.0.0',
-        },
-      ],
-      [
-        '/repo/packages/b/package.json',
-        {
-          name: 'pkg-b',
-          version: '1.0.0',
-        },
-      ],
-    ]);
-
-    const fileSystemService = {
-      findManyByGlob: vi.fn().mockReturnValue(['/repo/packages/a', '/repo/packages/b/package.json']),
-      readJson: vi.fn((filePath: string) => packageJsonByPath.get(filePath)),
-      fileExists: vi.fn((filePath: string) => packageJsonByPath.has(filePath)),
+  it('given workspace package json files when packages are discovered then private packages are excluded', () => {
+    const fs = {
+      readPackageJsonOrFail: vi.fn().mockReturnValue({ workspaces: ['packages/*'] }),
+      findManyPackageJsonByGlob: vi.fn().mockReturnValue([
+        ['/repo/packages/a/package.json', { name: 'pkg-a', version: '1.0.0' }],
+        ['/repo/packages/private/package.json', { name: 'pkg-private', version: '1.0.0', private: true }],
+      ]),
     };
 
-    const controller = new MonorepoController(fileSystemService as never, {} as never, {} as never, {} as never, {} as never, {} as never);
+    const controller = new MonorepoController([], fs as never, {} as never, {} as never);
 
-    (controller as unknown as { rootPackageJson: PackageJSON }).rootPackageJson = {
-      name: 'root',
-      version: '1.0.0',
-      workspaces: ['packages/*'],
-    };
+    controller.discoverPackages('/repo');
 
-    controller.discoverPackages();
-
-    expect(fileSystemService.readJson).toHaveBeenCalledWith('/repo/packages/a/package.json');
-    expect(fileSystemService.readJson).toHaveBeenCalledWith('/repo/packages/b/package.json');
-    expect((controller as unknown as { packages: Array<{ name: string }> }).packages.map((pkg) => pkg.name)).toEqual(['pkg-a', 'pkg-b']);
+    expect(fs.readPackageJsonOrFail).toHaveBeenCalledWith('/repo');
+    expect(fs.findManyPackageJsonByGlob).toHaveBeenCalledWith(['packages/*'], '/repo');
+    expect((controller as unknown as { packageSortedList: NpmPackage[] }).packageSortedList.map((pkg) => pkg.name)).toEqual(['pkg-a']);
   });
 });
 
 describe('MonorepoController.release', () => {
-  it('given a skipped bump when release runs then changelog is not rendered', () => {
-    const fileSystemService = {
-      readJson: vi.fn(),
+  it('given no release-triggering commits when release runs then it logs skip and calls only finalize hook', () => {
+    const plugin: ReleasePlugin = {
+      onPackageReleased: vi.fn(),
+      onReleaseComplete: vi.fn(),
     };
-    const vcs = {
+    const vsc = {
       findManyCommitsSinceTag: vi.fn().mockReturnValue([]),
-      createTag: vi.fn(),
-      commit: vi.fn(),
-      push: vi.fn(),
-    };
-    const changelog = {
-      addLog: vi.fn(),
-      render: vi.fn(),
-    };
-    const releaseCommitView = {
-      render: vi.fn().mockReturnValue('release commit message'),
-    };
-    const packageManager = {
-      bumpVersion: vi.fn(),
-      publish: vi.fn(),
     };
     const logger = {
       info: vi.fn(),
     };
+    const controller = new MonorepoController([plugin], {} as never, vsc as never, logger as never);
 
-    const controller = new MonorepoController(
-      fileSystemService as never,
-      vcs as never,
-      changelog as never,
-      releaseCommitView as never,
-      packageManager as never,
-      logger as never,
-    );
-
-    (controller as unknown as { packages: NpmPackage[] }).packages = [
-      NpmPackage.createFromPackage(
-        {
-          name: 'pkg-a',
-          version: '1.0.0',
-        },
-        '/repo/packages/pkg-a/package.json',
-      ),
+    (controller as unknown as { packageSortedList: NpmPackage[] }).packageSortedList = [
+      NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a/package.json'),
     ];
 
     controller.release();
 
-    expect(changelog.render).not.toHaveBeenCalled();
+    expect(plugin.onPackageReleased).not.toHaveBeenCalled();
+    expect(plugin.onReleaseComplete).toHaveBeenCalledWith({
+      dryRun: false,
+      noPush: false,
+      noPublish: false,
+      releasedVersions: new Map(),
+      releasedPackages: [],
+      releasedCommits: new Map(),
+    });
     expect(logger.info).toHaveBeenCalledWith('SKIP     pkg-a@1.0.0');
-    expect(logger.info).not.toHaveBeenCalledWith('WRITE    pkg-a CHANGELOG.md');
-    expect(releaseCommitView.render).toHaveBeenCalledWith({ packages: [] });
-    expect(vcs.commit).toHaveBeenCalledWith('release commit message');
   });
 
-  it('given multiple bumped packages when release runs then release commit receives all package changes', () => {
-    const fileSystemService = {
-      readJson: vi.fn((filePath: string) => {
-        if (filePath === '/repo/packages/pkg-a/package.json') {
-          return { name: 'pkg-a', version: '1.0.0' };
-        }
-        if (filePath === '/repo/packages/pkg-b/package.json') {
-          return { name: 'pkg-b', version: '2.0.0' };
-        }
-        return undefined;
-      }),
-      writeJson: vi.fn(),
+  it('given release-triggering commits when release runs then it calls package and finalize plugin hooks with released state', () => {
+    const plugin: ReleasePlugin = {
+      onPackageReleased: vi.fn(),
+      onReleaseComplete: vi.fn(),
     };
-    const vcs = {
+    const vsc = {
       findManyCommitsSinceTag: vi
         .fn()
         .mockImplementation((tag: string) =>
           tag === 'pkg-a@1.0.0' ? [ConventionalCommit.parse('feat(pkg-a): add feature')] : [ConventionalCommit.parse('fix(pkg-b): resolve bug')],
         ),
-      createTag: vi.fn(),
-      commit: vi.fn(),
-      push: vi.fn(),
-    };
-    const changelog = {
-      addLog: vi.fn(),
-      render: vi.fn(),
-    };
-    const releaseCommitView = {
-      render: vi.fn().mockReturnValue('release commit message'),
-    };
-    const packageManager = {
-      bumpVersion: vi.fn(),
-      publish: vi.fn(),
     };
     const logger = {
       info: vi.fn(),
     };
+    const controller = new MonorepoController([plugin], {} as never, vsc as never, logger as never);
 
-    const controller = new MonorepoController(
-      fileSystemService as never,
-      vcs as never,
-      changelog as never,
-      releaseCommitView as never,
-      packageManager as never,
-      logger as never,
-    );
+    const pkgA = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a/package.json');
+    const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0' }, '/repo/packages/pkg-b/package.json');
+    (controller as unknown as { packageSortedList: NpmPackage[] }).packageSortedList = [pkgA, pkgB];
 
-    (controller as unknown as { packages: NpmPackage[] }).packages = [
-      NpmPackage.createFromPackage(
-        {
-          name: 'pkg-a',
-          version: '1.0.0',
-        },
-        '/repo/packages/pkg-a/package.json',
-      ),
-      NpmPackage.createFromPackage(
-        {
-          name: 'pkg-b',
-          version: '2.0.0',
-        },
-        '/repo/packages/pkg-b/package.json',
-      ),
-    ];
+    controller.release({ noPush: true, noPublish: true });
 
-    controller.release();
+    expect(plugin.onPackageReleased).toHaveBeenCalledTimes(2);
+    expect(plugin.onReleaseComplete).toHaveBeenCalledTimes(1);
 
-    expect(releaseCommitView.render).toHaveBeenCalledWith({
-      packages: [
-        {
-          name: 'pkg-a',
-          version: '1.1.0',
-          previousVersion: '1.0.0',
-          commits: [{ type: 'feat', subject: 'add feature', isBreaking: false }],
-          dependencyUpdates: [],
-        },
-        {
-          name: 'pkg-b',
-          version: '2.0.1',
-          previousVersion: '2.0.0',
-          commits: [{ type: 'fix', subject: 'resolve bug', isBreaking: false }],
-          dependencyUpdates: [],
-        },
-      ],
-    });
-    expect(vcs.commit).toHaveBeenCalledWith('release commit message');
-  });
-
-  it('given released packages when release runs then it pushes tags and publishes packages by default', () => {
-    const fileSystemService = {
-      readJson: vi.fn((filePath: string) => {
-        if (filePath === '/repo/packages/pkg-a/package.json') {
-          return { name: 'pkg-a', version: '1.0.0' };
-        }
-        return undefined;
-      }),
-      writeJson: vi.fn(),
-    };
-    const vcs = {
-      findManyCommitsSinceTag: vi.fn().mockReturnValue([ConventionalCommit.parse('fix(pkg-a): release me')]),
-      createTag: vi.fn(),
-      commit: vi.fn(),
-      push: vi.fn(),
-    };
-    const changelog = {
-      addLog: vi.fn(),
-      render: vi.fn(),
-    };
-    const releaseCommitView = {
-      render: vi.fn().mockReturnValue('release commit message'),
-    };
-    const packageManager = {
-      bumpVersion: vi.fn(),
-      publish: vi.fn(),
-    };
-    const logger = {
-      info: vi.fn(),
-    };
-
-    const controller = new MonorepoController(
-      fileSystemService as never,
-      vcs as never,
-      changelog as never,
-      releaseCommitView as never,
-      packageManager as never,
-      logger as never,
-    );
-
-    (controller as unknown as { packages: NpmPackage[] }).packages = [
-      NpmPackage.createFromPackage(
-        {
-          name: 'pkg-a',
-          version: '1.0.0',
-        },
-        '/repo/packages/pkg-a/package.json',
-      ),
-    ];
-
-    controller.release();
-
-    expect(vcs.push).toHaveBeenCalledWith(true);
-    expect(packageManager.publish).toHaveBeenCalledTimes(1);
-    expect(packageManager.publish).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'pkg-a',
-      }),
-    );
-  });
-
-  it('given no push and no publish options when release runs then remote mutations are skipped', () => {
-    const fileSystemService = {
-      readJson: vi.fn((filePath: string) => {
-        if (filePath === '/repo/packages/pkg-a/package.json') {
-          return { name: 'pkg-a', version: '1.0.0' };
-        }
-        return undefined;
-      }),
-      writeJson: vi.fn(),
-    };
-    const vcs = {
-      findManyCommitsSinceTag: vi.fn().mockReturnValue([ConventionalCommit.parse('fix(pkg-a): release me')]),
-      createTag: vi.fn(),
-      commit: vi.fn(),
-      push: vi.fn(),
-    };
-    const changelog = {
-      addLog: vi.fn(),
-      render: vi.fn(),
-    };
-    const releaseCommitView = {
-      render: vi.fn().mockReturnValue('release commit message'),
-    };
-    const packageManager = {
-      bumpVersion: vi.fn(),
-      publish: vi.fn(),
-    };
-    const logger = {
-      info: vi.fn(),
-    };
-
-    const controller = new MonorepoController(
-      fileSystemService as never,
-      vcs as never,
-      changelog as never,
-      releaseCommitView as never,
-      packageManager as never,
-      logger as never,
-    );
-
-    (controller as unknown as { packages: NpmPackage[] }).packages = [
-      NpmPackage.createFromPackage(
-        {
-          name: 'pkg-a',
-          version: '1.0.0',
-        },
-        '/repo/packages/pkg-a/package.json',
-      ),
-    ];
-
-    controller.release({ noPush: false, noPublish: false });
-
-    expect(vcs.push).not.toHaveBeenCalled();
-    expect(packageManager.publish).not.toHaveBeenCalled();
-  });
-
-  it('given custom plugins when release runs then controller delegates package and finalize hooks', () => {
-    const fileSystemService = {
-      readJson: vi.fn((filePath: string) => {
-        if (filePath === '/repo/packages/pkg-a/package.json') {
-          return { name: 'pkg-a', version: '1.0.0' };
-        }
-        return undefined;
-      }),
-      writeJson: vi.fn(),
-    };
-    const vcs = {
-      findManyCommitsSinceTag: vi.fn().mockReturnValue([ConventionalCommit.parse('fix(pkg-a): release me')]),
-      createTag: vi.fn(),
-      commit: vi.fn(),
-      push: vi.fn(),
-    };
-    const packageManager = {
-      bumpVersion: vi.fn(),
-      publish: vi.fn(),
-    };
-    const logger = {
-      info: vi.fn(),
-    };
-    const plugin: ReleasePlugin = {
-      onPackageReleased: vi.fn(),
-      onReleaseComplete: vi.fn(),
-    };
-
-    const controller = new MonorepoController(
-      fileSystemService as never,
-      vcs as never,
-      {} as never,
-      {} as never,
-      packageManager as never,
-      logger as never,
-      [plugin],
-    );
-
-    (controller as unknown as { packages: NpmPackage[] }).packages = [
-      NpmPackage.createFromPackage(
-        {
-          name: 'pkg-a',
-          version: '1.0.0',
-        },
-        '/repo/packages/pkg-a/package.json',
-      ),
-    ];
-
-    controller.release();
-
-    expect(plugin.onPackageReleased).toHaveBeenCalledTimes(1);
-    expect(plugin.onReleaseComplete).toHaveBeenCalledWith(
-      expect.objectContaining({
-        push: true,
-        publish: true,
-        releasedPackages: [
-          {
-            version: '1.0.1',
-            pkg: expect.objectContaining({ name: 'pkg-a' }),
-          },
-        ],
-      }),
-    );
+    const finalizeArg = (plugin.onReleaseComplete as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(finalizeArg.noPush).toBe(true);
+    expect(finalizeArg.noPublish).toBe(true);
+    expect(finalizeArg.releasedPackages.map((pkg: NpmPackage) => pkg.name)).toEqual(['pkg-a', 'pkg-b']);
+    expect(finalizeArg.releasedVersions.get('pkg-a')).toBe('1.1.0');
+    expect(finalizeArg.releasedVersions.get('pkg-b')).toBe('2.0.1');
+    expect(finalizeArg.releasedCommits.get('pkg-a')).toHaveLength(1);
+    expect(finalizeArg.releasedCommits.get('pkg-b')).toHaveLength(1);
   });
 });
