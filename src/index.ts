@@ -48,8 +48,8 @@ export function parseCliOptions(args: string[]): CliOptions {
       return {
         help: true,
         dryRun: false,
-        push: true,
-        publish: true,
+        noPush: true,
+        noPublish: true,
       };
     }
     throw error;
@@ -60,8 +60,8 @@ export function parseCliOptions(args: string[]): CliOptions {
   return {
     help: false,
     dryRun: options.dryRun ?? false,
-    push: options.push ?? true,
-    publish: options.publish ?? true,
+    noPush: options.noPush ?? true,
+    noPublish: options.noPublish ?? true,
     changelogTemplate: options.changelogTemplate,
     releaseCommitTemplate: options.releaseCommitTemplate,
   };
@@ -102,11 +102,11 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
       ],
       fsService,
       vcsService,
+      new ConsoleLogger('Controller')
     );
 
-    controller.discoverRootPackageJSON();
-    controller.discoverPackages();
-    controller.release({ dryRun: cliOptions.dryRun, push: cliOptions.push, publish: cliOptions.publish });
+    controller.discoverPackages(cwd);
+    controller.release({ dryRun: cliOptions.dryRun, noPush: cliOptions.noPush, noPublish: cliOptions.noPublish });
 
     return 0;
   } catch (error) {

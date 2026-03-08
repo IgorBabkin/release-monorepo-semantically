@@ -6,7 +6,6 @@ export class ConventionalCommit {
     readonly scope: string | null,
     readonly subject: string,
     readonly isBreaking: boolean,
-    readonly hash: string | null = null,
   ) {}
 
   static parse(raw: string): ConventionalCommit {
@@ -40,8 +39,4 @@ export class ConventionalCommit {
   matchesScope(packageName: string): boolean {
     return this.scope === packageName;
   }
-}
-
-export function calcBumpTypeByCommits(...commits: ConventionalCommit[]): SemVerBumpType {
-  return Math.max(...commits.map((c) => c.bumpType), SemVerBumpType.NONE);
 }

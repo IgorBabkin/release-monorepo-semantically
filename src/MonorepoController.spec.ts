@@ -298,7 +298,7 @@ describe('MonorepoController.release', () => {
       ),
     ];
 
-    controller.release({ push: false, publish: false });
+    controller.release({ noPush: false, noPublish: false });
 
     expect(vcs.push).not.toHaveBeenCalled();
     expect(packageManager.publish).not.toHaveBeenCalled();

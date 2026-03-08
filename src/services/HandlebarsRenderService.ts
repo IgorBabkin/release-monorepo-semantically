@@ -1,12 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs';
 import Handlebars from 'handlebars';
 import path from 'node:path';
+import { ConventionalCommit } from '../models/ConventionalCommit';
+
+let helpersRegistered = false;
 
 export class HandlebarsRenderService {
   constructor(
     private basePath: string,
     private fallbackBasePath?: string,
-  ) {}
+  ) {
+    this.registerHelpers();
+  }
 
   render(templatePath: string, data: Record<string, unknown>): string {
     const resolvedTemplatePath = this.resolveTemplatePath(templatePath);
@@ -26,5 +31,49 @@ export class HandlebarsRenderService {
     }
 
     return path.resolve(this.fallbackBasePath, templatePath);
+  }
+
+  private registerHelpers(): void {
+    if (helpersRegistered) {
+      return;
+    }
+
+    const filterByType = (commits: ConventionalCommit[], type: string): ConventionalCommit[] => commits.filter((commit) => commit.type === type);
+    const asArray = (value: unknown): ConventionalCommit[] => (Array.isArray(value) ? (value as ConventionalCommit[]) : []);
+
+    Handlebars.registerHelper('now', () => new Date().toISOString().slice(0, 10));
+    Handlebars.registerHelper('hasBreakingChanges', (commits: unknown) => asArray(commits).some((commit) => commit.isBreaking));
+    Handlebars.registerHelper('findBreakingChanges', (commits: unknown) => asArray(commits).filter((commit) => commit.isBreaking));
+    Handlebars.registerHelper('hasFeatures', (commits: unknown) => filterByType(asArray(commits), 'feat').length > 0);
+    Handlebars.registerHelper('findFeatures', (commits: unknown) => filterByType(asArray(commits), 'feat'));
+    Handlebars.registerHelper('hasFixes', (commits: unknown) => filterByType(asArray(commits), 'fix').length > 0);
+    Handlebars.registerHelper('findFixes', (commits: unknown) => filterByType(asArray(commits), 'fix'));
+    Handlebars.registerHelper('hasPerfomance', (commits: unknown) => filterByType(asArray(commits), 'perf').length > 0);
+    Handlebars.registerHelper('findPerfomance', (commits: unknown) => filterByType(asArray(commits), 'perf'));
+    Handlebars.registerHelper('lookup', (container: unknown, key: unknown) => {
+      if (container instanceof Map) {
+        return container.get(String(key));
+      }
+      if (container && typeof container === 'object') {
+        return (container as Record<string, unknown>)[String(key)];
+      }
+      return undefined;
+    });
+    Handlebars.registerHelper('call', (target: unknown, methodName: unknown, ...args: unknown[]) => {
+      const options = args.pop();
+      if (!target || typeof target !== 'object') {
+        throw new Error(`Cannot call method ${String(methodName)} on non-object target`);
+      }
+
+      const method = (target as Record<string, unknown>)[String(methodName)];
+      if (typeof method !== 'function') {
+        throw new Error(`Method ${String(methodName)} is not a function`);
+      }
+
+      void options;
+      return method.apply(target, args);
+    });
+
+    helpersRegistered = true;
   }
 }

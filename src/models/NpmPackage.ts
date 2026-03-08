@@ -29,10 +29,17 @@ export class NpmPackage implements Sortable {
     return `${this.name}@${this.version}`;
   }
 
-  private findDependencyVersionByNameOrFail(depName: string): string {}
+  private findDependencyVersionByNameOrFail(depName: string): string {
+    const dependencyVersion = this.dependencies[depName] ?? this.devDependencies[depName];
+    if (!dependencyVersion) {
+      throw new Error(`Dependency ${depName} not found in ${this.name}`);
+    }
+    return dependencyVersion;
+  }
 
   private hasOutdatedDependency(depName: string, newVersion: string): boolean {
-    return false;
+    const dependencyVersion = this.dependencies[depName] ?? this.devDependencies[depName];
+    return Boolean(dependencyVersion) && dependencyVersion !== newVersion;
   }
 
   getDependencyUpdates(releasedVersions: Map<string, string>): DependencyVersionChange[] {

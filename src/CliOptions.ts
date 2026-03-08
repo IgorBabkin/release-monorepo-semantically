@@ -6,6 +6,6 @@ export interface TemplateOverrides {
 export interface CliOptions extends TemplateOverrides {
   help: boolean;
   dryRun: boolean;
-  push: boolean;
-  publish: boolean;
+  noPush: boolean;
+  noPublish: boolean;
 }

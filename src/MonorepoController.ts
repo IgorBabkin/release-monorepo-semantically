@@ -4,12 +4,11 @@ import { sortLessDependenciesFirst } from './sortLessDependenciesFirst';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
 import { GitService } from './services/GitService';
 import { ConsoleLogger } from './services/ConsoleLogger';
-import { ReleaseCommitPackage, ReleasedPackageVersion } from './models/ReleaseTypes';
 import { CliOptions } from './CliOptions';
 import { ReleasePlugin } from './plugins/ReleasePlugin';
 import { ConventionalCommit } from './models/ConventionalCommit';
 
-type ReleaseOptions = Partial<Pick<CliOptions, 'dryRun' | 'push' | 'publish'>>;
+type ReleaseOptions = Partial<Pick<CliOptions, 'dryRun' | 'noPush' | 'noPublish'>>;
 
 export class MonorepoController {
   private packageSortedList: NpmPackage[] = [];
@@ -30,14 +29,17 @@ export class MonorepoController {
   }
 
   release(options: ReleaseOptions = {}): void {
-    const { dryRun = false, push = true, publish = true } = options;
+    const { dryRun = false, noPush = false, noPublish = false } = options;
     const releasedVersions = new Map<string, string>();
     const releasedCommits = new Map<string, ConventionalCommit[]>();
 
     for (const pkg of this.packageSortedList) {
       const pkgReleaseCommits = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag()).filter((c) => c.matchesScope(pkg.name) && c.isReleaseTrigger());
       const dependencyUpdates = pkg.getDependencyUpdates(releasedVersions);
-      const versionBump = aggregateBumpTypes(...pkgReleaseCommits.map((c) => c.bumpType), dependencyUpdates.length ? SemVerBumpType.MINOR : SemVerBumpType.NONE);
+      const versionBump = aggregateBumpTypes(
+        ...pkgReleaseCommits.map((c) => c.bumpType),
+        dependencyUpdates.length ? SemVerBumpType.MINOR : SemVerBumpType.NONE,
+      );
 
       if (versionBump === SemVerBumpType.NONE) {
         this.logStep('SKIP', `${pkg.name}@${pkg.version}`);
@@ -52,8 +54,8 @@ export class MonorepoController {
       for (const plugin of this.plugins) {
         plugin.onPackageReleased?.({
           dryRun,
-          noPush: push,
-          noPublish: publish,
+          noPush,
+          noPublish,
           pkg: pkg,
           releasedVersions,
           releasedCommits: pkgReleaseCommits,
@@ -65,10 +67,10 @@ export class MonorepoController {
     for (const plugin of this.plugins) {
       plugin.onReleaseComplete?.({
         dryRun,
-        noPush: push,
-        noPublish: publish,
+        noPush,
+        noPublish,
         releasedVersions,
-        releasedPackages: this.packageSortedList.filter(pkg => releasedVersions.has(pkg.name)),
+        releasedPackages: this.packageSortedList.filter((pkg) => releasedVersions.has(pkg.name)),
         releasedCommits,
       });
     }
