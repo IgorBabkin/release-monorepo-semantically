@@ -14,6 +14,8 @@ import { ChangelogPlugin } from './plugins/ChangelogPlugin';
 import { GitPlugin } from './plugins/GitPlugin';
 import { NpmPlugin } from './plugins/NpmPlugin';
 import { PackageJsonPlugin } from './plugins/PackageJsonPlugin';
+import { GithubPlugin } from './plugins/GithubPlugin';
+import { GithubService } from './services/GithubService';
 
 interface PackageJsonWithTemplates {
   releaseTemplates?: TemplateOverrides;
@@ -92,11 +94,18 @@ export function runCli(cwd = process.cwd(), cliArgs = process.argv.slice(2)): nu
     const changelogView = new ChangelogView(templateOverrides.changelogTemplate, renderService);
     const releaseCommitView = new ReleaseCommitView(templateOverrides.releaseCommitTemplate, renderService);
     const packageManager = new PackageManager();
+    const githubService = new GithubService();
+    const githubConfig = {
+      isGithubActions: process.env.GITHUB_ACTIONS === 'true',
+      repository: process.env.GITHUB_REPOSITORY,
+      token: process.env.GITHUB_TOKEN,
+    };
     const controller = new MonorepoController(
       [
         new PackageJsonPlugin(fsService, logger),
         new ChangelogPlugin('CHANGELOG.md', changelogView, fsService, logger),
         new GitPlugin(vcsService, releaseCommitView, logger),
+        new GithubPlugin(githubService, logger, githubConfig),
         new NpmPlugin(packageManager, logger),
       ],
       fsService,

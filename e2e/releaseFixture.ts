@@ -34,13 +34,20 @@ export interface MonorepoFixture {
   commit: (message: string, packageName: string) => void;
   tags: () => string[];
   publishedPackages: () => string[];
+  githubReleases: () => Array<{
+    tagName: string;
+    repository: string;
+    title: string;
+    notes: string;
+    prerelease: boolean;
+  }>;
   getPackageJson: (packageName: string) => {
     name: string;
     version: string;
     dependencies?: Record<string, string>;
     private?: boolean;
   };
-  release: (options?: string | string[]) => ExecResult;
+  release: (options?: string | string[], envOverrides?: NodeJS.ProcessEnv) => ExecResult;
 }
 
 function runCommand(cmd: string, cwd: string, env?: NodeJS.ProcessEnv): string {
@@ -68,6 +75,7 @@ export function createMonorepoFixture(packages: PackageFixture[], withRemote = t
   const remoteDir = path.join(tempRoot, 'remote.git');
   const fixtureBinDir = path.join(tempRoot, 'bin');
   const publishedPackagesLog = path.join(tempRoot, 'published-packages.log');
+  const githubReleasesLog = path.join(tempRoot, 'github-releases.log');
   const workDir = path.join(tempRoot, 'workspace');
   mkdirSync(fixtureBinDir, { recursive: true });
   mkdirSync(workDir, { recursive: true });
@@ -93,10 +101,47 @@ process.exit(result.status ?? 0);
 `,
   );
   chmodSync(path.join(fixtureBinDir, 'pnpm'), 0o755);
+  writeFileSync(
+    path.join(fixtureBinDir, 'gh'),
+    `#!/usr/bin/env node
+const { appendFileSync } = require('node:fs');
+
+const args = process.argv.slice(2);
+if (args[0] === '--version') {
+  process.stdout.write('gh version 2.0.0\\n');
+  process.exit(0);
+}
+
+if (args[0] === 'release' && args[1] === 'create') {
+  const tagName = args[2];
+  const getArg = (name) => {
+    const index = args.indexOf(name);
+    if (index === -1 || index + 1 >= args.length) return '';
+    return args[index + 1];
+  };
+
+  appendFileSync(
+    process.env.MONOREPO_SEMREL_GITHUB_RELEASE_LOG,
+    JSON.stringify({
+      tagName,
+      repository: getArg('--repo'),
+      title: getArg('--title'),
+      notes: getArg('--notes'),
+      prerelease: args.includes('--prerelease'),
+    }) + '\\n',
+  );
+  process.exit(0);
+}
+
+process.exit(1);
+`,
+  );
+  chmodSync(path.join(fixtureBinDir, 'gh'), 0o755);
   const fixtureEnv = {
     ...process.env,
     PATH: `${fixtureBinDir}:${process.env.PATH ?? ''}`,
     MONOREPO_SEMREL_PUBLISH_LOG: publishedPackagesLog,
+    MONOREPO_SEMREL_GITHUB_RELEASE_LOG: githubReleasesLog,
   };
 
   runCommand(`git init --bare ${JSON.stringify(remoteDir)}`, tempRoot, fixtureEnv);
@@ -169,6 +214,26 @@ process.exit(result.status ?? 0);
       const output = runCommandCapture(`cat ${JSON.stringify(publishedPackagesLog)}`, workDir, fixtureEnv);
       return output.status === 'passed' && output.stdout ? output.stdout.split('\n').filter(Boolean) : [];
     },
+    githubReleases() {
+      const output = runCommandCapture(`cat ${JSON.stringify(githubReleasesLog)}`, workDir, fixtureEnv);
+      if (output.status !== 'passed' || !output.stdout) {
+        return [];
+      }
+
+      return output.stdout
+        .split('\n')
+        .filter(Boolean)
+        .map(
+          (line) =>
+            JSON.parse(line) as {
+              tagName: string;
+              repository: string;
+              title: string;
+              notes: string;
+              prerelease: boolean;
+            },
+        );
+    },
     getPackageJson(packageName: string) {
       return JSON.parse(readFileSync(path.join(workDir, 'packages', packageName, 'package.json'), 'utf-8')) as {
         name: string;
@@ -177,13 +242,14 @@ process.exit(result.status ?? 0);
         private?: boolean;
       };
     },
-    release(options?: string | string[]) {
+    release(options?: string | string[], envOverrides?: NodeJS.ProcessEnv) {
+      const releaseEnv = { ...fixtureEnv, ...envOverrides };
       if (!options) {
-        return runCommandCapture('./node_modules/.bin/monorepo-semantic-release', workDir, fixtureEnv);
+        return runCommandCapture('./node_modules/.bin/monorepo-semantic-release', workDir, releaseEnv);
       }
 
       const commandArgs = Array.isArray(options) ? options.map((argument) => JSON.stringify(argument)).join(' ') : JSON.stringify(options);
-      return runCommandCapture(`./node_modules/.bin/monorepo-semantic-release ${commandArgs}`, workDir, fixtureEnv);
+      return runCommandCapture(`./node_modules/.bin/monorepo-semantic-release ${commandArgs}`, workDir, releaseEnv);
     },
   };
 }
