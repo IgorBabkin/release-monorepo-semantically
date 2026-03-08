@@ -6,6 +6,7 @@ export class ConventionalCommit {
     readonly scope: string | null,
     readonly subject: string,
     readonly isBreaking: boolean,
+    readonly hash: string | null = null,
   ) {}
 
   static parse(raw: string): ConventionalCommit {
