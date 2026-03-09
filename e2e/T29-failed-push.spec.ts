@@ -11,7 +11,7 @@ describe('T29 - failed push leaves actionable release failure', () => {
   it('given an invalid remote when release runs then push failure aborts the release before publish', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
     const brokenRemote = path.join(fixture.workDir, 'broken-remote');
-    writeFileSync(brokenRemote, 'not a git remote');
+    writeFileSync(brokenRemote, 'not a vcs remote');
     fixture.run(`git remote set-url origin ${JSON.stringify(brokenRemote)}`);
 
     fixture.commit('feat(pkg-a): push failure expected', 'pkg-a');

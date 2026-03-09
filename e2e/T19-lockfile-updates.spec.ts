@@ -12,8 +12,8 @@ describe('T19 - lockfile updates are tracked when version changes', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
     const lockPath = path.join(fixture.workDir, 'pnpm-lock.yaml');
     writeFileSync(lockPath, 'lockfile: initial\n');
-    fixture.run('git add pnpm-lock.yaml');
-    fixture.run('git commit -m "chore: add lockfile"');
+    fixture.run('vcs add pnpm-lock.yaml');
+    fixture.run('vcs commit -m "chore: add lockfile"');
 
     fixture.commit('feat(pkg-a): update lockfile path', 'pkg-a');
     const beforeLock = runFixtureCommandCapture(fixture.workDir, 'cat pnpm-lock.yaml');

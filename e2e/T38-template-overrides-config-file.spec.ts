@@ -46,6 +46,6 @@ describe('template overrides via .semantic-release.json', () => {
     const outcome = fixture.release();
 
     expect(outcome.status).toBe('passed');
-    expect(fixture.run('git log -1 --pretty=%s')).toBe('release from semantic release file');
+    expect(fixture.run('vcs log -1 --pretty=%s')).toBe('release from semantic release file');
   });
 });

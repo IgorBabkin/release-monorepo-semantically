@@ -1,3 +1,7 @@
+import 'reflect-metadata';
+
+import { bindTo, inject, register, SingleToken } from 'ts-ioc-container';
+
 type StepName = 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG';
 
 const STEP_FORMAT: Record<StepName, { emoji: string; color: number }> = {
@@ -8,8 +12,16 @@ const STEP_FORMAT: Record<StepName, { emoji: string; color: number }> = {
   TAG: { emoji: '🏷️', color: 34 },
 };
 
-export class ConsoleLogger {
-  constructor(private topic: string) {}
+export interface ILogger {
+  info(...args: unknown[]): void;
+}
+
+export const ILoggerKey = new SingleToken<ILogger>('ILogger');
+export const ILoggerTopicKey = new SingleToken<string>('ILoggerTopic');
+
+@register(bindTo(ILoggerKey))
+export class ConsoleLogger implements ILogger {
+  constructor(@inject(ILoggerTopicKey) private topic: string) {}
 
   private supportsColor(): boolean {
     return Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;

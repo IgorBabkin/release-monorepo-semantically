@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runCli } from './index';
 import { Controller } from './Controller';
 import { NodeFileSystemService } from './services/NodeFileSystemService';
-import { ExceptionHandler } from './services/ExceptionHandler';
+import { ExceptionHandler } from './exceptions/ExceptionHandler';
 import { CliOptionsService } from './services/CliOptionsService';
 import { ReleaseConfigService } from './services/ReleaseConfigService';
 

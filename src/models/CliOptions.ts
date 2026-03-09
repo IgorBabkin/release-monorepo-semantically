@@ -1,11 +1,3 @@
-export interface TemplateOverrides {
-  changelogTemplate?: string;
-  releaseCommitTemplate?: string;
-}
-
-export interface CliOptions extends TemplateOverrides {
+export interface CliOptions {
   help: boolean;
-  dryRun: boolean;
-  noPush: boolean;
-  noPublish: boolean;
 }

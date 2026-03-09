@@ -32,6 +32,6 @@ describe('template override precedence', () => {
     const outcome = fixture.release(['--release-commit-template', 'templates/cli-release.hbs']);
 
     expect(outcome.status).toBe('passed');
-    expect(fixture.run('git log -1 --pretty=%s')).toBe('release from cli');
+    expect(fixture.run('vcs log -1 --pretty=%s')).toBe('release from cli');
   });
 });

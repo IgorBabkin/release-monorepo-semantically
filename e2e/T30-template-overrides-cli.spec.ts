@@ -18,7 +18,7 @@ describe('template overrides via CLI', () => {
     const outcome = fixture.release(['--release-commit-template', 'templates/custom-release-commit.hbs']);
 
     expect(outcome.status).toBe('passed');
-    expect(fixture.run('git log -1 --pretty=%s')).toBe('custom release commit');
+    expect(fixture.run('vcs log -1 --pretty=%s')).toBe('custom release commit');
   });
 
   it('uses a custom changelog template', () => {

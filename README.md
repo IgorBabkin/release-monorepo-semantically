@@ -55,9 +55,9 @@ Package scope is matched by package name.
 monorepo-semantic-release [options]
 
 Options:
-  --dry-run                        Preview changes without mutating files/git/publish
-  --no-push                        Skip git push
-  --no-publish                     Skip npm publish
+  --dry-run                        Preview changes without mutating files/vcs/publish
+  --no-push                        Skip vcs push
+  --no-publish                     Skip packageManager publish
   --changelog-template <path>      Override changelog template
   --release-commit-template <path> Override release commit template
   -h, --help                       Show help
@@ -124,7 +124,7 @@ Release lifecycle is implemented by plugins:
 - `ChangelogPlugin`: writes per-package changelog updates
 - `GitPlugin`: creates release commit, tags, and push
 - `GithubPlugin`: creates GitHub Releases
-- `NpmPlugin`: bumps package version and publishes
+- `PackageManagerPlugin`: bumps package version and publishes
 
 ## Plugin selection and order
 
@@ -138,9 +138,9 @@ You can choose which plugins run and in what order with `plugins`.
     "plugins": [
       { "name": "package-json" },
       { "name": "changelog", "template": "templates/changelog.hbs", "changelogName": "CHANGELOG.md" },
-      { "name": "git", "template": "templates/release-commit-msg.hbs" },
-      { "name": "github", "template": "templates/github-release-notes.hbs" },
-      { "name": "npm" }
+      { "name": "vcs", "template": "templates/release-commit-msg.hbs" },
+      { "name": "releaseNotes", "template": "templates/releaseNotes-release-notes.hbs" },
+      { "name": "packageManager" }
     ]
   }
 }
@@ -153,9 +153,9 @@ You can choose which plugins run and in what order with `plugins`.
   "plugins": [
     { "name": "package-json" },
     { "name": "changelog", "template": "templates/changelog.hbs", "changelogName": "CHANGELOG.md" },
-    { "name": "git", "template": "templates/release-commit-msg.hbs" },
-    { "name": "github", "template": "templates/github-release-notes.hbs" },
-    { "name": "npm" }
+    { "name": "vcs", "template": "templates/release-commit-msg.hbs" },
+    { "name": "releaseNotes", "template": "templates/releaseNotes-release-notes.hbs" },
+    { "name": "packageManager" }
   ]
 }
 ```

@@ -39,7 +39,7 @@ describe('template overrides via package.json release section', () => {
     const outcome = fixture.release();
 
     expect(outcome.status).toBe('passed');
-    expect(fixture.run('git log -1 --pretty=%s')).toBe('release from package section');
+    expect(fixture.run('vcs log -1 --pretty=%s')).toBe('release from package section');
 
     const changelog = readFileSync(path.join(fixture.workDir, 'packages', 'pkg-a', 'CHANGELOG.md'), 'utf-8');
     expect(changelog).toContain('# RELEASE SECTION 1.0.1');

@@ -33,7 +33,7 @@ describe('template overrides via package.json config', () => {
     const outcome = fixture.release();
 
     expect(outcome.status).toBe('passed');
-    expect(fixture.run('git log -1 --pretty=%s')).toBe('release from config');
+    expect(fixture.run('vcs log -1 --pretty=%s')).toBe('release from config');
 
     const changelog = readFileSync(path.join(fixture.workDir, 'packages', 'pkg-a', 'CHANGELOG.md'), 'utf-8');
     expect(changelog).toContain('# CONFIG 1.0.1');

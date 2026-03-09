@@ -8,7 +8,7 @@ describe('T22 - merge-like commits without conventional payload are ignored', ()
 
   it('does not bump version on non-conventional merge message', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
-    fixture.run('git commit --allow-empty -m "Merge branch feature into main"');
+    fixture.run('vcs commit --allow-empty -m "Merge branch feature into main"');
 
     const outcome = fixture.release();
     expect(outcome.status).toBe('passed');

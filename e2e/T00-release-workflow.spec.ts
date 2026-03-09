@@ -17,13 +17,13 @@ describe('release CLI e2e', () => {
     const outcome = fixture.release();
     expect(outcome.status).toBe('passed');
 
-    const latestSubject = fixture.run('git log -1 --pretty=%s');
-    const branch = fixture.run('git branch --show-current');
+    const latestSubject = fixture.run('vcs log -1 --pretty=%s');
+    const branch = fixture.run('vcs branch --show-current');
     const remoteHead = execSync(`git --git-dir=${JSON.stringify(fixture.remoteDir)} rev-parse refs/heads/${branch}`, {
       cwd: fixture.workDir,
       encoding: 'utf-8',
     }).trim();
-    const localHead = fixture.run('git rev-parse HEAD');
+    const localHead = fixture.run('vcs rev-parse HEAD');
     const pkgJson = JSON.parse(readFileSync(path.join(fixture.workDir, 'packages', 'pkg-a', 'package.json'), 'utf-8')) as {
       version: string;
     };

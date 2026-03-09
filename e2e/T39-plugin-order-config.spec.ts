@@ -26,8 +26,8 @@ describe('plugin order via release config', () => {
       plugins: [
         { name: 'package-json' },
         { name: 'changelog', template: 'templates/changelog.hbs' },
-        { name: 'npm' },
-        { name: 'git', template: 'templates/release-commit-msg.hbs' },
+        { name: 'packageManager' },
+        { name: 'vcs', template: 'templates/release-commit-msg.hbs' },
       ],
     };
     writeFileSync(rootPackageJsonPath, `${JSON.stringify(rootPackageJson, null, 2)}\n`);

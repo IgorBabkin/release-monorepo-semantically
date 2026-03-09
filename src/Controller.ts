@@ -1,39 +1,44 @@
+import 'reflect-metadata';
+
 import { NpmPackage } from './models/NpmPackage';
 import { aggregateBumpTypes, bumpTypeToString, SemVerBumpType } from './models/SemVerBumpType';
 import { sortLessDependenciesFirst } from './utils/sortLessDependenciesFirst';
-import { NodeFileSystemService } from './services/NodeFileSystemService';
-import { GitService } from './services/GitService';
-import { ConsoleLogger } from './services/ConsoleLogger';
-import { CliOptions } from './models/CliOptions';
-import { ReleasePlugin } from './plugins/ReleasePlugin';
+import { IFileSystemService, IFileSystemServiceKey } from './services/NodeFileSystemService';
+import { ILogger, ILoggerKey } from './services/ConsoleLogger';
+import {
+  onPackageReleasedHooksRunner,
+  onReleaseCompleteHooksRunner,
+  PackageReleasedPluginContext,
+  ReleaseCompletePluginContext,
+  ReleasePlugin,
+  releasePlugins,
+} from './plugins/ReleasePlugin';
 import { ConventionalCommit } from './models/ConventionalCommit';
-import { DirtyWorkingTreeException } from './exceptions/DomainException';
-
-type ReleaseOptions = Partial<Pick<CliOptions, 'dryRun' | 'noPush' | 'noPublish'>>;
+import { HookContext, IContainer, inject, select } from 'ts-ioc-container';
+import { VSCService, VSCServiceKey } from './plugins/vcs/services/VSCService';
 
 export class Controller {
   private packageSortedList: NpmPackage[] = [];
 
   constructor(
-    private readonly plugins: ReleasePlugin[],
-    private fs: NodeFileSystemService,
-    private vsc: GitService,
-    private logger: ConsoleLogger,
+    @inject(releasePlugins) private readonly plugins: ReleasePlugin[],
+    @inject(IFileSystemServiceKey) private fs: IFileSystemService,
+    @inject(VSCServiceKey) private vsc: VSCService,
+    @inject(ILoggerKey) private logger: ILogger,
+    @inject(select.scope.current) private scope: IContainer,
   ) {}
 
-  discoverPackages(monorepoPath: string): void {
-    const { workspaces = [] } = this.fs.readPackageJsonOrFail(monorepoPath);
-    const packageJsonList = this.fs.findManyPackageJsonByGlob(workspaces, monorepoPath);
+  discoverPackages(): void {
+    const { workspaces = [] } = this.fs.readPackageJsonOrFail('./');
+    const packageJsonList = this.fs.findManyPackageJsonByGlob(workspaces);
     this.packageSortedList = sortLessDependenciesFirst(
       packageJsonList.map(([pkgPath, pkg]) => NpmPackage.createFromPackage(pkg, pkgPath)).filter((p) => !p.isPrivate),
     );
   }
 
-  release(options: ReleaseOptions = {}): void {
-    const { dryRun = false, noPush = false, noPublish = false } = options;
+  release(): void {
     const releasedVersions = new Map<string, string>();
     const releasedCommits = new Map<string, ConventionalCommit[]>();
-    let releaseStarted = false;
 
     for (const pkg of this.packageSortedList) {
       const pkgReleaseCommits = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag()).filter((c) => c.matchesScope(pkg.name) && c.isReleaseTrigger());
@@ -48,21 +53,13 @@ export class Controller {
         continue;
       }
 
-      if (!releaseStarted) {
-        this.ensureWritableReleaseState(dryRun);
-        releaseStarted = true;
-      }
-
       const newVersion = pkg.getNewVersion(versionBump);
       releasedVersions.set(pkg.name, newVersion);
       releasedCommits.set(pkg.name, pkgReleaseCommits);
       this.logStep('BUMP', `${pkg.name} ${pkg.version} -> ${newVersion} (${bumpTypeToString(versionBump)})`);
 
       for (const plugin of this.plugins) {
-        plugin.onPackageReleased?.({
-          dryRun,
-          noPush,
-          noPublish,
+        this.onPackageReleasedHook(plugin, {
           pkg: pkg,
           releasedVersions,
           releasedCommits: pkgReleaseCommits,
@@ -72,10 +69,7 @@ export class Controller {
     }
 
     for (const plugin of this.plugins) {
-      plugin.onReleaseComplete?.({
-        dryRun,
-        noPush,
-        noPublish,
+      this.onReleaseCompleteHook(plugin, {
         releasedVersions,
         releasedPackages: this.packageSortedList.filter((pkg) => releasedVersions.has(pkg.name)),
         releasedCommits,
@@ -87,13 +81,17 @@ export class Controller {
     this.logger.info(`${step.padEnd(8)} ${detail}`);
   }
 
-  private ensureWritableReleaseState(dryRun: boolean): void {
-    if (dryRun) {
-      return;
-    }
+  private onPackageReleasedHook(plugin: ReleasePlugin, context: PackageReleasedPluginContext) {
+    onPackageReleasedHooksRunner.execute(plugin, {
+      scope: this.scope,
+      createContext: (Target, scope, methodName) => new HookContext(Target, scope, methodName).args(context),
+    });
+  }
 
-    if (!this.vsc.isWorkingTreeClean()) {
-      throw new DirtyWorkingTreeException();
-    }
+  private onReleaseCompleteHook(plugin: ReleasePlugin, context: ReleaseCompletePluginContext) {
+    onReleaseCompleteHooksRunner.execute(plugin, {
+      scope: this.scope,
+      createContext: (Target, scope, methodName) => new HookContext(Target, scope, methodName).args(context),
+    });
   }
 }

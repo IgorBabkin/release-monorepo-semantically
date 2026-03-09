@@ -16,7 +16,7 @@ describe('NodeFileSystemService', () => {
   it('given file content when read and write methods are used then values are persisted and retrieved', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'node-fs-service-'));
     tempRoots.push(root);
-    const service = new NodeFileSystemService();
+    const service = new NodeFileSystemService(root);
 
     const sampleFile = path.join(root, 'sample.txt');
     service.writeFile(sampleFile, 'hello');
@@ -28,7 +28,7 @@ describe('NodeFileSystemService', () => {
   it('given package json path forms when package json methods run then directory and file paths are supported', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'node-fs-service-'));
     tempRoots.push(root);
-    const service = new NodeFileSystemService();
+    const service = new NodeFileSystemService(root);
 
     const pkgDir = path.join(root, 'pkg-a');
     mkdirSync(pkgDir, { recursive: true });
@@ -43,7 +43,7 @@ describe('NodeFileSystemService', () => {
   it('given workspace globs with duplicate matches when package json files are discovered then unique package directories are returned', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'node-fs-service-'));
     tempRoots.push(root);
-    const service = new NodeFileSystemService();
+    const service = new NodeFileSystemService(root);
 
     const pkgA = path.join(root, 'packages', 'a');
     const pkgB = path.join(root, 'packages', 'b');
@@ -52,7 +52,7 @@ describe('NodeFileSystemService', () => {
     writeFileSync(path.join(pkgA, 'package.json'), '{"name":"pkg-a","version":"1.0.0"}\n');
     writeFileSync(path.join(pkgB, 'package.json'), '{"name":"pkg-b","version":"1.0.0"}\n');
 
-    const discovered = service.findManyPackageJsonByGlob(['packages/*', 'packages/*/package.json'], root);
+    const discovered = service.findManyPackageJsonByGlob(['packages/*', 'packages/*/package.json']);
 
     expect(discovered.map(([pkgPath]) => pkgPath).sort()).toEqual([pkgA, pkgB]);
     expect(discovered.map(([, pkg]) => pkg.name).sort()).toEqual(['pkg-a', 'pkg-b']);
@@ -61,7 +61,7 @@ describe('NodeFileSystemService', () => {
   it('given json file when readJson is called then parsed content is returned', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'node-fs-service-'));
     tempRoots.push(root);
-    const service = new NodeFileSystemService();
+    const service = new NodeFileSystemService(root);
 
     const jsonPath = path.join(root, 'config.json');
     writeFileSync(jsonPath, '{"a":1,"b":"ok"}\n');

@@ -41,3 +41,5 @@ export class ConventionalCommit {
     return this.scope === packageName;
   }
 }
+
+export const filterCommitsByType = (commits: ConventionalCommit[], type: string): ConventionalCommit[] => commits.filter((commit) => commit.type === type);

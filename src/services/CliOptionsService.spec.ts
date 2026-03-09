@@ -13,7 +13,7 @@ describe('CliOptionsService', () => {
     });
   });
 
-  it('given no push or publish flags when options are parsed then git push and package publish are disabled', () => {
+  it('given no push or publish flags when options are parsed then vcs push and package publish are disabled', () => {
     const service = new CliOptionsService();
 
     expect(service.parse(['--no-push', '--no-publish'])).toEqual({

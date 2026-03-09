@@ -23,7 +23,7 @@ describe('HandlebarsRenderService.render', () => {
     mkdirSync(path.join(packageRoot, 'templates'), { recursive: true });
     writeFileSync(path.join(packageRoot, 'templates', 'release-commit-msg.hbs'), 'release {{value}}\n');
 
-    const service = new HandlebarsRenderService(cwd, packageRoot);
+    const service = new HandlebarsRenderService(cwd);
 
     const rendered = service.render('templates/release-commit-msg.hbs', { value: 'ok' });
 

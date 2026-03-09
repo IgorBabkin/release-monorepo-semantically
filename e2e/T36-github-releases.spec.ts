@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture';
 
-describe('T36 - github releases via plugin', () => {
+describe('T36 - releaseNotes releases via plugin', () => {
   afterEach(() => {
     disposeMonorepoFixtures();
   });
 
-  it('creates github release entries when running in github actions environment', () => {
+  it('creates releaseNotes release entries when running in releaseNotes actions environment', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
     fixture.commit('fix(pkg-a): ship release notes', 'pkg-a');
 
@@ -28,7 +28,7 @@ describe('T36 - github releases via plugin', () => {
     ]);
   });
 
-  it('skips github release creation on dry-run and when push is disabled', () => {
+  it('skips releaseNotes release creation on dry-run and when push is disabled', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
     fixture.commit('fix(pkg-a): no release artifact', 'pkg-a');
 
