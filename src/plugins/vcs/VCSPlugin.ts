@@ -1,12 +1,11 @@
-
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
 import { onPackageReleasedHook, ReleaseCompletePluginContext, ReleasePlugin, ReleasePluginKey } from '../ReleasePlugin';
 import { DirtyWorkingTreeException } from '../../exceptions/DomainException';
 import { execute } from '../../utils/hooks';
 import { z } from 'zod';
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { bindTo, inject, register, scope } from 'ts-ioc-container';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService';
-import { pluginConfig } from '../../models/PluginConfig';
+import { IPluginsConfigServiceKey, pluginConfig } from '../../models/PluginConfig';
 import { globalConfig } from '../../models/GlobalConfig';
 import { VSCService, VSCServiceKey } from './services/VSCService';
 
@@ -20,7 +19,15 @@ const PLUGIN_CONFIG_SCHEMA = z.object({
   dryRun: z.boolean().optional(),
   template: z.string().optional(),
   priority: z.number().optional(),
+  kind: z.enum(['git']),
 });
+type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;
+
+export const whenVCSConfigEqual = <K extends keyof PluginConfig>(key: K, value: PluginConfig[K]) =>
+  scope((c, prev = true) => {
+    const config = IPluginsConfigServiceKey.resolve(c).getConfigAndCache('vcs', PLUGIN_CONFIG_SCHEMA);
+    return prev && config !== null && config[key] === value;
+  });
 
 @register(bindTo(ReleasePluginKey))
 export class VCSPlugin implements ReleasePlugin {

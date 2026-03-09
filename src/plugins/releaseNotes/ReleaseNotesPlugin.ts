@@ -2,10 +2,10 @@ import { onReleaseCompleteHook, ReleaseCompletePluginContext, ReleasePlugin, Rel
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
 import { GithubCliUnavailableException } from '../../exceptions/DomainException';
 import { z } from 'zod';
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { bindTo, inject, register, scope } from 'ts-ioc-container';
 import { execute } from '../../utils/hooks';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService';
-import { pluginConfig } from '../../models/PluginConfig';
+import { IPluginsConfigServiceKey, pluginConfig } from '../../models/PluginConfig';
 import { globalConfig } from '../../models/GlobalConfig';
 import { ReleaseNotesService, ReleaseNotesServiceKey } from './services/ReleaseNotesService';
 
@@ -19,7 +19,15 @@ const PLUGIN_CONFIG_SCHEMA = z.object({
   dryRun: z.boolean().optional(),
   template: z.string().optional(),
   priority: z.number().optional(),
+  kind: z.enum(['github', 'bitbucket']).optional(),
 });
+type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;
+
+export const whenReleaseNotesConfigEqual = <K extends keyof PluginConfig>(key: K, value: PluginConfig[K]) =>
+  scope((c, prev = true) => {
+    const config = IPluginsConfigServiceKey.resolve(c).getConfigAndCache('release-notes', PLUGIN_CONFIG_SCHEMA);
+    return prev && config !== null && config[key] === value;
+  });
 
 @register(bindTo(ReleasePluginKey))
 export class ReleaseNotesPlugin implements ReleasePlugin {

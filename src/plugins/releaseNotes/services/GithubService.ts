@@ -3,8 +3,9 @@ import 'reflect-metadata';
 import { execFileSync } from 'node:child_process';
 import { bindTo, register } from 'ts-ioc-container';
 import { ReleaseNotesCreateOptions, ReleaseNotesService, ReleaseNotesServiceKey } from './ReleaseNotesService';
+import { whenReleaseNotesConfigEqual } from '../ReleaseNotesPlugin';
 
-@register(bindTo(ReleaseNotesServiceKey))
+@register(bindTo(ReleaseNotesServiceKey), whenReleaseNotesConfigEqual('kind', 'github'))
 export class GithubService implements ReleaseNotesService {
   isCliAvailable(): boolean {
     try {

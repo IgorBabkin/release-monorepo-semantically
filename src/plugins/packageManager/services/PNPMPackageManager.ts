@@ -3,8 +3,9 @@ import 'reflect-metadata';
 import { execSync } from 'node:child_process';
 import { bindTo, register } from 'ts-ioc-container';
 import { PackageManager, PackageManagerKey } from './PackageManager';
+import { whenPackageManagerConfigEqual } from '../PackageManagerPlugin';
 
-@register(bindTo(PackageManagerKey))
+@register(bindTo(PackageManagerKey), whenPackageManagerConfigEqual('kind', 'pnpm'))
 export class PNPMPackageManager implements PackageManager {
   bumpVersion(cwd: string, version: string): void {
     execSync(`pnpm version ${version} --no-git-tag-version`, {

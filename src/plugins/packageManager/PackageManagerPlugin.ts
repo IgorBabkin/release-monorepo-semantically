@@ -9,16 +9,25 @@ import {
   ReleasePluginKey,
 } from '../ReleasePlugin';
 import { execute } from '../../utils/hooks';
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { bindTo, inject, register, scope } from 'ts-ioc-container';
 import { z } from 'zod';
-import { pluginConfig } from '../../models/PluginConfig';
+import { IPluginsConfigServiceKey, pluginConfig } from '../../models/PluginConfig';
 import { PackageManager, PackageManagerKey } from './services/PackageManager';
 
 const PLUGIN_CONFIG_SCHEMA = z.object({
   disabled: z.boolean().optional(),
   dryRun: z.boolean().optional(),
   priority: z.number().optional(),
+  kind: z.enum(['npm', 'pnpm', 'yarn']),
 });
+
+type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;
+
+export const whenPackageManagerConfigEqual = <K extends keyof PluginConfig>(key: K, value: PluginConfig[K]) =>
+  scope((c, prev = true) => {
+    const config = IPluginsConfigServiceKey.resolve(c).getConfigAndCache('release-notes', PLUGIN_CONFIG_SCHEMA);
+    return prev && config !== null && config[key] === value;
+  });
 
 @register(bindTo(ReleasePluginKey))
 export class PackageManagerPlugin implements ReleasePlugin {
