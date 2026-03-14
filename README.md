@@ -6,7 +6,7 @@ It discovers workspace packages, analyzes conventional commits per package scope
 
 ## Requirements
 
-- Node.js: `>=22 <23`
+- Node.js: `>=24.14.0 <25`
 - pnpm: `10.20.0`
 - Git repository with conventional commits
 

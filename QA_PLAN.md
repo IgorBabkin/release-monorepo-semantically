@@ -17,7 +17,7 @@ Validate the release CLI against functional correctness, sequencing integrity, a
 
 ## 3) Entry Criteria
 
-- Node version in supported range (`>=22 <23`)
+- Node version in supported range (`>=24.14.0 <25`)
 - Clean baseline git state before each test case
 - Test fixtures restored before each case
 - `pnpm-lock.yaml`/package manifests are tracked and restorable

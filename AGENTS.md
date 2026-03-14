@@ -26,7 +26,7 @@ Core entrypoints and modules:
 
 ## Environment And Commands
 
-- Node version: `>=22 <23`
+- Node version: `>=24.14.0 <25`
 - Package manager: `pnpm@10.20.0`
 - Build: `pnpm run build`
 - Unit tests: `pnpm test`
