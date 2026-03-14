@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: ${{ releaseNotes.workflow }}-${{ releaseNotes.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -39,7 +39,7 @@ jobs:
       name: production
       url: https://www.npmjs.com/package/release-monorepo-semantically
     runs-on: ubuntu-latest
-    if: releaseNotes.ref == 'refs/heads/main' && releaseNotes.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
         with:
