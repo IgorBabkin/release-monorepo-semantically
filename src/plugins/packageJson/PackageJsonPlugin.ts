@@ -4,18 +4,13 @@ import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
 import { execute } from '../../utils/hooks';
 import { z } from 'zod';
 import { bindTo, inject, register } from 'ts-ioc-container';
-import { pluginConfig } from '../../models/PluginConfig';
-
-const PLUGIN_CONFIG_SCHEMA = z.object({
-  disabled: z.boolean().optional(),
-  dryRun: z.boolean().optional(),
-  priority: z.number().optional(),
-});
+import { pluginsConfigService } from '../../services/PluginsConfigService';
+import { PLUGIN_CONFIG_SCHEMA } from './PackageJsonPluginConfig';
 
 @register(bindTo(ReleasePluginKey))
 export class PackageJsonPlugin implements ReleasePlugin {
   constructor(
-    @inject(pluginConfig('package-json', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
+    @inject(pluginsConfigService('package-json', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
     @inject(IFileSystemServiceKey) private readonly fs: IFileSystemService,
     @inject(ILoggerKey.args('PackageJsonPlugin')) private readonly logger: ILogger,
   ) {}
@@ -24,12 +19,12 @@ export class PackageJsonPlugin implements ReleasePlugin {
     return this.config?.priority ?? 0;
   }
 
+  get disabled(): boolean {
+    return this.config?.disabled ?? false;
+  }
+
   @onPackageReleasedHook(execute())
   updateDependencies({ pkg, releasedVersions }: PackageReleasedPluginContext) {
-    if (!this.config || this.config.disabled) {
-      return;
-    }
-
     const changes = pkg.getDependencyUpdates(releasedVersions);
     if (changes.length === 0) {
       return;
@@ -44,7 +39,7 @@ export class PackageJsonPlugin implements ReleasePlugin {
       this.logger.info(`BUMP     ${change.packageName}@${change.newVersion}`);
     }
 
-    if (this.config.dryRun) {
+    if (this.config!.dryRun) {
       this.logger.info(`SKIP     SAVE ${pkg.name} package.json (dry-run)`);
       return;
     }

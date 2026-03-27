@@ -30,8 +30,8 @@ describe('GitService', () => {
 
     const commits = service.findManyCommitsSinceTag('pkg-a@1.0.0');
 
-    expect(execSync).toHaveBeenNthCalledWith(1, 'vcs rev-parse --verify --quiet refs/tags/pkg-a@1.0.0', { encoding: 'utf-8' });
-    expect(execSync).toHaveBeenNthCalledWith(2, 'vcs log pkg-a@1.0.0..HEAD --format="%H %s"', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(1, 'git rev-parse --verify --quiet refs/tags/pkg-a@1.0.0', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git log pkg-a@1.0.0..HEAD --format="%H %s"', { encoding: 'utf-8' });
     expect(commits).toHaveLength(1);
     expect(commits[0].type).toBe('fix');
     expect(commits[0].hash).toBe('abcd123');
@@ -48,7 +48,7 @@ describe('GitService', () => {
 
     const commits = service.findManyCommitsSinceTag('pkg-a@1.0.0');
 
-    expect(execSync).toHaveBeenNthCalledWith(2, 'vcs log HEAD --format="%H %s"', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git log HEAD --format="%H %s"', { encoding: 'utf-8' });
     expect(commits).toEqual([]);
   });
 
@@ -68,7 +68,7 @@ describe('GitService', () => {
 
     service.createTag('pkg-a@1.0.1');
 
-    expect(execSync).toHaveBeenCalledWith('vcs tag pkg-a@1.0.1');
+    expect(execSync).toHaveBeenCalledWith('git tag pkg-a@1.0.1');
   });
 
   it('given vcs status output when checking tree cleanliness then it returns true only for empty status', () => {

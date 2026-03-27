@@ -4,6 +4,7 @@ import { NpmPackage } from '../../models/NpmPackage';
 
 describe('PackageManagerPlugin', () => {
   it('given package release when onPackageReleased runs then version is bumped in package directory', () => {
+    const config = { dryRun: false };
     const packageManager = {
       bumpVersion: vi.fn(),
       publish: vi.fn(),
@@ -12,13 +13,10 @@ describe('PackageManagerPlugin', () => {
       info: vi.fn(),
     };
 
-    const plugin = new PackageManagerPlugin(packageManager as never, logger as never);
+    const plugin = new PackageManagerPlugin(config as never, packageManager as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
-    plugin.onPackageReleased?.({
-      dryRun: false,
-      noPush: false,
-      noPublish: false,
+    plugin.bumpVersion({
       pkg,
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedPackages: [pkg],
@@ -29,6 +27,7 @@ describe('PackageManagerPlugin', () => {
   });
 
   it('given dry run when onPackageReleased runs then version bump is skipped', () => {
+    const config = { dryRun: true };
     const packageManager = {
       bumpVersion: vi.fn(),
       publish: vi.fn(),
@@ -36,13 +35,10 @@ describe('PackageManagerPlugin', () => {
     const logger = {
       info: vi.fn(),
     };
-    const plugin = new PackageManagerPlugin(packageManager as never, logger as never);
+    const plugin = new PackageManagerPlugin(config as never, packageManager as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
-    plugin.onPackageReleased?.({
-      dryRun: true,
-      noPush: false,
-      noPublish: false,
+    plugin.bumpVersion({
       pkg,
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedPackages: [pkg],
@@ -50,10 +46,11 @@ describe('PackageManagerPlugin', () => {
     });
 
     expect(packageManager.bumpVersion).not.toHaveBeenCalled();
-    expect(logger.info).toHaveBeenCalledWith('SKIP     pkg-a version bump (dry-run)');
+    expect(logger.info).toHaveBeenCalledWith('SKIP     BUMP     pkg-a@1.0.1 (dry-run)');
   });
 
-  it('given dry run or noPublish when release completes then package publish is skipped', () => {
+  it('given dry run when release completes then package publish is skipped', () => {
+    const config = { dryRun: true };
     const packageManager = {
       bumpVersion: vi.fn(),
       publish: vi.fn(),
@@ -62,32 +59,21 @@ describe('PackageManagerPlugin', () => {
       info: vi.fn(),
     };
 
-    const plugin = new PackageManagerPlugin(packageManager as never, logger as never);
+    const plugin = new PackageManagerPlugin(config as never, packageManager as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
-    plugin.onReleaseComplete?.({
-      dryRun: true,
-      noPush: false,
-      noPublish: false,
-      releasedPackages: [pkg],
-      releasedVersions: new Map([['pkg-a', '1.0.1']]),
-      releasedCommits: new Map(),
-    });
-
-    plugin.onReleaseComplete?.({
-      dryRun: false,
-      noPush: false,
-      noPublish: true,
+    plugin.publishAllPackages({
       releasedPackages: [pkg],
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedCommits: new Map(),
     });
 
     expect(packageManager.publish).not.toHaveBeenCalled();
-    expect(logger.info).toHaveBeenCalledWith('SKIP     packageManager publish (dry-run)');
+    expect(logger.info).toHaveBeenCalledWith('SKIP     PUBLISH      pkg-a@1.0.1 (dry-run)');
   });
 
   it('given released packages when publishing is enabled then each package is published', () => {
+    const config = { dryRun: false };
     const packageManager = {
       bumpVersion: vi.fn(),
       publish: vi.fn(),
@@ -95,13 +81,10 @@ describe('PackageManagerPlugin', () => {
     const logger = {
       info: vi.fn(),
     };
-    const plugin = new PackageManagerPlugin(packageManager as never, logger as never);
+    const plugin = new PackageManagerPlugin(config as never, packageManager as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
-    plugin.onReleaseComplete?.({
-      dryRun: false,
-      noPush: false,
-      noPublish: false,
+    plugin.publishAllPackages({
       releasedPackages: [pkg],
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedCommits: new Map(),

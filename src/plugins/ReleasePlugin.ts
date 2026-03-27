@@ -4,11 +4,15 @@ import { constructor, GroupAliasToken, hook, HookClass, HookFn, HooksRunner, ICo
 
 export interface ReleasePlugin {
   priority: number;
+  disabled: boolean;
 }
 
-const byPriorityAsc = (a: { priority: number }, b: { priority: number }) => a.priority - b.priority;
+const byPriorityDesc = (a: { priority: number }, b: { priority: number }) => b.priority - a.priority;
 export const ReleasePluginKey = new GroupAliasToken<ReleasePlugin>('ReleasePlugin');
-export const releasePlugins = (c: IContainer) => ReleasePluginKey.resolve(c).sort(byPriorityAsc);
+export const releasePlugins = (c: IContainer) =>
+  ReleasePluginKey.resolve(c)
+    .filter((p) => !p.disabled)
+    .sort(byPriorityDesc);
 
 export interface PackageReleasedPluginContext {
   pkg: NpmPackage;

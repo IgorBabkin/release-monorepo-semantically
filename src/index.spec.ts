@@ -1,83 +1,42 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Container } from 'ts-ioc-container';
 import { runCli } from './index';
-import { Controller } from './Controller';
-import { NodeFileSystemService } from './services/NodeFileSystemService';
-import { ExceptionHandler } from './exceptions/ExceptionHandler';
-import { CliOptionsService } from './services/CliOptionsService';
-import { ReleaseConfigService } from './services/ReleaseConfigService';
+import { App } from './App';
 
 describe('runCli', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('given --help when the cli starts then it prints usage and exits before reading repo state', () => {
-    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  it('given the cli starts when the app runs successfully then the process exits with zero', () => {
+    const app = { run: vi.fn() };
+    const exceptionHandler = { handle: vi.fn() };
+    vi.spyOn(Container.prototype, 'useModule').mockReturnThis();
+    vi.spyOn(Container.prototype, 'resolve').mockImplementation((target: unknown) => (target === App ? app : exceptionHandler) as never);
+    vi.spyOn(Container.prototype, 'dispose').mockImplementation(() => undefined);
 
-    const exitCode = runCli('/repo', ['--help']);
-
-    expect(exitCode).toBe(0);
-    expect(errorSpy).not.toHaveBeenCalled();
-    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining('Usage: monorepo-semantic-release [options]'));
-  });
-
-  it('given --dry-run when the cli starts then release is executed in dry-run mode', () => {
-    const releaseSpy = vi.spyOn(Controller.prototype, 'release').mockImplementation(() => undefined);
-    vi.spyOn(Controller.prototype, 'discoverPackages').mockImplementation(() => undefined);
-    vi.spyOn(NodeFileSystemService.prototype, 'readJson').mockReturnValue({});
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const exitCode = runCli('/repo', ['--dry-run']);
+    const exitCode = runCli('/repo');
 
     expect(exitCode).toBe(0);
-    expect(releaseSpy).toHaveBeenCalledWith({ dryRun: true, noPush: false, noPublish: false });
+    expect(app.run).toHaveBeenCalledTimes(1);
+    expect(exceptionHandler.handle).not.toHaveBeenCalled();
   });
 
-  it('given cli starts when options are parsed then it delegates parsing to CliOptionsService', () => {
-    const parseSpy = vi.spyOn(CliOptionsService.prototype, 'parse').mockReturnValue({
-      help: true,
-      dryRun: false,
-      noPush: false,
-      noPublish: false,
-    });
-
-    const exitCode = runCli('/repo', ['--help']);
-
-    expect(exitCode).toBe(0);
-    expect(parseSpy).toHaveBeenCalledWith(['--help']);
-  });
-
-  it('given configured plugin order when the cli starts then controller receives plugins in that order', () => {
-    const observedPluginConstructors: string[] = [];
-    vi.spyOn(NodeFileSystemService.prototype, 'readJson').mockReturnValue({});
-    vi.spyOn(ReleaseConfigService.prototype, 'resolvePlugins').mockReturnValue([
-      { name: 'git', template: 'templates/custom-release.hbs' },
-      { name: 'changelog', template: 'templates/custom-changelog.hbs' },
-    ]);
-    vi.spyOn(Controller.prototype, 'discoverPackages').mockImplementation(function mockDiscoverPackages(this: {
-      plugins: Array<{ constructor: { name: string } }>;
-    }) {
-      observedPluginConstructors.push(...this.plugins.map((plugin) => plugin.constructor.name));
-    });
-    vi.spyOn(Controller.prototype, 'release').mockImplementation(() => undefined);
-
-    const exitCode = runCli('/repo', ['--dry-run']);
-
-    expect(exitCode).toBe(0);
-    expect(observedPluginConstructors).toEqual(['GitPlugin', 'ChangelogPlugin']);
-  });
-
-  it('given a runtime error when the cli fails then it delegates error reporting to ExceptionHandler', () => {
+  it('given a runtime error when the cli fails then it delegates error reporting to the exception handler', () => {
     const expectedError = new Error('boom');
-    const handleSpy = vi.spyOn(ExceptionHandler.prototype, 'handle').mockImplementation(() => undefined);
-    vi.spyOn(NodeFileSystemService.prototype, 'readJson').mockImplementation(() => {
-      throw expectedError;
-    });
+    const app = {
+      run: vi.fn().mockImplementation(() => {
+        throw expectedError;
+      }),
+    };
+    const exceptionHandler = { handle: vi.fn() };
+    vi.spyOn(Container.prototype, 'useModule').mockReturnThis();
+    vi.spyOn(Container.prototype, 'resolve').mockImplementation((target: unknown) => (target === App ? app : exceptionHandler) as never);
+    vi.spyOn(Container.prototype, 'dispose').mockImplementation(() => undefined);
 
-    const exitCode = runCli('/repo', []);
+    const exitCode = runCli('/repo');
 
     expect(exitCode).toBe(1);
-    expect(handleSpy).toHaveBeenCalledWith(expectedError);
+    expect(exceptionHandler.handle).toHaveBeenCalledWith(expectedError);
   });
 });

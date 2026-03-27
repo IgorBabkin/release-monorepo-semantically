@@ -3,7 +3,8 @@ import 'reflect-metadata';
 import { execSync } from 'node:child_process';
 import { bindTo, register } from 'ts-ioc-container';
 import { PackageManager, PackageManagerKey } from './PackageManager';
-import { whenPackageManagerConfigEqual } from '../PackageManagerPlugin';
+
+import { whenPackageManagerConfigEqual } from '../PackageManagerPluginConfig';
 
 @register(bindTo(PackageManagerKey), whenPackageManagerConfigEqual('kind', 'pnpm'))
 export class PNPMPackageManager implements PackageManager {

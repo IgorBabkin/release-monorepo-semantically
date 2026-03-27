@@ -34,7 +34,3 @@ export function bumpVersion(version: string, bumpType: SemVerBumpType): string {
       return version;
   }
 }
-
-export function aggregateBumpTypes(...bumpType: SemVerBumpType[]): SemVerBumpType {
-  return Math.max(...bumpType, SemVerBumpType.NONE);
-}

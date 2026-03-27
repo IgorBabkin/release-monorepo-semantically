@@ -6,25 +6,14 @@ import { z } from 'zod';
 import { bindTo, inject, register } from 'ts-ioc-container';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService';
 import { execute } from '../../utils/hooks';
-import { pluginConfig } from '../../models/PluginConfig';
+import { pluginsConfigService } from '../../services/PluginsConfigService';
 import { globalConfig } from '../../models/GlobalConfig';
-
-const PLUGIN_CONFIG_SCHEMA = z.object({
-  template: z
-    .string()
-    .trim()
-    .regex(/^[^/\s]+\/[^/\s]+$/)
-    .optional(),
-  changelogName: z.string().trim().optional(),
-  disabled: z.boolean().optional(),
-  dryRun: z.boolean().optional(),
-  priority: z.number().optional(),
-});
+import { PLUGIN_CONFIG_SCHEMA } from './ChangelogPluginConfig';
 
 @register(bindTo(ReleasePluginKey))
 export class ChangelogPlugin implements ReleasePlugin {
   constructor(
-    @inject(pluginConfig('changelog', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
+    @inject(pluginsConfigService('changelog', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
     @inject(globalConfig('cwd')) private readonly cwd: string,
     @inject(IRenderServiceKey) private readonly renderService: IRenderService,
     @inject(IFileSystemServiceKey) private readonly fs: IFileSystemService,
@@ -35,16 +24,16 @@ export class ChangelogPlugin implements ReleasePlugin {
     return this.config?.priority ?? 0;
   }
 
+  get disabled(): boolean {
+    return this.config?.disabled ?? false;
+  }
+
   @onPackageReleasedHook(execute())
   generateChangelog(context: PackageReleasedPluginContext): void {
-    if (!this.config || this.config.disabled) {
-      return;
-    }
-
-    const { template, changelogName = 'CHANGELOG.md' } = this.config!;
+    const { template, changelogName = 'CHANGELOG.md', dryRun } = this.config!;
     const { pkg } = context;
 
-    if (this.config.dryRun) {
+    if (dryRun) {
       this.logger.info(`SKIP     ${pkg.name} ${changelogName} (dry-run)`);
       return;
     }

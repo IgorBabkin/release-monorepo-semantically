@@ -4,9 +4,10 @@ import { execSync } from 'node:child_process';
 import { ConventionalCommit } from '../../../models/ConventionalCommit';
 import { bindTo, register } from 'ts-ioc-container';
 import { VSCService, VSCServiceKey } from './VSCService';
-import { whenVCSConfigEqual } from '../VCSPlugin';
 
-@register(bindTo(VSCServiceKey), whenVCSConfigEqual('kind', 'git'))
+import { whenConfig } from '../VCSPluginConfig';
+
+@register(bindTo(VSCServiceKey), whenConfig('kind', 'git'))
 export class GitService implements VSCService {
   findManyCommitsSinceTag(sinceTag: string): ConventionalCommit[] {
     const range = this.tagExists(sinceTag) ? `${sinceTag}..HEAD` : 'HEAD';

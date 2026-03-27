@@ -13,20 +13,31 @@ describe('HandlebarsRenderService.render', () => {
     }
   });
 
-  it('given no local template when rendering then it falls back to the package template directory', () => {
+  it('given a cwd override when rendering then the template is resolved from that directory', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'handlebars-render-service-'));
     tempRoots.push(root);
 
     const cwd = path.join(root, 'workspace');
-    const packageRoot = path.join(root, 'package');
     mkdirSync(cwd, { recursive: true });
-    mkdirSync(path.join(packageRoot, 'templates'), { recursive: true });
-    writeFileSync(path.join(packageRoot, 'templates', 'release-commit-msg.hbs'), 'release {{value}}\n');
+    mkdirSync(path.join(cwd, 'templates'), { recursive: true });
+    writeFileSync(path.join(cwd, 'templates', 'release-commit-msg.hbs'), 'release {{value}}\n');
 
     const service = new HandlebarsRenderService(cwd);
 
-    const rendered = service.render('templates/release-commit-msg.hbs', { value: 'ok' });
+    const rendered = service.render('templates/release-commit-msg.hbs', { value: 'ok' }, { cwd });
 
     expect(rendered).toBe('release ok\n');
+  });
+
+  it('given no cwd override when rendering then the configured cwd is used', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'handlebars-render-service-'));
+    tempRoots.push(root);
+
+    mkdirSync(path.join(root, 'templates'), { recursive: true });
+    writeFileSync(path.join(root, 'templates', 'release-commit-msg.hbs'), 'release {{value}}\n');
+
+    const service = new HandlebarsRenderService(root);
+
+    expect(service.render('templates/release-commit-msg.hbs', { value: 'ok' })).toBe('release ok\n');
   });
 });

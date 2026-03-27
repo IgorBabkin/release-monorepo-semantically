@@ -41,7 +41,7 @@
     "glob": "^10.3.10",
     "handlebars": "^4.7.8",
     "reflect-metadata": "^0.2.2",
-    "ts-ioc-container": "^47.0.0",
+    "ts-ioc-container": "^46.9.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

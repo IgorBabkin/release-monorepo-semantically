@@ -1,38 +1,19 @@
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
-import { onPackageReleasedHook, ReleaseCompletePluginContext, ReleasePlugin, ReleasePluginKey } from '../ReleasePlugin';
+import { onReleaseCompleteHook, ReleaseCompletePluginContext, ReleasePlugin, ReleasePluginKey } from '../ReleasePlugin';
 import { DirtyWorkingTreeException } from '../../exceptions/DomainException';
 import { execute } from '../../utils/hooks';
 import { z } from 'zod';
-import { bindTo, inject, register, scope } from 'ts-ioc-container';
+import { bindTo, inject, register } from 'ts-ioc-container';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService';
-import { IPluginsConfigServiceKey, pluginConfig } from '../../models/PluginConfig';
+import { pluginsConfigService } from '../../services/PluginsConfigService';
 import { globalConfig } from '../../models/GlobalConfig';
 import { VSCService, VSCServiceKey } from './services/VSCService';
-
-const PLUGIN_CONFIG_SCHEMA = z.object({
-  repository: z
-    .string()
-    .trim()
-    .regex(/^[^/\s]+\/[^/\s]+$/),
-  token: z.string().trim().min(1),
-  disabled: z.boolean().optional(),
-  dryRun: z.boolean().optional(),
-  template: z.string().optional(),
-  priority: z.number().optional(),
-  kind: z.enum(['git']),
-});
-type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;
-
-export const whenVCSConfigEqual = <K extends keyof PluginConfig>(key: K, value: PluginConfig[K]) =>
-  scope((c, prev = true) => {
-    const config = IPluginsConfigServiceKey.resolve(c).getConfigAndCache('vcs', PLUGIN_CONFIG_SCHEMA);
-    return prev && config !== null && config[key] === value;
-  });
+import { PLUGIN_CONFIG_SCHEMA } from './VCSPluginConfig';
 
 @register(bindTo(ReleasePluginKey))
 export class VCSPlugin implements ReleasePlugin {
   constructor(
-    @inject(pluginConfig('vcs', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
+    @inject(pluginsConfigService('vcs', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
     @inject(globalConfig('cwd')) private readonly cwd: string,
     @inject(VSCServiceKey) private readonly vcs: VSCService,
     @inject(IRenderServiceKey) private readonly renderService: IRenderService,
@@ -43,12 +24,12 @@ export class VCSPlugin implements ReleasePlugin {
     return this.config?.priority ?? 0;
   }
 
-  @onPackageReleasedHook(execute())
+  get disabled(): boolean {
+    return this.config?.disabled ?? false;
+  }
+
+  @onReleaseCompleteHook(execute())
   commitChanges(context: ReleaseCompletePluginContext) {
-    if (!this.config || this.config.disabled) {
-      this.logger.info('SKIP     commitChanges (disabled)');
-      return true;
-    }
     this.validateVCS();
 
     const { template } = this.config!;
@@ -57,12 +38,8 @@ export class VCSPlugin implements ReleasePlugin {
     this.vcs.commit(commitMessage);
   }
 
-  @onPackageReleasedHook(execute())
+  @onReleaseCompleteHook(execute())
   createTags(context: ReleaseCompletePluginContext) {
-    if (!this.config || this.config.disabled) {
-      this.logger.info('SKIP     createTags (disabled)');
-      return true;
-    }
     this.validateVCS();
 
     const { releasedPackages, releasedVersions } = context;
@@ -73,12 +50,8 @@ export class VCSPlugin implements ReleasePlugin {
     }
   }
 
-  @onPackageReleasedHook(execute())
+  @onReleaseCompleteHook(execute())
   pushChanges(context: ReleaseCompletePluginContext) {
-    if (!this.config || this.config.disabled) {
-      this.logger.info('SKIP     pushChanges (disabled)');
-      return true;
-    }
     this.validateVCS();
 
     const { releasedPackages } = context;

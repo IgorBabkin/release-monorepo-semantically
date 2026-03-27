@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 
 import { NpmPackage } from './models/NpmPackage';
-import { aggregateBumpTypes, bumpTypeToString, SemVerBumpType } from './models/SemVerBumpType';
+import { bumpTypeToString, SemVerBumpType } from './models/SemVerBumpType';
 import { sortLessDependenciesFirst } from './utils/sortLessDependenciesFirst';
 import { IFileSystemService, IFileSystemServiceKey } from './services/NodeFileSystemService';
 import { ILogger, ILoggerKey } from './services/ConsoleLogger';
@@ -17,8 +17,11 @@ import { ConventionalCommit } from './models/ConventionalCommit';
 import { HookContext, IContainer, inject, select } from 'ts-ioc-container';
 import { VSCService, VSCServiceKey } from './plugins/vcs/services/VSCService';
 
+type PackageName = string;
+type PackageVersion = string;
+
 export class Controller {
-  private packageSortedList: NpmPackage[] = [];
+  private publicPackages: NpmPackage[] = [];
 
   constructor(
     @inject(releasePlugins) private readonly plugins: ReleasePlugin[],
@@ -31,22 +34,19 @@ export class Controller {
   discoverPackages(): void {
     const { workspaces = [] } = this.fs.readPackageJsonOrFail('./');
     const packageJsonList = this.fs.findManyPackageJsonByGlob(workspaces);
-    this.packageSortedList = sortLessDependenciesFirst(
+    this.publicPackages = sortLessDependenciesFirst(
       packageJsonList.map(([pkgPath, pkg]) => NpmPackage.createFromPackage(pkg, pkgPath)).filter((p) => !p.isPrivate),
     );
   }
 
   release(): void {
-    const releasedVersions = new Map<string, string>();
-    const releasedCommits = new Map<string, ConventionalCommit[]>();
+    const releasedVersions = new Map<PackageName, PackageVersion>();
+    const releasedCommits = new Map<PackageName, ConventionalCommit[]>();
 
-    for (const pkg of this.packageSortedList) {
+    for (const pkg of this.publicPackages) {
       const pkgReleaseCommits = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag()).filter((c) => c.matchesScope(pkg.name) && c.isReleaseTrigger());
       const dependencyUpdates = pkg.getDependencyUpdates(releasedVersions);
-      const versionBump = aggregateBumpTypes(
-        ...pkgReleaseCommits.map((c) => c.bumpType),
-        dependencyUpdates.length ? SemVerBumpType.MINOR : SemVerBumpType.NONE,
-      );
+      const versionBump = Math.max(...pkgReleaseCommits.map((c) => c.bumpType), dependencyUpdates.length ? SemVerBumpType.MINOR : SemVerBumpType.NONE);
 
       if (versionBump === SemVerBumpType.NONE) {
         this.logStep('SKIP', `${pkg.name}@${pkg.version}`);
@@ -63,7 +63,7 @@ export class Controller {
           pkg: pkg,
           releasedVersions,
           releasedCommits: pkgReleaseCommits,
-          releasedPackages: this.packageSortedList.filter((pkg) => releasedVersions.has(pkg.name)),
+          releasedPackages: this.publicPackages.filter((pkg) => releasedVersions.has(pkg.name)),
         });
       }
     }
@@ -71,7 +71,7 @@ export class Controller {
     for (const plugin of this.plugins) {
       this.onReleaseCompleteHook(plugin, {
         releasedVersions,
-        releasedPackages: this.packageSortedList.filter((pkg) => releasedVersions.has(pkg.name)),
+        releasedPackages: this.publicPackages.filter((pkg) => releasedVersions.has(pkg.name)),
         releasedCommits,
       });
     }
@@ -84,14 +84,14 @@ export class Controller {
   private onPackageReleasedHook(plugin: ReleasePlugin, context: PackageReleasedPluginContext) {
     onPackageReleasedHooksRunner.execute(plugin, {
       scope: this.scope,
-      createContext: (Target, scope, methodName) => new HookContext(Target, scope, methodName).args(context),
+      createContext: (Target, scope, methodName) => new HookContext(Target, scope, methodName).setInitialArgs(context),
     });
   }
 
   private onReleaseCompleteHook(plugin: ReleasePlugin, context: ReleaseCompletePluginContext) {
     onReleaseCompleteHooksRunner.execute(plugin, {
       scope: this.scope,
-      createContext: (Target, scope, methodName) => new HookContext(Target, scope, methodName).args(context),
+      createContext: (Target, scope, methodName) => new HookContext(Target, scope, methodName).setInitialArgs(context),
     });
   }
 }

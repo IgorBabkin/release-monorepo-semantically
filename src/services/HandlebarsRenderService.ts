@@ -10,7 +10,7 @@ import { globalConfig } from '../models/GlobalConfig';
 import path from 'node:path';
 
 export interface IRenderService {
-  render(templatePath: string, data: object, options?: {cwd?: string}): string;
+  render(templatePath: string, data: object, options?: { cwd?: string }): string;
 }
 
 export const IRenderServiceKey = new SingleToken<IRenderService>('IRenderService');

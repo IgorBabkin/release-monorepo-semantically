@@ -5,6 +5,7 @@ import { ConventionalCommit } from '../../models/ConventionalCommit';
 
 describe('ChangelogPlugin', () => {
   it('given dry run when package is released then changelog write is skipped', () => {
+    const config = { dryRun: true };
     const view = {
       render: vi.fn().mockReturnValue('new changelog'),
     };
@@ -16,13 +17,10 @@ describe('ChangelogPlugin', () => {
     const logger = {
       info: vi.fn(),
     };
-    const plugin = new ChangelogPlugin(view as never, fs as never, logger as never);
+    const plugin = new ChangelogPlugin(config as never, '/repo' as never, view as never, fs as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
-    plugin.onPackageReleased?.({
-      dryRun: true,
-      noPush: false,
-      noPublish: false,
+    plugin.generateChangelog({
       pkg,
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedPackages: [pkg],
@@ -36,6 +34,7 @@ describe('ChangelogPlugin', () => {
   });
 
   it('given missing changelog when package is released then empty existing content is passed to view', () => {
+    const config = { dryRun: false };
     const view = {
       render: vi.fn().mockReturnValue('new changelog'),
     };
@@ -48,33 +47,35 @@ describe('ChangelogPlugin', () => {
       info: vi.fn(),
     };
 
-    const plugin = new ChangelogPlugin(view as never, fs as never, logger as never);
+    const plugin = new ChangelogPlugin(config as never, '/repo' as never, view as never, fs as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const commits = [ConventionalCommit.parse('fix(pkg-a): patch')];
 
-    plugin.onPackageReleased?.({
-      dryRun: false,
-      noPush: false,
-      noPublish: false,
+    plugin.generateChangelog({
       pkg,
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedPackages: [pkg],
       releasedCommits: commits,
     });
 
-    expect(view.render).toHaveBeenCalledWith({
-      pkg,
-      releasedPackages: [pkg],
-      releasedVersions: new Map([['pkg-a', '1.0.1']]),
-      releasedCommits: commits,
-      existing: '',
-    });
+    expect(view.render).toHaveBeenCalledWith(
+      './changelog.hbs',
+      {
+        pkg,
+        releasedPackages: [pkg],
+        releasedVersions: new Map([['pkg-a', '1.0.1']]),
+        releasedCommits: commits,
+        existing: '',
+      },
+      { cwd: expect.stringContaining('/src/plugins/changelog') },
+    );
     expect(fs.readFile).not.toHaveBeenCalled();
     expect(fs.writeFile).toHaveBeenCalledWith('/repo/packages/pkg-a/CHANGELOG.md', 'new changelog');
     expect(logger.info).toHaveBeenCalledWith('WRITE    pkg-a CHANGELOG.md');
   });
 
   it('given existing changelog when package is released then existing content is passed to view and file is rewritten', () => {
+    const config = { dryRun: false };
     const view = {
       render: vi.fn().mockReturnValue('new changelog'),
     };
@@ -87,32 +88,38 @@ describe('ChangelogPlugin', () => {
       info: vi.fn(),
     };
 
-    const plugin = new ChangelogPlugin(view as never, fs as never, logger as never);
+    const plugin = new ChangelogPlugin(config as never, '/repo' as never, view as never, fs as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const commits = [ConventionalCommit.parse('fix(pkg-a): patch')];
 
-    plugin.onPackageReleased?.({
-      dryRun: false,
-      noPush: false,
-      noPublish: false,
+    plugin.generateChangelog({
       pkg,
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedPackages: [pkg],
       releasedCommits: commits,
     });
 
-    expect(view.render).toHaveBeenCalledWith({
-      pkg,
-      releasedPackages: [pkg],
-      releasedVersions: new Map([['pkg-a', '1.0.1']]),
-      releasedCommits: commits,
-      existing: 'old changelog',
-    });
+    expect(view.render).toHaveBeenCalledWith(
+      './changelog.hbs',
+      {
+        pkg,
+        releasedPackages: [pkg],
+        releasedVersions: new Map([['pkg-a', '1.0.1']]),
+        releasedCommits: commits,
+        existing: 'old changelog',
+      },
+      { cwd: expect.stringContaining('/src/plugins/changelog') },
+    );
     expect(fs.writeFile).toHaveBeenCalledWith('/repo/packages/pkg-a/CHANGELOG.md', 'new changelog');
     expect(logger.info).toHaveBeenCalledWith('WRITE    pkg-a CHANGELOG.md');
   });
 
   it('given changelogName plugin config when package is released then configured changelog filename is used', () => {
+    const config = {
+      template: 'templates/custom.hbs',
+      changelogName: 'HISTORY.md',
+      dryRun: false,
+    };
     const view = {
       render: vi.fn().mockReturnValue('new changelog'),
     };
@@ -125,17 +132,10 @@ describe('ChangelogPlugin', () => {
       info: vi.fn(),
     };
 
-    const plugin = new ChangelogPlugin(view as never, fs as never, logger as never, {
-      name: 'changelog',
-      template: 'templates/custom.hbs',
-      changelogName: 'HISTORY.md',
-    });
+    const plugin = new ChangelogPlugin(config as never, '/repo' as never, view as never, fs as never, logger as never);
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
 
-    plugin.onPackageReleased?.({
-      dryRun: false,
-      noPush: false,
-      noPublish: false,
+    plugin.generateChangelog({
       pkg,
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedPackages: [pkg],

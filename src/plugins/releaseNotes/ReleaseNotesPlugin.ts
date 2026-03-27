@@ -2,40 +2,21 @@ import { onReleaseCompleteHook, ReleaseCompletePluginContext, ReleasePlugin, Rel
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
 import { GithubCliUnavailableException } from '../../exceptions/DomainException';
 import { z } from 'zod';
-import { bindTo, inject, register, scope } from 'ts-ioc-container';
+import { bindTo, inject, register } from 'ts-ioc-container';
 import { execute } from '../../utils/hooks';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService';
-import { IPluginsConfigServiceKey, pluginConfig } from '../../models/PluginConfig';
+import { pluginsConfigService } from '../../services/PluginsConfigService';
 import { globalConfig } from '../../models/GlobalConfig';
 import { ReleaseNotesService, ReleaseNotesServiceKey } from './services/ReleaseNotesService';
-
-const PLUGIN_CONFIG_SCHEMA = z.object({
-  repository: z
-    .string()
-    .trim()
-    .regex(/^[^/\s]+\/[^/\s]+$/),
-  token: z.string().trim().min(1),
-  disabled: z.boolean().optional(),
-  dryRun: z.boolean().optional(),
-  template: z.string().optional(),
-  priority: z.number().optional(),
-  kind: z.enum(['github', 'bitbucket']).optional(),
-});
-type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;
-
-export const whenReleaseNotesConfigEqual = <K extends keyof PluginConfig>(key: K, value: PluginConfig[K]) =>
-  scope((c, prev = true) => {
-    const config = IPluginsConfigServiceKey.resolve(c).getConfigAndCache('release-notes', PLUGIN_CONFIG_SCHEMA);
-    return prev && config !== null && config[key] === value;
-  });
+import { PLUGIN_CONFIG_SCHEMA } from './ReleaseNotesPluginConfig';
 
 @register(bindTo(ReleasePluginKey))
 export class ReleaseNotesPlugin implements ReleasePlugin {
   constructor(
-    @inject(pluginConfig('release-notes', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
+    @inject(pluginsConfigService('release-notes', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
     @inject(globalConfig('cwd')) private readonly cwd: string,
     @inject(ReleaseNotesServiceKey) private readonly githubService: ReleaseNotesService,
-    @inject(ILoggerKey.args('GithubPlugin')) private readonly logger: ILogger,
+    @inject(ILoggerKey.args('ReleaseNotesPlugin')) private readonly logger: ILogger,
     @inject(IRenderServiceKey) private readonly renderService: IRenderService,
   ) {}
 
@@ -43,12 +24,12 @@ export class ReleaseNotesPlugin implements ReleasePlugin {
     return this.config?.priority ?? 0;
   }
 
+  get disabled(): boolean {
+    return this.config?.disabled ?? false;
+  }
+
   @onReleaseCompleteHook(execute())
   createGithubRelease(context: ReleaseCompletePluginContext): void {
-    if (!this.config || this.config.disabled) {
-      return;
-    }
-
     const { repository, token, template } = this.config!;
     const { releasedPackages, releasedVersions } = context;
 
@@ -62,7 +43,7 @@ export class ReleaseNotesPlugin implements ReleasePlugin {
         continue;
       }
 
-      if (this.config.dryRun) {
+      if (this.config!.dryRun) {
         this.logger.info(`SKIP   RELEASE  ${pkg.name}@${version}`);
         continue;
       }

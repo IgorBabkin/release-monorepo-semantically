@@ -9,7 +9,7 @@ describe('PNPMPackageManager.bumpVersion', () => {
 
     pm.bumpVersion('/repo/packages/a', '2.1.0');
 
-    expect(cp.execSync).toHaveBeenCalledWith('pnpm version 2.1.0 --no-vcs-tag-version', {
+    expect(cp.execSync).toHaveBeenCalledWith('pnpm version 2.1.0 --no-git-tag-version', {
       cwd: '/repo/packages/a',
       stdio: 'pipe',
     });

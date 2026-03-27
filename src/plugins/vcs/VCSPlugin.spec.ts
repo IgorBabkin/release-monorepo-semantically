@@ -3,92 +3,36 @@ import { VCSPlugin } from './VCSPlugin';
 import { NpmPackage } from '../../models/NpmPackage';
 
 describe('GitPlugin', () => {
-  it('given dry run when release completes then no vcs actions are executed', () => {
-    const vcs = {
-      commit: vi.fn(),
-      createTag: vi.fn(),
-      push: vi.fn(),
-    };
-    const releaseCommitView = {
-      render: vi.fn().mockReturnValue('release commit message'),
-    };
-    const logger = {
-      info: vi.fn(),
-    };
-    const plugin = new VCSPlugin(vcs as never, releaseCommitView as never, logger as never);
-
-    plugin.onReleaseComplete?.({
-      dryRun: true,
-      noPush: false,
-      noPublish: false,
-      releasedPackages: [],
-      releasedVersions: new Map(),
-      releasedCommits: new Map(),
-    });
-
-    expect(releaseCommitView.render).not.toHaveBeenCalled();
-    expect(vcs.commit).not.toHaveBeenCalled();
-    expect(vcs.createTag).not.toHaveBeenCalled();
-    expect(vcs.push).not.toHaveBeenCalled();
-    expect(logger.info).toHaveBeenCalledWith('SKIP     vcs commit/tag/push (dry-run)');
-  });
-
-  it('given no push option when release completes then commit and tags are created but push is skipped', () => {
-    const vcs = {
-      commit: vi.fn(),
-      createTag: vi.fn(),
-      push: vi.fn(),
-    };
-    const releaseCommitView = {
-      render: vi.fn().mockReturnValue('release commit message'),
-    };
-    const logger = {
-      info: vi.fn(),
-    };
-    const plugin = new VCSPlugin(vcs as never, releaseCommitView as never, logger as never);
-    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
-
-    plugin.onReleaseComplete?.({
+  it('given a clean working tree when release completes then commit, tags, and push are executed', () => {
+    const config = {
       dryRun: false,
-      noPush: true,
-      noPublish: false,
+      template: 'templates/custom-release.hbs',
+    };
+    const vcs = {
+      isWorkingTreeClean: vi.fn().mockReturnValue(true),
+      commit: vi.fn(),
+      createTag: vi.fn(),
+      push: vi.fn(),
+    };
+    const releaseCommitView = {
+      render: vi.fn().mockReturnValue('release commit message'),
+    };
+    const logger = {
+      info: vi.fn(),
+    };
+    const plugin = new VCSPlugin(config as never, '/repo' as never, vcs as never, releaseCommitView as never, logger as never);
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+    const context = {
       releasedPackages: [pkg],
       releasedVersions: new Map([['pkg-a', '1.0.1']]),
       releasedCommits: new Map(),
-    });
-
-    expect(vcs.commit).toHaveBeenCalledWith('release commit message');
-    expect(vcs.createTag).toHaveBeenCalledWith('pkg-a@1.0.1');
-    expect(vcs.push).not.toHaveBeenCalled();
-  });
-
-  it('given released package when release completes then it commits, creates tags and pushes', () => {
-    const vcs = {
-      commit: vi.fn(),
-      createTag: vi.fn(),
-      push: vi.fn(),
-    };
-    const releaseCommitView = {
-      render: vi.fn().mockReturnValue('release commit message'),
-    };
-    const logger = {
-      info: vi.fn(),
-    };
-    const plugin = new VCSPlugin(vcs as never, releaseCommitView as never, logger as never);
-    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
-    const releasedVersions = new Map([['pkg-a', '1.0.1']]);
-    const context = {
-      dryRun: false,
-      noPush: false,
-      noPublish: true,
-      releasedPackages: [pkg],
-      releasedVersions,
-      releasedCommits: new Map([['pkg-a', []]]),
     };
 
-    plugin.onReleaseComplete?.(context);
+    plugin.commitChanges(context);
+    plugin.createTags(context);
+    plugin.pushChanges(context);
 
-    expect(releaseCommitView.render).toHaveBeenCalledWith(context);
+    expect(releaseCommitView.render).toHaveBeenCalledWith('templates/custom-release.hbs', context, { cwd: '/repo' });
     expect(vcs.commit).toHaveBeenCalledWith('release commit message');
     expect(vcs.createTag).toHaveBeenCalledWith('pkg-a@1.0.1');
     expect(vcs.push).toHaveBeenCalledWith(true);

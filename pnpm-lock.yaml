@@ -20,8 +20,8 @@ importers:
         specifier: ^0.2.2
         version: 0.2.2
       ts-ioc-container:
-        specifier: ^47.0.0
-        version: 47.0.0
+        specifier: ^46.9.0
+        version: 46.9.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -2421,8 +2421,8 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
-  ts-ioc-container@47.0.0:
-    resolution: { integrity: sha512-4u3W41pv2LQ4lijVlQUEpiKq7xpAB9tfPWonb+JPyLDx4wuiPq8BGBCBw2JVFp3wAC7KyBfipsKuOpKclqcWFw== }
+  ts-ioc-container@46.9.0:
+    resolution: { integrity: sha512-rKl8vBjdZjPrU8qnuM0YqFsN2F/VAU3jpGyk4BDviL4/RFqyBZuN3liZpwyIGEAfYl4h+fU82KhvUcrTsh2BRQ== }
 
   tunnel@0.0.6:
     resolution: { integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg== }
@@ -4890,7 +4890,7 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  ts-ioc-container@47.0.0: {}
+  ts-ioc-container@46.9.0: {}
 
   tunnel@0.0.6: {}
 
