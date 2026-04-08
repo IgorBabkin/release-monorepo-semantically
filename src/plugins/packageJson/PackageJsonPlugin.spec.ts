@@ -1,113 +1,75 @@
-import { describe, expect, it, vi } from 'vitest';
-import { PackageJsonPlugin } from './PackageJsonPlugin';
+import { describe, it } from 'vitest';
+import { It, Mock, Times } from 'moq.ts';
+import { PackageController } from './PackageController';
 import { NpmPackage } from '../../models/NpmPackage';
+import { serializeContext } from '../../models/ReleaseControllerContext';
+import { IFileSystemService } from '../../services/NodeFileSystemService';
+import { ILogger } from '../../services/ConsoleLogger';
 
-describe('PackageJsonPlugin', () => {
+describe('PackageController', () => {
+  const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0', dependencies: { 'pkg-b': '^1.0.0' } }, '/repo/packages/pkg-a');
+  const releasedVersions = new Map([['pkg-b', '1.1.0']]);
+  const context = serializeContext({
+    releasedVersions,
+    releasedPackages: [pkg],
+    releasedCommits: new Map(),
+  });
+
   it('given dry run when package is released then package.json rewrite is skipped', () => {
     const config = { dryRun: true };
-    const fileSystemService = {
-      readPackageJsonOrFail: vi.fn().mockReturnValue({
-        name: 'pkg-a',
-        version: '1.0.0',
-        dependencies: { 'pkg-b': '^1.0.0' },
-      }),
-      writeToPackageJsonOrFail: vi.fn(),
-    };
-    const logger = {
-      info: vi.fn(),
-    };
-    const plugin = new PackageJsonPlugin(config as never, fileSystemService as never, logger as never);
-    const pkg = NpmPackage.createFromPackage(
-      {
-        name: 'pkg-a',
-        version: '1.0.0',
-        dependencies: { 'pkg-b': '^1.0.0' },
-      },
-      '/repo/packages/pkg-a',
-    );
+    const fs = new Mock<IFileSystemService>()
+      .setup((m) => m.readPackageJsonOrFail(It.IsAny()))
+      .returns({ name: 'pkg-a', version: '1.0.0', dependencies: { 'pkg-b': '^1.0.0' } })
+      .setup((m) => m.writeToPackageJsonOrFail(It.IsAny(), It.IsAny()))
+      .returns(undefined);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    plugin.updateDependencies({
-      pkg,
-      releasedVersions: new Map([['pkg-b', '1.1.0']]),
-      releasedPackages: [pkg],
-      releasedCommits: [],
-    });
+    new PackageController(config as never, fs.object(), logger.object()).updateDependencies({ context });
 
-    expect(fileSystemService.readPackageJsonOrFail).toHaveBeenCalledWith('/repo/packages/pkg-a');
-    expect(fileSystemService.writeToPackageJsonOrFail).not.toHaveBeenCalled();
-    expect(logger.info).toHaveBeenCalledWith('BUMP     pkg-b@1.1.0');
-    expect(logger.info).toHaveBeenCalledWith('SKIP     SAVE pkg-a package.json (dry-run)');
+    fs.verify((m) => m.readPackageJsonOrFail('/repo/packages/pkg-a'), Times.Once());
+    fs.verify((m) => m.writeToPackageJsonOrFail(It.IsAny(), It.IsAny()), Times.Never());
+    logger.verify((m) => m.info('BUMP     pkg-b@1.1.0'), Times.Once());
+    logger.verify((m) => m.info('SKIP     SAVE pkg-a package.json (dry-run)'), Times.Once());
   });
 
   it('given dependency version updates when package is released then package.json is rewritten and logged', () => {
     const config = { dryRun: false };
-    const fileSystemService = {
-      readPackageJsonOrFail: vi.fn().mockReturnValue({
-        name: 'pkg-a',
-        version: '1.0.0',
-        dependencies: { 'pkg-b': '^1.0.0' },
-      }),
-      writeToPackageJsonOrFail: vi.fn(),
-    };
-    const logger = {
-      info: vi.fn(),
-    };
+    const fs = new Mock<IFileSystemService>()
+      .setup((m) => m.readPackageJsonOrFail(It.IsAny()))
+      .returns({ name: 'pkg-a', version: '1.0.0', dependencies: { 'pkg-b': '^1.0.0' } })
+      .setup((m) => m.writeToPackageJsonOrFail(It.IsAny(), It.IsAny()))
+      .returns(undefined);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    const plugin = new PackageJsonPlugin(config as never, fileSystemService as never, logger as never);
-    const pkg = NpmPackage.createFromPackage(
-      {
-        name: 'pkg-a',
-        version: '1.0.0',
-        dependencies: { 'pkg-b': '^1.0.0' },
-      },
-      '/repo/packages/pkg-a',
+    new PackageController(config as never, fs.object(), logger.object()).updateDependencies({ context });
+
+    fs.verify((m) => m.readPackageJsonOrFail('/repo/packages/pkg-a'), Times.Once());
+    fs.verify(
+      (m) =>
+        m.writeToPackageJsonOrFail(
+          '/repo/packages/pkg-a',
+          It.Is((v: { dependencies?: Record<string, string> }) => v.dependencies?.['pkg-b'] === '1.1.0'),
+        ),
+      Times.Once(),
     );
-
-    plugin.updateDependencies({
-      pkg,
-      releasedVersions: new Map([['pkg-b', '1.1.0']]),
-      releasedPackages: [pkg],
-      releasedCommits: [],
-    });
-
-    expect(fileSystemService.readPackageJsonOrFail).toHaveBeenCalledWith('/repo/packages/pkg-a');
-    expect(fileSystemService.writeToPackageJsonOrFail).toHaveBeenCalledWith('/repo/packages/pkg-a', {
-      name: 'pkg-a',
-      version: '1.0.0',
-      dependencies: { 'pkg-b': '1.1.0' },
-    });
-    expect(logger.info).toHaveBeenCalledWith('SAVE    pkg-a package.json');
+    logger.verify((m) => m.info('SAVE    pkg-a package.json'), Times.Once());
   });
 
   it('given no dependency changes when package is released then package.json is not rewritten', () => {
-    const config = { dryRun: false };
-    const fileSystemService = {
-      readPackageJsonOrFail: vi.fn(),
-      writeToPackageJsonOrFail: vi.fn(),
-    };
-    const logger = {
-      info: vi.fn(),
-    };
-
-    const plugin = new PackageJsonPlugin(config as never, fileSystemService as never, logger as never);
-    const pkg = NpmPackage.createFromPackage(
-      {
-        name: 'pkg-a',
-        version: '1.0.0',
-        dependencies: { 'pkg-b': '1.0.0' },
-      },
-      '/repo/packages/pkg-a',
-    );
-
-    plugin.updateDependencies({
-      pkg,
+    const pkgNoDeps = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0', dependencies: { 'pkg-b': '1.0.0' } }, '/repo/packages/pkg-a');
+    const contextNoDeps = serializeContext({
       releasedVersions: new Map([['pkg-b', '1.0.0']]),
-      releasedPackages: [pkg],
-      releasedCommits: [],
+      releasedPackages: [pkgNoDeps],
+      releasedCommits: new Map(),
     });
+    const config = { dryRun: false };
+    const fs = new Mock<IFileSystemService>().setup((m) => m.writeToPackageJsonOrFail(It.IsAny(), It.IsAny())).returns(undefined);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    expect(fileSystemService.readPackageJsonOrFail).not.toHaveBeenCalled();
-    expect(fileSystemService.writeToPackageJsonOrFail).not.toHaveBeenCalled();
-    expect(logger.info).not.toHaveBeenCalled();
+    new PackageController(config as never, fs.object(), logger.object()).updateDependencies({ context: contextNoDeps });
+
+    fs.verify((m) => m.readPackageJsonOrFail(It.IsAny()), Times.Never());
+    fs.verify((m) => m.writeToPackageJsonOrFail(It.IsAny(), It.IsAny()), Times.Never());
+    logger.verify((m) => m.info(It.IsAny()), Times.Never());
   });
 });

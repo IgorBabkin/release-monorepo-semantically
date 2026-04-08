@@ -1,17 +1,24 @@
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
-import { onReleaseCompleteHook, ReleaseCompletePluginContext, ReleasePlugin, ReleasePluginKey } from '../ReleasePlugin';
 import { DirtyWorkingTreeException } from '../../exceptions/DomainException';
 import { execute } from '../../utils/hooks';
 import { z } from 'zod';
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { bindTo, hook, inject, register } from 'ts-ioc-container';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService';
 import { pluginsConfigService } from '../../services/PluginsConfigService';
 import { globalConfig } from '../../models/GlobalConfig';
 import { VSCService, VSCServiceKey } from './services/VSCService';
 import { PLUGIN_CONFIG_SCHEMA } from './VCSPluginConfig';
+import { command, schema } from 'ib-commander';
+import { Command } from 'commander';
+import { constant as c } from '../../utils/utils';
+import { deserializeContext } from '../../models/ReleaseControllerContext';
 
-@register(bindTo(ReleasePluginKey))
-export class VCSPlugin implements ReleasePlugin {
+export const VCS_OPTIONS = z.object({
+  context: z.string(),
+});
+
+@register(bindTo('vcs'))
+export class VCSController {
   constructor(
     @inject(pluginsConfigService('vcs', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
     @inject(globalConfig('cwd')) private readonly cwd: string,
@@ -20,29 +27,24 @@ export class VCSPlugin implements ReleasePlugin {
     @inject(ILoggerKey.args('GitPlugin')) private readonly logger: ILogger,
   ) {}
 
-  get priority(): number {
-    return this.config?.priority ?? 0;
-  }
-
-  get disabled(): boolean {
-    return this.config?.disabled ?? false;
-  }
-
-  @onReleaseCompleteHook(execute())
-  commitChanges(context: ReleaseCompletePluginContext) {
+  @command(c(new Command().requiredOption('--context <value>', 'Semantic release report')))
+  @schema(c(VCS_OPTIONS))
+  @hook('vcs-commit', execute())
+  commitChanges({ context }: z.infer<typeof VCS_OPTIONS>): void {
     this.validateVCS();
-
+    const releaseContext = deserializeContext(context);
     const { template } = this.config!;
     const cwd = template ? this.cwd : __dirname;
-    const commitMessage = this.renderService.render(template ?? './release-commit-msg.hbs', context, { cwd });
+    const commitMessage = this.renderService.render(template ?? './release-commit-msg.hbs', releaseContext, { cwd });
     this.vcs.commit(commitMessage);
   }
 
-  @onReleaseCompleteHook(execute())
-  createTags(context: ReleaseCompletePluginContext) {
+  @command(c(new Command().requiredOption('--context <value>', 'Semantic release report')))
+  @schema(c(VCS_OPTIONS))
+  @hook('vcs-tag', execute())
+  createTags({ context }: z.infer<typeof VCS_OPTIONS>): void {
     this.validateVCS();
-
-    const { releasedPackages, releasedVersions } = context;
+    const { releasedPackages, releasedVersions } = deserializeContext(context);
     for (const pkg of releasedPackages) {
       const newVersion = releasedVersions.get(pkg.name);
       this.vcs.createTag(`${pkg.name}@${newVersion}`);
@@ -50,11 +52,12 @@ export class VCSPlugin implements ReleasePlugin {
     }
   }
 
-  @onReleaseCompleteHook(execute())
-  pushChanges(context: ReleaseCompletePluginContext) {
+  @command(c(new Command().requiredOption('--context <value>', 'Semantic release report')))
+  @schema(c(VCS_OPTIONS))
+  @hook('vcs-push', execute())
+  pushChanges({ context }: z.infer<typeof VCS_OPTIONS>): void {
     this.validateVCS();
-
-    const { releasedPackages } = context;
+    const { releasedPackages } = deserializeContext(context);
     this.vcs.push(releasedPackages.length > 0);
     this.logger.info(`PUSH     HEAD${releasedPackages.length > 0 ? ` and ${releasedPackages.length} tag(s)` : ''}`);
   }

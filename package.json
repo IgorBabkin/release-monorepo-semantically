@@ -22,9 +22,10 @@
     "url": "git+https://github.com/IgorBabkin/release-monorepo-semantically.git"
   },
   "engines": {
-    "node": ">=24.14.0 <25"
+    "node": ">=25"
   },
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
@@ -40,8 +41,9 @@
     "commander": "14.0.3",
     "glob": "^10.3.10",
     "handlebars": "^4.7.8",
+    "ib-commander": "^1.6.0",
     "reflect-metadata": "^0.2.2",
-    "ts-ioc-container": "^46.9.0",
+    "ts-ioc-container": "47.3.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -59,6 +61,7 @@
     "eslint": "^9.39.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "moq.ts": "^10.0.8",
     "prettier": "^3.8.1",
     "semantic-release": "^24.2.9",
     "typescript": "^5.3.3",

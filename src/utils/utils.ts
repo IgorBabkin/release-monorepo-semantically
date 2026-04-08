@@ -7,3 +7,8 @@ export function uniqBy<T>(args: T[], predicate: (a: T, b: T) => boolean): T[] {
 export function isPresent<T extends unknown | undefined | null>(value: unknown): value is T {
   return value !== undefined && value !== null;
 }
+
+export const constant =
+  <T>(value: T) =>
+  () =>
+    value;

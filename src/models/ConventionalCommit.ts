@@ -1,5 +1,13 @@
 import { SemVerBumpType } from './SemVerBumpType';
 
+export interface ConventionalCommitJSON {
+  type: string;
+  scope: string | null;
+  subject: string;
+  isBreaking: boolean;
+  hash: string | null;
+}
+
 export class ConventionalCommit {
   constructor(
     readonly type: string,
@@ -8,6 +16,14 @@ export class ConventionalCommit {
     readonly isBreaking: boolean,
     readonly hash: string | null = null,
   ) {}
+
+  toJSON(): ConventionalCommitJSON {
+    return { type: this.type, scope: this.scope, subject: this.subject, isBreaking: this.isBreaking, hash: this.hash };
+  }
+
+  static fromJSON(data: ConventionalCommitJSON): ConventionalCommit {
+    return new ConventionalCommit(data.type, data.scope, data.subject, data.isBreaking, data.hash);
+  }
 
   static parse(raw: string): ConventionalCommit {
     const trimmedRaw = raw.trim();

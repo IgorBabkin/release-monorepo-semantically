@@ -4,9 +4,25 @@ import { DependencyVersionChange } from './ReleaseTypes';
 import { SemVerBumpType } from './SemVerBumpType';
 import { MissingDependencyVersionException } from '../exceptions/DomainException';
 
+export interface NpmPackageJSON {
+  name: string;
+  dirname: string;
+  version: string;
+  isPrivate: boolean;
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
+}
+
+export type PackageName = string;
+export type PackageVersion = string;
+
 export class NpmPackage implements Sortable {
   static createFromPackage(pkgJson: PackageJSON, pkgDirname: string): NpmPackage {
     return new NpmPackage(pkgJson.name, pkgDirname, pkgJson.version, pkgJson.private ?? false, pkgJson.dependencies ?? {}, pkgJson.devDependencies ?? {});
+  }
+
+  static fromJSON(data: NpmPackageJSON): NpmPackage {
+    return new NpmPackage(data.name, data.dirname, data.version, data.isPrivate, data.dependencies, data.devDependencies);
   }
 
   constructor(
@@ -17,6 +33,17 @@ export class NpmPackage implements Sortable {
     readonly dependencies: Record<string, string>,
     readonly devDependencies: Record<string, string>,
   ) {}
+
+  toJSON(): NpmPackageJSON {
+    return {
+      name: this.name,
+      dirname: this.dirname,
+      version: this.version,
+      isPrivate: this.isPrivate,
+      dependencies: this.dependencies,
+      devDependencies: this.devDependencies,
+    };
+  }
 
   filterDependencies(packageNames: Set<string>): string[] {
     return Object.keys({ ...this.dependencies, ...this.devDependencies }).filter((d) => packageNames.has(d));

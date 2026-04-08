@@ -49,32 +49,32 @@ export const IFileSystemServiceKey = new SingleToken<IFileSystemService>('IFileS
 export class NodeFileSystemService implements IFileSystemService {
   constructor(@inject(globalConfig('cwd')) private readonly cwd: string) {}
 
-  readJson<T = unknown>(filePath: string, options?: {cwd?: string}): T {
+  readJson<T = unknown>(filePath: string, options?: { cwd?: string }): T {
     const absolutePath = this.resolveAbsolutePath(filePath, options);
     const content = readFileSync(absolutePath, 'utf-8');
     return JSON.parse(content);
   }
 
-  writeToPackageJsonOrFail(dirname: string, data: unknown, options?: {cwd?: string}): void {
+  writeToPackageJsonOrFail(dirname: string, data: unknown, options?: { cwd?: string }): void {
     const absolutePath = this.resolvePackageJsonPath(this.resolveAbsolutePath(dirname, options));
     const jsonContent = JSON.stringify(data, null, 2);
     writeFileSync(absolutePath, jsonContent + '\n', 'utf-8');
   }
 
-  readFile(filePath: string, options?: {cwd?: string}): string {
+  readFile(filePath: string, options?: { cwd?: string }): string {
     const absolutePath = this.resolveAbsolutePath(filePath, options);
     return readFileSync(absolutePath, 'utf-8');
   }
 
-  writeFile(filePath: string, content: string, options?: {cwd?: string}): void {
+  writeFile(filePath: string, content: string, options?: { cwd?: string }): void {
     writeFileSync(this.resolveAbsolutePath(filePath, options), content, 'utf-8');
   }
 
-  fileExists(filePath: string, options?: {cwd?: string}): boolean {
+  fileExists(filePath: string, options?: { cwd?: string }): boolean {
     return existsSync(this.resolveAbsolutePath(filePath, options));
   }
 
-  findManyPackageJsonByGlob(patterns: string[], options?: {cwd?: string}): [string, PackageJSON][] {
+  findManyPackageJsonByGlob(patterns: string[], options?: { cwd?: string }): [string, PackageJSON][] {
     return uniqBy(
       patterns
         .flatMap((pattern) => globSync(pattern, { cwd: options?.cwd ?? this.cwd, absolute: true }))
@@ -91,13 +91,13 @@ export class NodeFileSystemService implements IFileSystemService {
     );
   }
 
-  readPackageJsonOrFail(pkgPath: string, options?: {cwd?: string}): PackageJSON {
+  readPackageJsonOrFail(pkgPath: string, options?: { cwd?: string }): PackageJSON {
     const absolutePath = this.resolvePackageJsonPath(this.resolveAbsolutePath(pkgPath, options));
     const content = readFileSync(absolutePath, 'utf-8');
     return JSON.parse(content);
   }
 
-  private resolveAbsolutePath(paths: string, options: {cwd?: string} = {}) {
+  private resolveAbsolutePath(paths: string, options: { cwd?: string } = {}) {
     return path.resolve(options.cwd ?? this.cwd, paths);
   }
 

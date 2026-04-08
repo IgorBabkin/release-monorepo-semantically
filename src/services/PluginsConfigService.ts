@@ -4,7 +4,6 @@ import { execute } from '../utils/hooks';
 import path from 'node:path';
 import { globalConfig } from '../models/GlobalConfig';
 import * as fs from 'node:fs';
-import { shallowCache } from '../utils/shallowCache';
 import { ILogger, ILoggerKey } from './ConsoleLogger';
 
 export interface IPluginsConfigService {
@@ -16,6 +15,7 @@ export const pluginsConfigService = (key: string, schema: ZodType) => (c: IConta
 @register(bindTo(IPluginsConfigServiceKey), singleton())
 export class PluginsConfigService implements IPluginsConfigService {
   private config: Record<string, unknown> = {};
+  private readonly cache = new Map<string, WeakMap<ZodType, unknown>>();
 
   constructor(
     @inject(globalConfig('cwd')) private readonly cwd: string,
@@ -53,13 +53,21 @@ export class PluginsConfigService implements IPluginsConfigService {
     }
   }
 
-  @shallowCache
   getConfig<T extends ZodType>(key: string, schema: T): z.infer<T> | null {
+    let keyCache = this.cache.get(key);
+    if (!keyCache) {
+      keyCache = new WeakMap();
+      this.cache.set(key, keyCache);
+    }
+    if (keyCache.has(schema)) {
+      return keyCache.get(schema) as z.infer<T>;
+    }
     const config = this.config[key];
     if (!config) {
       return null;
     }
-
-    return schema.parse(config);
+    const result = schema.parse(config);
+    keyCache.set(schema, result);
+    return result;
   }
 }

@@ -1,8 +1,8 @@
 import { IContainer, IContainerModule, Registration as R } from 'ts-ioc-container';
-import { PackageJsonPlugin } from './PackageJsonPlugin';
+import { PackageController } from './PackageController';
 
 export class PackageJsonPluginModule implements IContainerModule {
   applyTo(container: IContainer): void {
-    container.addRegistration(R.fromClass(PackageJsonPlugin));
+    container.addRegistration(R.fromClass(PackageController));
   }
 }

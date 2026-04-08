@@ -16,12 +16,15 @@ importers:
       handlebars:
         specifier: ^4.7.8
         version: 4.7.8
+      ib-commander:
+        specifier: ^1.6.0
+        version: 1.6.0(commander@14.0.3)(reflect-metadata@0.2.2)(ts-ioc-container@47.3.1)(type-fest@5.4.4)(zod@4.3.6)
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
       ts-ioc-container:
-        specifier: ^46.9.0
-        version: 46.9.0
+        specifier: 47.3.1
+        version: 47.3.1
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -68,6 +71,9 @@ importers:
       lint-staged:
         specifier: ^16.2.7
         version: 16.2.7
+      moq.ts:
+        specifier: ^10.0.8
+        version: 10.0.8
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
@@ -1415,6 +1421,16 @@ packages:
     engines: { node: '>=18' }
     hasBin: true
 
+  ib-commander@1.6.0:
+    resolution: { integrity: sha512-gOX4tERHB9JcUM3fL3CRk72JWH5nRNSaOzZ5sqhH+zlXrSfNdepiFviMuFdH9Uxbebt+Rt4jSBajpViWLodwDg== }
+    engines: { node: '>=25' }
+    peerDependencies:
+      commander: ^14.0.3
+      reflect-metadata: ^0.2.2
+      ts-ioc-container: ^47.2.0
+      type-fest: ^5.5.0
+      zod: ^4.3.6
+
   ignore@5.3.2:
     resolution: { integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g== }
     engines: { node: '>= 4' }
@@ -1744,6 +1760,9 @@ packages:
   minipass@7.1.3:
     resolution: { integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A== }
     engines: { node: '>=16 || 14 >=14.17' }
+
+  moq.ts@10.0.8:
+    resolution: { integrity: sha512-9zAJcsqhVCNczXz8xfDHSjU0SYq6umAFRB1CDRpgE1vwK7EMqc+DAUV6vUS+Ttl8CAQFFtTiWB46g3axdcrzmQ== }
 
   ms@2.1.3:
     resolution: { integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA== }
@@ -2421,8 +2440,12 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
-  ts-ioc-container@46.9.0:
-    resolution: { integrity: sha512-rKl8vBjdZjPrU8qnuM0YqFsN2F/VAU3jpGyk4BDviL4/RFqyBZuN3liZpwyIGEAfYl4h+fU82KhvUcrTsh2BRQ== }
+  ts-ioc-container@47.3.1:
+    resolution: { integrity: sha512-QohE1+PnhIfkFkQ3EPwKVcTx/xOKa/dF4bRK7GdDWTT6YYRHC6LwJ3gbz3ZRuDmef8S07P8EtpYsPTdsvcapPQ== }
+    engines: { node: '>= 22.14.0' }
+
+  tslib@2.8.1:
+    resolution: { integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w== }
 
   tunnel@0.0.6:
     resolution: { integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg== }
@@ -4066,6 +4089,14 @@ snapshots:
 
   husky@9.1.7: {}
 
+  ib-commander@1.6.0(commander@14.0.3)(reflect-metadata@0.2.2)(ts-ioc-container@47.3.1)(type-fest@5.4.4)(zod@4.3.6):
+    dependencies:
+      commander: 14.0.3
+      reflect-metadata: 0.2.2
+      ts-ioc-container: 47.3.1
+      type-fest: 5.4.4
+      zod: 4.3.6
+
   ignore@5.3.2: {}
 
   ignore@7.0.5: {}
@@ -4353,6 +4384,10 @@ snapshots:
   minimist@1.2.8: {}
 
   minipass@7.1.3: {}
+
+  moq.ts@10.0.8:
+    dependencies:
+      tslib: 2.8.1
 
   ms@2.1.3: {}
 
@@ -4890,7 +4925,9 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  ts-ioc-container@46.9.0: {}
+  ts-ioc-container@47.3.1: {}
+
+  tslib@2.8.1: {}
 
   tunnel@0.0.6: {}
 
