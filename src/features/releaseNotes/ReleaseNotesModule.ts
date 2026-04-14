@@ -2,7 +2,7 @@ import { IContainer, IContainerModule, Registration as R } from 'ts-ioc-containe
 import { GithubService } from './services/GithubService';
 import { ReleaseNotesController } from './ReleaseNotesController';
 
-export class ReleaseNotesPluginModule implements IContainerModule {
+export class ReleaseNotesModule implements IContainerModule {
   applyTo(container: IContainer) {
     container.addRegistration(R.fromClass(GithubService));
     container.addRegistration(R.fromClass(ReleaseNotesController));

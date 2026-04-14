@@ -145,9 +145,9 @@ process.exit(1);
   };
 
   runCommand(`git init --bare ${JSON.stringify(remoteDir)}`, tempRoot, fixtureEnv);
-  runCommand('vcs init', workDir, fixtureEnv);
-  runCommand('vcs config user.name "E2E Bot"', workDir, fixtureEnv);
-  runCommand('vcs config user.email "e2e@example.com"', workDir, fixtureEnv);
+  runCommand('git init', workDir, fixtureEnv);
+  runCommand('git config user.name "E2E Bot"', workDir, fixtureEnv);
+  runCommand('git config user.email "e2e@example.com"', workDir, fixtureEnv);
 
   cpSync(templatesDir, path.join(workDir, 'templates'), { recursive: true });
   mkdirSync(path.join(workDir, 'node_modules', '.bin'), { recursive: true });
@@ -178,8 +178,8 @@ process.exit(1);
     writeFileSync(path.join(packagePath, 'README.md'), 'initial\n');
   }
 
-  runCommand('vcs add .', workDir, fixtureEnv);
-  runCommand('vcs commit -m "chore: initial fixture"', workDir, fixtureEnv);
+  runCommand('git add .', workDir, fixtureEnv);
+  runCommand('git commit -m "chore: initial fixture"', workDir, fixtureEnv);
 
   if (includeInitialTags) {
     for (const pkg of packages) {
@@ -189,8 +189,8 @@ process.exit(1);
 
   if (withRemote) {
     runCommand(`git remote add origin ${JSON.stringify(remoteDir)}`, workDir, fixtureEnv);
-    runCommand('vcs push -u origin HEAD', workDir, fixtureEnv);
-    runCommand('vcs push --tags', workDir, fixtureEnv);
+    runCommand('git push -u origin HEAD', workDir, fixtureEnv);
+    runCommand('git push --tags', workDir, fixtureEnv);
   }
 
   return {
@@ -203,11 +203,11 @@ process.exit(1);
       const packagePath = path.join(workDir, 'packages', packageName);
       const marker = path.join(packagePath, `${Date.now()}-${Math.random().toString(36).slice(2)}.txt`);
       writeFileSync(marker, `${message}\n`);
-      runCommand('vcs add .', workDir, fixtureEnv);
+      runCommand('git add .', workDir, fixtureEnv);
       runCommand(`git commit -m ${JSON.stringify(message)}`, workDir, fixtureEnv);
     },
     tags(): string[] {
-      const tagOutput = runCommand('vcs tag --list', workDir, fixtureEnv);
+      const tagOutput = runCommand('git tag --list', workDir, fixtureEnv);
       return tagOutput ? tagOutput.split('\n').filter(Boolean) : [];
     },
     publishedPackages(): string[] {

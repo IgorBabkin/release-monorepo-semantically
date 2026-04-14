@@ -4,11 +4,11 @@ import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
 import { execute } from '../../utils/hooks';
 import { z } from 'zod';
 import { pluginsConfigService } from '../../services/PluginsConfigService';
-import { PLUGIN_CONFIG_SCHEMA } from './PackageJsonPluginConfig';
+import { PLUGIN_CONFIG_SCHEMA } from './PackageJsonConfig';
 import { command, schema } from 'ib-commander';
 import { Command } from 'commander';
 import { constant as c } from '../../utils/utils';
-import { deserializeContext } from '../../models/ReleaseControllerContext';
+import { deserializeContext } from '../../domain/ReleaseControllerContext';
 
 export const PACKAGE_OPTIONS = z.object({
   context: z.string(),

@@ -1,8 +1,8 @@
-import { bindTo, IContainer, inject, onConstruct, register, SingleToken, singleton } from 'ts-ioc-container';
+import { bindTo, IContainer, inject, onConstruct, register, shallowCache, SingleToken, singleton } from 'ts-ioc-container';
 import { z, ZodType } from 'zod';
 import { execute } from '../utils/hooks';
 import path from 'node:path';
-import { globalConfig } from '../models/GlobalConfig';
+import { globalConfig } from '../domain/GlobalConfig';
 import * as fs from 'node:fs';
 import { ILogger, ILoggerKey } from './ConsoleLogger';
 
@@ -15,7 +15,6 @@ export const pluginsConfigService = (key: string, schema: ZodType) => (c: IConta
 @register(bindTo(IPluginsConfigServiceKey), singleton())
 export class PluginsConfigService implements IPluginsConfigService {
   private config: Record<string, unknown> = {};
-  private readonly cache = new Map<string, WeakMap<ZodType, unknown>>();
 
   constructor(
     @inject(globalConfig('cwd')) private readonly cwd: string,
@@ -53,21 +52,12 @@ export class PluginsConfigService implements IPluginsConfigService {
     }
   }
 
+  @shallowCache((...args) => args[0])
   getConfig<T extends ZodType>(key: string, schema: T): z.infer<T> | null {
-    let keyCache = this.cache.get(key);
-    if (!keyCache) {
-      keyCache = new WeakMap();
-      this.cache.set(key, keyCache);
-    }
-    if (keyCache.has(schema)) {
-      return keyCache.get(schema) as z.infer<T>;
-    }
     const config = this.config[key];
     if (!config) {
       return null;
     }
-    const result = schema.parse(config);
-    keyCache.set(schema, result);
-    return result;
+    return schema.parse(config);
   }
 }

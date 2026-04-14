@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { bindTo, register } from 'ts-ioc-container';
 import { ReleaseNotesCreateOptions, ReleaseNotesService, ReleaseNotesServiceKey } from './ReleaseNotesService';
 
-import { whenConfig } from '../ReleaseNotesPluginConfig';
+import { whenConfig } from '../ReleaseNotesConfig';
 
 @register(bindTo(ReleaseNotesServiceKey), whenConfig('kind', 'github'))
 export class GithubService implements ReleaseNotesService {

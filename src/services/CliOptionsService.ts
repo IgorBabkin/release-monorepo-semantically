@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 
 import { Command } from 'commander';
-import { CliOptions } from '../models/CliOptions';
+import { CliOptions } from '../domain/CliOptions';
 import { bindTo, register, SingleToken } from 'ts-ioc-container';
 
 export interface ICliOptionsService {

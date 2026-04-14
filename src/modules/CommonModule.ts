@@ -4,7 +4,7 @@ import { NodeFileSystemService } from '../services/NodeFileSystemService';
 import { ExceptionHandler } from '../exceptions/ExceptionHandler';
 import { ConsoleLogger } from '../services/ConsoleLogger';
 import { HandlebarsRenderService } from '../services/HandlebarsRenderService';
-import { GlobalConfigKey } from '../models/GlobalConfig';
+import { GlobalConfigKey } from '../domain/GlobalConfig';
 import { PluginsConfigService } from '../services/PluginsConfigService';
 
 interface CommonModuleOptions {

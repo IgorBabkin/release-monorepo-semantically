@@ -4,7 +4,7 @@ import { execSync } from 'node:child_process';
 import { bindTo, register } from 'ts-ioc-container';
 import { PackageManager, PackageManagerKey } from './PackageManager';
 
-import { whenPackageManagerConfigEqual } from '../PackageManagerPluginConfig';
+import { whenPackageManagerConfigEqual } from '../PackageManagerConfig';
 
 @register(bindTo(PackageManagerKey), whenPackageManagerConfigEqual('kind', 'pnpm'))
 export class PNPMPackageManager implements PackageManager {

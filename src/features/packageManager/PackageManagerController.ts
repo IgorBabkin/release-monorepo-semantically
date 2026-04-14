@@ -4,11 +4,11 @@ import { bindTo, hook, inject, register } from 'ts-ioc-container';
 import { z } from 'zod';
 import { pluginsConfigService } from '../../services/PluginsConfigService';
 import { PackageManager, PackageManagerKey } from './services/PackageManager';
-import { PLUGIN_CONFIG_SCHEMA } from './PackageManagerPluginConfig';
+import { PLUGIN_CONFIG_SCHEMA } from './PackageManagerConfig';
 import { command, schema } from 'ib-commander';
 import { Command } from 'commander';
 import { constant as c } from '../../utils/utils';
-import { deserializeContext } from '../../models/ReleaseControllerContext';
+import { deserializeContext } from '../../domain/ReleaseControllerContext';
 
 export const PACKAGE_MANAGER_OPTIONS = z.object({
   context: z.string(),

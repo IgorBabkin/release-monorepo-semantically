@@ -1,10 +1,10 @@
 import { bindTo, hook, inject, register } from 'ts-ioc-container';
-import { globalConfig } from '../../models/GlobalConfig';
+import { globalConfig } from '../../domain/GlobalConfig';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService';
 import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService';
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
 import { execute } from '../../utils/hooks';
-import { deserializeContext } from '../../models/ReleaseControllerContext';
+import { deserializeContext } from '../../domain/ReleaseControllerContext';
 import path from 'node:path';
 import { Command } from 'commander';
 import { z } from 'zod';

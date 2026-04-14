@@ -5,13 +5,13 @@ import { bindTo, hook, inject, register } from 'ts-ioc-container';
 import { execute } from '../../utils/hooks';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService';
 import { pluginsConfigService } from '../../services/PluginsConfigService';
-import { globalConfig } from '../../models/GlobalConfig';
+import { globalConfig } from '../../domain/GlobalConfig';
 import { ReleaseNotesService, ReleaseNotesServiceKey } from './services/ReleaseNotesService';
-import { PLUGIN_CONFIG_SCHEMA } from './ReleaseNotesPluginConfig';
+import { PLUGIN_CONFIG_SCHEMA } from './ReleaseNotesConfig';
 import { command, schema } from 'ib-commander';
 import { Command } from 'commander';
 import { constant as c } from '../../utils/utils';
-import { deserializeContext } from '../../models/ReleaseControllerContext';
+import { deserializeContext } from '../../domain/ReleaseControllerContext';
 
 export const RELEASE_NOTES_OPTIONS = z.object({
   context: z.string(),

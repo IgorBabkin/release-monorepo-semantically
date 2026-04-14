@@ -5,13 +5,13 @@ import { z } from 'zod';
 import { bindTo, hook, inject, register } from 'ts-ioc-container';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService';
 import { pluginsConfigService } from '../../services/PluginsConfigService';
-import { globalConfig } from '../../models/GlobalConfig';
+import { globalConfig } from '../../domain/GlobalConfig';
 import { VSCService, VSCServiceKey } from './services/VSCService';
-import { PLUGIN_CONFIG_SCHEMA } from './VCSPluginConfig';
+import { PLUGIN_CONFIG_SCHEMA } from './VCSConfig';
 import { command, schema } from 'ib-commander';
 import { Command } from 'commander';
 import { constant as c } from '../../utils/utils';
-import { deserializeContext } from '../../models/ReleaseControllerContext';
+import { deserializeContext } from '../../domain/ReleaseControllerContext';
 
 export const VCS_OPTIONS = z.object({
   context: z.string(),

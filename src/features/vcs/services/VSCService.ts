@@ -1,4 +1,4 @@
-import { ConventionalCommit } from '../../../models/ConventionalCommit';
+import { ConventionalCommit } from '../../../domain/ConventionalCommit';
 import { SingleToken } from 'ts-ioc-container';
 
 export interface VSCService {

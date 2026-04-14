@@ -2,11 +2,11 @@ import 'reflect-metadata';
 
 import { readFileSync } from 'node:fs';
 import Handlebars from 'handlebars';
-import { ConventionalCommit, filterCommitsByType } from '../models/ConventionalCommit';
+import { ConventionalCommit, filterCommitsByType } from '../domain/ConventionalCommit';
 import { TemplateInvocationTargetException, TemplateMethodNotFunctionException } from '../exceptions/DomainException';
 import { bindTo, inject, onConstruct, register, SingleToken, singleton } from 'ts-ioc-container';
 import { execute } from '../utils/hooks';
-import { globalConfig } from '../models/GlobalConfig';
+import { globalConfig } from '../domain/GlobalConfig';
 import path from 'node:path';
 
 export interface IRenderService {

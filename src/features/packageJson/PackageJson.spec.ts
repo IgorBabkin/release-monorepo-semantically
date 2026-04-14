@@ -1,8 +1,8 @@
 import { describe, it } from 'vitest';
 import { It, Mock, Times } from 'moq.ts';
 import { PackageController } from './PackageController';
-import { NpmPackage } from '../../models/NpmPackage';
-import { serializeContext } from '../../models/ReleaseControllerContext';
+import { NpmPackage } from '../../domain/NpmPackage';
+import { serializeContext } from '../../domain/ReleaseControllerContext';
 import { IFileSystemService } from '../../services/NodeFileSystemService';
 import { ILogger } from '../../services/ConsoleLogger';
 

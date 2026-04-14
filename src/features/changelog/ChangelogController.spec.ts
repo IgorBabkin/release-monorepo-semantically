@@ -1,9 +1,9 @@
 import { describe, it } from 'vitest';
 import { It, Mock, Times } from 'moq.ts';
 import { ChangelogController } from './ChangelogController';
-import { NpmPackage } from '../../models/NpmPackage';
-import { ConventionalCommit } from '../../models/ConventionalCommit';
-import { serializeContext } from '../../models/ReleaseControllerContext';
+import { NpmPackage } from '../../domain/NpmPackage';
+import { ConventionalCommit } from '../../domain/ConventionalCommit';
+import { serializeContext } from '../../domain/ReleaseControllerContext';
 import { IRenderService } from '../../services/HandlebarsRenderService';
 import { IFileSystemService } from '../../services/NodeFileSystemService';
 import { ILogger } from '../../services/ConsoleLogger';
@@ -34,7 +34,7 @@ describe('ChangelogController', () => {
         m.render(
           './changelog.hbs',
           It.Is((data: Record<string, unknown>) => data['existing'] === ''),
-          It.Is((opts: { cwd: string }) => opts.cwd.includes('src/plugins/changelog')),
+          It.Is((opts: { cwd: string }) => opts.cwd.includes('src/features/changelog')),
         ),
       Times.Once(),
     );
@@ -61,7 +61,7 @@ describe('ChangelogController', () => {
         m.render(
           './changelog.hbs',
           It.Is((data: Record<string, unknown>) => data['existing'] === 'old changelog'),
-          It.Is((opts: { cwd: string }) => opts.cwd.includes('src/plugins/changelog')),
+          It.Is((opts: { cwd: string }) => opts.cwd.includes('src/features/changelog')),
         ),
       Times.Once(),
     );

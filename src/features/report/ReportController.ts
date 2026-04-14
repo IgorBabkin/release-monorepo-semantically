@@ -1,5 +1,5 @@
 import { bindTo, hook, IContainer, inject, register } from 'ts-ioc-container';
-import { NpmPackage, PackageName, PackageVersion } from '../../models/NpmPackage';
+import { NpmPackage, PackageName, PackageVersion } from '../../domain/NpmPackage';
 import { IFileSystemServiceKey } from '../../services/NodeFileSystemService';
 import { VSCService, VSCServiceKey } from '../vcs/services/VSCService';
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
@@ -7,9 +7,9 @@ import { OutputService, OutputServiceKey } from '../../services/OutputService';
 import { onDefault } from 'ib-commander';
 import { execute } from '../../utils/hooks';
 import { sortLessDependenciesFirst } from '../../utils/sortLessDependenciesFirst';
-import { ConventionalCommit } from '../../models/ConventionalCommit';
-import { bumpTypeToString, SemVerBumpType } from '../../models/SemVerBumpType';
-import { serializeContext } from '../../models/ReleaseControllerContext';
+import { ConventionalCommit } from '../../domain/ConventionalCommit';
+import { bumpTypeToString, SemVerBumpType } from '../../domain/SemVerBumpType';
+import { serializeContext } from '../../domain/ReleaseControllerContext';
 
 @register(bindTo('report'))
 export class ReportController {

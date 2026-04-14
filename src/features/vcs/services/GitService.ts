@@ -1,11 +1,11 @@
 import 'reflect-metadata';
 
 import { execSync } from 'node:child_process';
-import { ConventionalCommit } from '../../../models/ConventionalCommit';
+import { ConventionalCommit } from '../../../domain/ConventionalCommit';
 import { bindTo, register } from 'ts-ioc-container';
 import { VSCService, VSCServiceKey } from './VSCService';
 
-import { whenConfig } from '../VCSPluginConfig';
+import { whenConfig } from '../VCSConfig';
 
 @register(bindTo(VSCServiceKey), whenConfig('kind', 'git'))
 export class GitService implements VSCService {
