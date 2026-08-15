@@ -26,6 +26,7 @@ export class GitService implements VSCService {
   }
 
   createTag(tagName: string): void {
+    if (this.tagExists(tagName)) return;
     execSync(`git tag ${tagName}`);
   }
 

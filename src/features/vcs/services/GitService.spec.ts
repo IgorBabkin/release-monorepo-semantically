@@ -63,12 +63,26 @@ describe('GitService', () => {
     expect(execSync).toHaveBeenNthCalledWith(3, 'git push --tags');
   });
 
-  it('given a tag name when createTag runs then vcs tag command is executed', () => {
+  it('given a missing tag when createTag runs then vcs tag command is executed', () => {
+    vi.mocked(execSync).mockImplementationOnce(() => {
+      throw new Error('missing tag');
+    });
     const service = new GitService();
 
     service.createTag('pkg-a@1.0.1');
 
-    expect(execSync).toHaveBeenCalledWith('git tag pkg-a@1.0.1');
+    expect(execSync).toHaveBeenNthCalledWith(1, 'git rev-parse --verify --quiet refs/tags/pkg-a@1.0.1', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git tag pkg-a@1.0.1');
+  });
+
+  it('given an existing tag when createTag runs then it is skipped without error', () => {
+    vi.mocked(execSync).mockReturnValueOnce('refs/tags/pkg-a@1.0.1\n');
+    const service = new GitService();
+
+    service.createTag('pkg-a@1.0.1');
+
+    expect(execSync).toHaveBeenCalledTimes(1);
+    expect(execSync).toHaveBeenCalledWith('git rev-parse --verify --quiet refs/tags/pkg-a@1.0.1', { encoding: 'utf-8' });
   });
 
   it('given vcs status output when checking tree cleanliness then it returns true only for empty status', () => {

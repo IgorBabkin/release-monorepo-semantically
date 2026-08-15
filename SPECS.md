@@ -489,6 +489,8 @@ Create a tag for each released package:
 - `ts-ioc-container@2.1.0`
 - `@ts-ioc-container/react@1.5.2`
 
+If a tag with the target name already exists in the repository, skip creating it rather than raising an error (idempotent — safe to re-run after a partial/failed release).
+
 ## Output Format
 
 Every step logs one line per action, tagged with its own name (`[report]`, `[vcs]`, ...), to **stderr**. `report` writes nothing else to stderr; its **stdout** carries only the serialized JSON context, so it can be captured directly (`RELEASE_CONTEXT=$(monorepo-semantic-release report)`) without stripping log lines out of it first. `--dry-run` prefixes each skipped action with `SKIP` and appends `(dry-run)`; every other step still emits its normal log lines, just without the side effect.
