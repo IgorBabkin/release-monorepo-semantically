@@ -2,6 +2,8 @@
 
 This document contains UML diagrams of the release task domain using Mermaid format. These diagrams render directly on GitHub, GitLab, and in most modern **markdown** viewers.
 
+> **These diagrams are a conceptual design sketch, not a description of the current codebase.** See [`README-UML.md`](README-UML.md) for what's real vs. illustrative, and `SPECS.md`/`README.md` at the repo root for the actual architecture.
+
 > **💡 Viewing in Cursor?** Install the "Markdown Preview Mermaid Support" extension, then press `Cmd+Shift+V` (Mac) or `Ctrl+Shift+V` (Windows/Linux) to open the preview. See [`CURSOR-VISUALIZATION.md`](CURSOR-VISUALIZATION.md) for detailed instructions.
 
 ## 1. Complete Domain Model

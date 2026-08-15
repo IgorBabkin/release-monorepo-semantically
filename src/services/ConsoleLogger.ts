@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { bindTo, inject, register, SingleToken } from 'ts-ioc-container';
+import { args, bindTo, inject, register, SingleToken } from 'ts-ioc-container';
 
 type StepName = 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG';
 
@@ -16,15 +16,19 @@ export interface ILogger {
   info(...args: unknown[]): void;
 }
 
-export const ILoggerKey = new SingleToken<ILogger>('ILogger');
-export const ILoggerTopicKey = new SingleToken<string>('ILoggerTopic');
+// Deliberately not named 'ILogger': ib-commander's SetupModule registers its own
+// logger under that token name, and SingleToken identity is the name.
+export const ILoggerKey = new SingleToken<ILogger>('ReleaseLogger');
 
 @register(bindTo(ILoggerKey))
 export class ConsoleLogger implements ILogger {
-  constructor(@inject(ILoggerTopicKey) private topic: string) {}
+  // Callers inject via ILoggerKey.args('<topic>'); @inject(args(0)) is what
+  // actually reads that extra resolution argument back out — an undecorated
+  // parameter gets no metadata at all and silently falls back to its default.
+  constructor(@inject(args(0)) private topic: string = 'release') {}
 
   private supportsColor(): boolean {
-    return Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
+    return Boolean(process.stderr.isTTY) && !process.env.NO_COLOR;
   }
 
   private color(text: string, colorCode: number): string {
@@ -47,7 +51,11 @@ export class ConsoleLogger implements ILogger {
   }
 
   info(...args: unknown[]) {
+    // Progress output goes to stderr, not stdout: `report`'s stdout is meant
+    // to be captured directly as the release context (see SPECS.md's CI
+    // story, `RELEASE_CONTEXT=$(monorepo-semantic-release report)`), and
+    // mixing log lines into that stream would corrupt it.
     const renderedArgs = args.map((arg, index) => (index === 0 && typeof arg === 'string' ? this.decorateStructuredMessage(arg) : arg));
-    console.info(`[${this.topic}]`, ...renderedArgs);
+    console.error(`[${this.topic}]`, ...renderedArgs);
   }
 }

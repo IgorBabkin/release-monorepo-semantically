@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture';
+import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture.js';
 
 describe('T18 - missing changelog file is generated during release', () => {
   afterEach(() => {

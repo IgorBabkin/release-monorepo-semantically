@@ -53,113 +53,67 @@ chore: update dependencies
 
 ### Enforcement
 
-- The release CLI MUST validate that all commits follow conventional format
-- Non-conventional commits MUST cause the release process to fail with a clear error message
-- The error message MUST identify the problematic commit(s) and provide guidance on fixing them
-
-**Example Error:**
-
-```
-❌ Release failed: Non-conventional commits detected
-
-The following commits do not follow conventional commit format:
-  - a1b2c3d: "Updated README" (missing type and scope)
-  - d4e5f6a: "quick fix" (missing type and scope)
-
-All commits must follow the format: <type>(<scope>): <subject>
-
-Allowed types: feat, fix, perf, docs, test, ci, chore, refactor, style
-Allowed scopes: ts-ioc-container, @ts-ioc-container/react, @ts-ioc-container/solidjs, @ts-ioc-container/express, @ts-ioc-container/fastify
-
-Please rewrite these commits using conventional format and try again.
-```
+**Current behavior:** `report` does not validate commit format. A commit that doesn't parse as `<type>(<scope>): <subject>` is treated as `type: "unknown"` with no bump (equivalent to a non-release type like `chore`) and is silently excluded from the release — it neither triggers a bump nor fails the run. Enforcing conventional commit format (e.g. via commitlint in a commit-msg hook) is left to the consuming repository; `report` only classifies what it finds.
 
 ## CLI Interface
 
-The release process is orchestrated entirely from the root package.json:
-
-**Script workflow:**
-
-1. Discover all workspace packages
-2. Build dependency graph
-3. Sort packages topologically (dependencies first)
-4. Process each package sequentially in dependency order
-5. Track updated dependency versions between package releases
+There is no single release command. The tool is a set of independent steps — `report`, `package-json`, `package-manager`, `changelog`, `vcs`, `release-notes` — invoked as `monorepo-semantic-release <controller> [action] [--flags...]`. `report` reads the repository and computes what should release; every other step receives that result via `--context <json>` and does one job. The caller (a CI pipeline, or a local shell loop) decides which steps to run, in what order, and whether to run them at all — the tool does not orchestrate a multi-step release itself. See [CI Integration User Story](#ci-integration-user-story) below for the canonical sequence, and `README.md` for the full command reference.
 
 ### Usage
 
 ```bash
-# Root command - releases all packages in dependency order
-monorepo-semantic-release
+RELEASE_CONTEXT=$(monorepo-semantic-release report)
 
-# Dry-run mode - preview changes without modifying anything
-monorepo-semantic-release --dry-run
+monorepo-semantic-release package-json    --context "$RELEASE_CONTEXT"
+monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"
+monorepo-semantic-release changelog       --context "$RELEASE_CONTEXT"
+monorepo-semantic-release vcs             --context "$RELEASE_CONTEXT"
 ```
 
 ### CLI Options
 
-**`--dry-run`** (optional)
+**`--dry-run`** (optional, every step)
 
-- Simulates the entire release process without making any changes
-- Shows exactly what would be released, version bumps, and changelogs
-- No file modifications, no git commits, no git tags, no pushes, no publishes
-- Safe to run repeatedly for planning and verification
+- Previews that one step's effect without making any changes
+- No file modifications, no git commits, no git tags, no pushes, no publishes for that invocation
+- Safe to run repeatedly for planning and verification; chain it onto every step in the pipeline to preview the whole release
 
-**`--no-push`** (optional)
+**`--context <json>`** (required on every step except `report`)
 
-- Skips pushing the release commit and tags to the configured Git remote
-- Still creates local commit and tags unless `--dry-run` is also used
+- The JSON `report` wrote to stdout: released packages, their new versions, and the commits that triggered each bump
 
-**`--no-publish`** (optional)
-
-- Skips publishing bumped packages after the release commit and tags are created
-- Useful for local verification or split CI pipelines
-
-**Examples:**
-
-```bash
-# Preview what would be released
-monorepo-semantic-release --dry-run
-
-# Perform actual release
-monorepo-semantic-release
-```
+There is no `--no-push`/`--no-publish` equivalent: a pipeline that wants to skip pushing or publishing simply doesn't invoke `vcs push` (or invokes `vcs commit`/`vcs tag` instead of bare `vcs`) or `package-manager publish`.
 
 ## Workflow
 
 ### High-Level Flow
 
 ```
-Root Release Script (monorepo-semantic-release)
+1. `report`
+   ├─ Discover workspace packages from package.json → workspaces
+   ├─ Build dependency graph (internal dependencies)
+   ├─ Sort topologically (dependencies first)
+   ├─ For each package in sorted order:
+   │  ├─ Filter commits since its last release tag by scope
+   │  ├─ Check for outdated internal dependencies
+   │  ├─ Calculate version bump (commits + dependency updates)
+   │  └─ Track released version for the next package's dependency check
+   └─ Write { releasedVersions, releasedPackages, releasedCommits } as JSON to stdout
   ↓
-1. Discover workspace packages from package.json → workspaces
+2. `package-json --context <json>`     — update internal dependency versions in package.json
   ↓
-2. Build dependency graph (internal dependencies)
+3. `package-manager --context <json>`  — run pnpm version <newVersion> per released package
   ↓
-3. Topological sort (dependencies first)
+4. `changelog --context <json>`        — generate & prepend CHANGELOG.md per released package
   ↓
-4. Detect commits since last release
+5. `vcs --context <json>`              — stage everything, one release commit, one tag per package, push
   ↓
-4. For each package in sorted order:
-   ├─ Filter commits out by package name (scope)
-   ├─ Check for outdated internal dependencies
-   ├─ Calculate version bump (commits + dependency updates)
-   ├─ Skip if no changes (BumpType.NONE)
-   ├─ Update dependencies in package.json
-   ├─ Run pnpm version <newVersion>
-   ├─ Generate & prepend new changelog to CHANGELOG.md
-   ├─ Create git tag: pkg@version
-   └─ Track released version for next package's dependency check
+6. `package-manager publish --context <json>`  — publish bumped packages (optional)
   ↓
-5. Update root pnpm-lock.yaml
-  ↓
-6. Create single release commit: ci: release [skip-ci]
-   (includes all packages and changes)
-  ↓
-7. Push the release commit and tags to the remote unless `--no-push` is used
-  ↓
-8. Publish bumped packages unless `--no-publish` is used
+7. `release-notes --context <json>`            — create GitHub Releases (optional)
 ```
+
+Each step after `report` is its own process invocation and reads the same `--context`; nothing is shared between steps except that JSON blob. A pipeline can stop after any step, skip a step entirely, or re-run one in isolation (e.g. `vcs push` again after a failed push, without recomputing `report` or redoing the commit).
 
 ### Sequential Processing (IMPORTANT)
 
@@ -464,6 +418,8 @@ Uses Handlebars template from `scripts/templates/changelog.hbs`:
 
 ### Phase 4: Version Updates
 
+Handled by the `package-json` step (dependency versions) and the `package-manager` step (the version bump itself).
+
 #### 4.1 Update package.json using pnpm version
 
 **IMPORTANT:** Use `pnpm version` command to bump versions (not manual JSON editing).
@@ -481,43 +437,45 @@ After updating all package.json files, regenerate the lockfile:
 
 ### Phase 5: Git Operations
 
+Handled by the `vcs` step (`commit`, `tag`, and `push` actions, run in that order by the default action).
+
 #### 5.1 Create Release Commits
 
-**IMPORTANT:** Create **one commit per all package**.
+**IMPORTANT:** Create **one commit per all package**, staged and created by `vcs commit`.
 
-**Commit Message Format** (from `scripts/templates/release-commit-message.hbs`):
+**Commit Message Format** (from `src/features/vcs/release-commit-msg.hbs`):
 
 ```
-ci: release [skip-ci]
+ci(release): publish [skip-ci]
 
-## package1@version
+## 📦 package1@version
 
-- type[!]: subject
-- type[!]: subject
+- 🔹 type[!]: subject
+- 🔹 type[!]: subject
 
-## package2@version
+## 📦 package2@version
 
-- type[!]: subject
+- 🔹 type[!]: subject
 
-Affected: package1@version,package2@version
+Affected: 📌 package1@version,package2@version
 ```
 
 **Example:**
 
 ```
-ci: release [skip-ci]
+ci(release): publish [skip-ci]
 
-## ts-ioc-container@2.1.0
+## 📦 ts-ioc-container@2.1.0
 
-- feat: add new provider type
-- feat: support async factory functions
-- fix: memory leak in singleton provider
+- 🔹 feat: add new provider type
+- 🔹 feat: support async factory functions
+- 🔹 fix: memory leak in singleton provider
 
-## @ts-ioc-container/react@1.6.0
+## 📦 @ts-ioc-container/react@1.6.0
 
-- fix: resolve context hook issue
+- 🔹 fix: resolve context hook issue
 
-Affected: ts-ioc-container@2.1.0,@ts-ioc-container/react@1.6.0
+Affected: 📌 ts-ioc-container@2.1.0,@ts-ioc-container/react@1.6.0
 ```
 
 #### 5.2 Create Git Tags
@@ -533,160 +491,132 @@ Create a tag for each released package:
 
 ## Output Format
 
-### Console Output (--dry-run)
+Every step logs one line per action, tagged with its own name (`[report]`, `[vcs]`, ...), to **stderr**. `report` writes nothing else to stderr; its **stdout** carries only the serialized JSON context, so it can be captured directly (`RELEASE_CONTEXT=$(monorepo-semantic-release report)`) without stripping log lines out of it first. `--dry-run` prefixes each skipped action with `SKIP` and appends `(dry-run)`; every other step still emits its normal log lines, just without the side effect.
+
+### Console Output (actual run, stderr)
 
 ```
-🔍 Discovering workspace packages...
-  Found 5 packages in workspaces
-
-🔗 Building dependency graph...
-  ts-ioc-container (no internal deps)
-  @ts-ioc-container/react → ts-ioc-container
-  @ts-ioc-container/solidjs → ts-ioc-container
-  @ts-ioc-container/express → ts-ioc-container
-  @ts-ioc-container/fastify → ts-ioc-container
-
-📊 Topological sort order:
-  1. ts-ioc-container
-  2. @ts-ioc-container/react
-  3. @ts-ioc-container/solidjs
-  4. @ts-ioc-container/express
-  5. @ts-ioc-container/fastify
-
-🔍 Analyzing changes...
-
-📦 ts-ioc-container
-  Current version: 2.0.5
-  Commits:         5 (3 feat, 2 fix)
-  Bump reason:     New features
-  Next version:    2.1.0 (minor)
-
-📦 @ts-ioc-container/react
-  Current version: 1.5.1
-  Commits:         0
-  Dependencies:    ts-ioc-container 2.0.5 → 2.1.0
-  Bump reason:     Dependency update
-  Next version:    1.6.0 (minor)
-
-📦 @ts-ioc-container/solidjs
-  Current version: 1.0.0
-  Commits:         0
-  Dependencies:    ts-ioc-container 2.0.5 → 2.1.0
-  Bump reason:     Dependency update
-  Next version:    1.1.0 (minor)
-
-📦 @ts-ioc-container/express
-  No changes
-
-📦 @ts-ioc-container/fastify
-  No changes
-
-📝 Release plan:
-
-  [1/3] ts-ioc-container (2.0.5 → 2.1.0)
-    ✓ Run pnpm version 2.1.0
-    ✓ Update CHANGELOG.md
-    ✓ Git tag: ts-ioc-container@2.1.0
-
-  [2/3] @ts-ioc-container/react (1.5.1 → 1.6.0)
-    ✓ Update dependency: ts-ioc-container@2.1.0
-    ✓ Run pnpm version 1.6.0
-    ✓ Update CHANGELOG.md
-    ✓ Git tag: @ts-ioc-container/react@1.6.0
-
-  [3/3] @ts-ioc-container/solidjs (1.0.0 → 1.1.0)
-    ✓ Update dependency: ts-ioc-container@2.1.0
-    ✓ Run pnpm version 1.1.0
-    ✓ Update CHANGELOG.md
-    ✓ Git tag: @ts-ioc-container/solidjs@1.1.0
-
-  Final:
-    ✓ Update pnpm-lock.yaml
-    ✓ Git commit: ci: release [skip-ci]
-    ✓ Push 1 commit and 3 tags to remote
+[report] 🚀 BUMP     ts-ioc-container 2.0.5 -> 2.1.0 (minor)
+[report] 🚀 BUMP     @ts-ioc-container/react 1.5.1 -> 1.6.0 (minor)
+[package-manager] 🚀 BUMP     ts-ioc-container@2.1.0
+[package-manager] 🚀 BUMP     @ts-ioc-container/react@1.6.0
+[changelog] 📝 WRITE    ts-ioc-container CHANGELOG.md
+[changelog] 📝 WRITE    @ts-ioc-container/react CHANGELOG.md
+[vcs] 📦 COMMIT   release commit created
+[vcs] 🏷️ TAG      ts-ioc-container@2.1.0
+[vcs] 🏷️ TAG      @ts-ioc-container/react@1.6.0
+[vcs] PUSH     HEAD and 2 tag(s)
+[package-manager] PUBLISH  ts-ioc-container@2.1.0
+[package-manager] PUBLISH  @ts-ioc-container/react@1.6.0
 ```
 
-### Console Output (Actual Run)
+### Console Output (`--dry-run`, stderr)
 
 ```
-🔍 Discovering workspace packages...
-  ✓ Found 5 packages
-
-🔗 Building dependency graph...
-  ✓ Analyzed internal dependencies
-
-📊 Release order (3 packages):
-  1. ts-ioc-container
-  2. @ts-ioc-container/react
-  3. @ts-ioc-container/solidjs
-
-📦 [1/3] Releasing ts-ioc-container@2.1.0...
-  ✓ Detected 5 commits (3 feat, 2 fix)
-  ✓ Calculated bump: minor (new features)
-  ✓ pnpm version 2.1.0
-  ✓ Generated CHANGELOG.md
-  ✓ Git tag: ts-ioc-container@2.1.0
-
-📦 [2/3] Releasing @ts-ioc-container/react@1.6.0...
-  ✓ Detected dependency update: ts-ioc-container 2.0.5 → 2.1.0
-  ✓ Updated package.json dependencies
-  ✓ Calculated bump: minor (dependency update)
-  ✓ pnpm version 1.6.0
-  ✓ Generated CHANGELOG.md
-  ✓ Git tag: @ts-ioc-container/react@1.6.0
-
-📦 [3/3] Releasing @ts-ioc-container/solidjs@1.1.0...
-  ✓ Detected dependency update: ts-ioc-container 2.0.5 → 2.1.0
-  ✓ Updated package.json dependencies
-  ✓ Calculated bump: minor (dependency update)
-  ✓ pnpm version 1.1.0
-  ✓ Generated CHANGELOG.md
-  ✓ Git tag: @ts-ioc-container/solidjs@1.1.0
-
-🔒 Finalizing...
-  ✓ Updated pnpm-lock.yaml
-  ✓ Git commit: ci: release [skip-ci]
-
-🚀 Pushing to remote...
-  ✓ Pushed 1 commit
-  ✓ Pushed 3 tags
-
-✨ Release complete!
-
-Released packages:
-  • ts-ioc-container@2.1.0 (5 commits)
-  • @ts-ioc-container/react@1.6.0 (dependency update)
-  • @ts-ioc-container/solidjs@1.1.0 (dependency update)
+[report] 🚀 BUMP     ts-ioc-container 2.0.5 -> 2.1.0 (minor)
+[package-manager] ⚠ SKIP     BUMP     ts-ioc-container@2.1.0 (dry-run)
+[changelog] ⚠ SKIP     WRITE    ts-ioc-container CHANGELOG.md (dry-run)
+[vcs] ⚠ SKIP     COMMIT (dry-run)
+ci(release): publish [skip-ci]
+...
+[vcs] ⚠ SKIP     TAG      ts-ioc-container@2.1.0 (dry-run)
+[vcs] ⚠ SKIP     PUSH     HEAD and 1 tag(s) (dry-run)
 ```
 
 ## Error Handling
 
-The CLI is designed to run in CI environments where the repository state is controlled. No pre-flight checks are performed - the script will fail naturally when issues occur.
+The CLI is designed to run in CI environments where the repository state is controlled. `report` performs one pre-flight check — the working tree must be clean — before computing anything; every other step fails naturally when the underlying command it wraps fails.
 
 **Error Behavior:**
 
-If an error occurs during the release process:
+If a step fails:
 
-- Display clear error message showing what failed
-- Exit with non-zero status code
-- Leave working directory in current state for inspection
+- A recognized failure (see below) prints `[CODE] message` to stderr via the domain exception it raised
+- An unrecognized failure prints the raw error
+- The process exits with a non-zero status code
+- Nothing about the working directory is rolled back — whatever that step had already done (e.g. `vcs`'s commit and tag actions, before its push action fails) stays in place for inspection
 
 **Common Errors:**
 
-- **Missing package.json**: Script will throw error when attempting to read file
-- **Invalid workspaces**: Script will fail when parsing workspaces field
-- **Git errors**: Git commands will fail with appropriate error messages
-- **pnpm version errors**: pnpm will fail if version already exists or invalid
-- **Template errors**: Handlebars will fail if templates are missing or invalid
-- **Push errors**: Git push will fail with authentication or network errors
+- **`DIRTY_WORKING_TREE`**: `report` refuses to run against an unclean working tree
+- **`MISSING_GITHUB_CREDENTIALS`**: `release-notes` has no repository/token from config or `GITHUB_REPOSITORY`/`GITHUB_TOKEN`
+- **`GITHUB_CLI_UNAVAILABLE`**: `release-notes` needs `gh` on `PATH`
+- **`INVALID_CONFIG`**: `package.json`'s `release` section or `.release.json` failed to parse, or failed a step's config schema
+- **Missing/invalid `package.json` or `workspaces`**: thrown when `report` reads the repository
+- **Git errors**: git commands fail with their own stderr output (e.g. push rejected, no configured remote)
+- **`pnpm version`/`pnpm publish` errors**: pnpm fails if the version already exists or is invalid
+- **Template errors**: Handlebars fails if a `--template` path is missing or invalid
 
-### Usage in Monorepo
+## CI Integration User Story
 
-```bash
-monorepo-semantic-release
+**As a CI pipeline**, I want to run the release process as a sequence of discrete, independently-invocable steps so that each feature/controller can be controlled, skipped, or extended without modifying the core tool.
+
+### Flow
+
+```
+Step 1 — Generate release report
+  monorepo-semantic-release report
+  └─ Analyzes commits, calculates version bumps, builds release context
+  └─ Serializes result to JSON and writes it to RELEASE_CONTEXT env var
+
+Step 2 — Run each feature/controller in order, passing the context
+
+  monorepo-semantic-release package-json --context "$RELEASE_CONTEXT"
+  └─ Updates internal dependency versions in each package.json
+
+  monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"
+  └─ Bumps package versions via pnpm version
+
+  monorepo-semantic-release changelog --context "$RELEASE_CONTEXT"
+  └─ Generates and prepends changelog entries
+
+  monorepo-semantic-release vcs --context "$RELEASE_CONTEXT"
+  └─ Stages files, creates release commit, creates git tags, pushes
+
+  monorepo-semantic-release package-manager publish --context "$RELEASE_CONTEXT"
+  └─ Publishes bumped packages to npm
+
+  monorepo-semantic-release release-notes --context "$RELEASE_CONTEXT"
+  └─ Creates GitHub release entries via gh CLI
 ```
 
-**Note:** Individual packages do not need a `release` script. The root script handles all packages automatically.
+### Example GitHub Actions Workflow
+
+```yaml
+- name: Generate release context
+  run: |
+    RELEASE_CONTEXT=$(monorepo-semantic-release report)
+    echo "RELEASE_CONTEXT=$RELEASE_CONTEXT" >> $GITHUB_ENV
+
+- name: Update package.json dependencies
+  run: monorepo-semantic-release package-json --context "$RELEASE_CONTEXT"
+
+- name: Bump versions
+  run: monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"
+
+- name: Generate changelogs
+  run: monorepo-semantic-release changelog --context "$RELEASE_CONTEXT"
+
+- name: Commit, tag and push
+  run: monorepo-semantic-release vcs --context "$RELEASE_CONTEXT"
+
+- name: Publish to npm
+  run: monorepo-semantic-release package-manager publish --context "$RELEASE_CONTEXT"
+
+- name: Create GitHub releases
+  run: monorepo-semantic-release release-notes --context "$RELEASE_CONTEXT"
+  env:
+    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Key Properties
+
+- **Report step is read-only** — it never modifies files, commits, or pushes; its only precondition is a clean working tree, so it's safe to run speculatively otherwise
+- **Each controller is idempotent in isolation** — it receives the full context and performs only its own concern
+- **Context is the contract** — the JSON blob passed via `--context` is the sole input to each controller; no shared mutable state between steps
+- **Steps can be skipped or reordered** — the CI pipeline owns orchestration; the tool provides building blocks
+
+---
 
 ## Use Cases
 
@@ -699,11 +629,7 @@ monorepo-semantic-release
 - Monorepo with `ts-ioc-container` (core) and `@ts-ioc-container/react` (depends on core)
 - Developer commits: `feat(ts-ioc-container): add lazy provider support`
 
-**Execution:**
-
-```bash
-monorepo-semantic-release --dry-run
-```
+**Execution:** the standard pipeline (see [CI Integration User Story](#ci-integration-user-story))
 
 **Expected Behavior:**
 
@@ -730,11 +656,7 @@ monorepo-semantic-release --dry-run
 - `@ts-ioc-container/react@1.5.1` depends on `ts-ioc-container@2.0.5`
 - `@ts-ioc-container/solidjs@1.0.0` depends on `ts-ioc-container@2.0.5`
 
-**Execution:**
-
-```bash
-monorepo-semantic-release
-```
+**Execution:** the standard pipeline (see [CI Integration User Story](#ci-integration-user-story))
 
 **Expected Behavior:**
 
@@ -762,11 +684,7 @@ monorepo-semantic-release
 - Developer commits: `feat(ts-ioc-container)!: remove deprecated Container.bind()`
 - Commit body includes: `BREAKING CHANGE: Container.bind() removed. Use Container.addRegistration()`
 
-**Execution:**
-
-```bash
-monorepo-semantic-release --dry-run
-```
+**Execution:** the standard pipeline with `--dry-run` on each step (see [Use Case 5](#use-case-5-dry-run-mode))
 
 **Expected Behavior:**
 
@@ -796,11 +714,7 @@ Commits:
 - perf(@ts-ioc-container/express): improve performance C
 ```
 
-**Execution:**
-
-```bash
-monorepo-semantic-release
-```
+**Execution:** the standard pipeline (see [CI Integration User Story](#ci-integration-user-story))
 
 **Expected Behavior:**
 
@@ -829,81 +743,61 @@ monorepo-semantic-release
 
 **Execution:**
 
+Add `--dry-run` to every step in the pipeline; `report` itself always computes the real bumps (there's nothing to preview differently), so the flag on it only exists for symmetry:
+
 ```bash
-monorepo-semantic-release --dry-run
+RELEASE_CONTEXT=$(monorepo-semantic-release report --dry-run)
+
+monorepo-semantic-release package-json    --context "$RELEASE_CONTEXT" --dry-run
+monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT" --dry-run
+monorepo-semantic-release changelog       --context "$RELEASE_CONTEXT" --dry-run
+monorepo-semantic-release vcs             --context "$RELEASE_CONTEXT" --dry-run
 ```
 
 **Expected Behavior:**
 
 1. ✓ Analyze all packages and commits
 2. ✓ Calculate version bumps
-3. ✓ Generate preview of changelog content
-4. ✓ Show what tags would be created
-5. ✓ Show what would be committed
-6. ✗ NO file modifications
-7. ✗ NO git commits or tags
-8. ✗ NO remote push
+3. ✓ Render the release commit message (shown in the log line, never committed)
+4. ✗ NO file modifications
+5. ✗ NO git commits or tags
+6. ✗ NO remote push
+7. ✗ NO publish
 
-**Console Output:**
+**Console Output (stderr):**
 
 ```
-🔍 DRY-RUN MODE - No changes will be made
+[report] 🚀 BUMP     ts-ioc-container 2.0.5 -> 2.1.0 (minor)
+[report] 🚀 BUMP     @ts-ioc-container/react 1.5.1 -> 1.6.0 (minor)
+[package-manager] ⚠ SKIP     BUMP     ts-ioc-container@2.1.0 (dry-run)
+[package-manager] ⚠ SKIP     BUMP     @ts-ioc-container/react@1.6.0 (dry-run)
+[changelog] ⚠ SKIP     WRITE    ts-ioc-container CHANGELOG.md (dry-run)
+[changelog] ⚠ SKIP     WRITE    @ts-ioc-container/react CHANGELOG.md (dry-run)
+[vcs] ⚠ SKIP     COMMIT (dry-run)
+ci(release): publish [skip-ci]
 
-📊 Release plan:
+## 📦 ts-ioc-container@2.1.0
 
-  [1/3] ts-ioc-container (2.0.5 → 2.1.0)
-    • 5 commits: 3 feat, 2 fix
-    • Bump reason: New features
-    • Would update: package.json, CHANGELOG.md
-    • Would create tag: ts-ioc-container@2.1.0
+- 🔹 feat: add lazy provider support
+- 🔹 feat: support async factory functions
+- 🔹 fix: memory leak in singleton provider
 
-  [2/3] @ts-ioc-container/react (1.5.1 → 1.6.0)
-    • Dependency update: ts-ioc-container 2.0.5 → 2.1.0
-    • Bump reason: Dependency update
-    • Would update: package.json, CHANGELOG.md
-    • Would create tag: @ts-ioc-container/react@1.6.0
+## 📦 @ts-ioc-container/react@1.6.0
 
-  [3/3] @ts-ioc-container/solidjs (1.0.0 → 1.1.0)
-    • Dependency update: ts-ioc-container 2.0.5 → 2.1.0
-    • Bump reason: Dependency update
-    • Would update: package.json, CHANGELOG.md
-    • Would create tag: @ts-ioc-container/solidjs@1.1.0
+- 🔹 feat: update from 1.5.1 to 1.6.0
 
-📝 Would create commit:
-  ci: release [skip-ci]
-
-  ## ts-ioc-container@2.1.0
-
-  - feat: add lazy provider support
-  - feat: support async factory functions
-  - fix: memory leak in singleton provider
-
-  ## @ts-ioc-container/react@1.6.0
-
-  - deps: update ts-ioc-container to 2.1.0
-
-  ## @ts-ioc-container/solidjs@1.1.0
-
-  - deps: update ts-ioc-container to 2.1.0
-
-  Affected: ts-ioc-container@2.1.0,@ts-ioc-container/react@1.6.0,@ts-ioc-container/solidjs@1.1.0
-
-🚀 Would push:
-  • 1 commit
-  • 3 tags
-
-✨ Dry-run complete - no changes were made
-
-To perform the actual release, run:
-  monorepo-semantic-release
+Affected: 📌 ts-ioc-container@2.1.0,@ts-ioc-container/react@1.6.0
+[vcs] ⚠ SKIP     TAG      ts-ioc-container@2.1.0 (dry-run)
+[vcs] ⚠ SKIP     TAG      @ts-ioc-container/react@1.6.0 (dry-run)
+[vcs] ⚠ SKIP     PUSH     HEAD and 2 tag(s) (dry-run)
 ```
 
 **Result:**
 
-- Full visibility into what would happen
+- Full visibility into what would happen, including the exact release commit message
 - No risk to repository state
 - Can be run multiple times safely
-- Perfect for CI/CD preview jobs
+- Each step's `--dry-run` is independent — a pipeline can preview one step while running the others for real
 
 ---
 

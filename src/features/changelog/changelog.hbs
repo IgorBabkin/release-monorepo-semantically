@@ -1,0 +1,55 @@
+# {{lookup releasedVersions pkg.name}} ({{now}})
+
+{{#if (hasBreakingChanges (lookup releasedCommits pkg.name))}}
+  ### 💥 BREAKING CHANGES
+
+  {{#each (findBreakingChanges (lookup releasedCommits pkg.name))}}
+    - **{{this.scope}}:**
+    {{this.subject}}
+    {{#if this.hash}}({{this.hash}}){{/if}}
+  {{/each}}
+
+{{/if}}
+{{#if (hasFeatures (lookup releasedCommits pkg.name))}}
+  ### ✨ Features
+
+  {{#each (findFeatures (lookup releasedCommits pkg.name))}}
+    - **{{this.scope}}:**
+    {{this.subject}}
+    {{#if this.hash}}({{this.hash}}){{/if}}
+  {{/each}}
+
+{{/if}}
+{{#if (hasFixes (lookup releasedCommits pkg.name))}}
+  ### 🐞 Bug Fixes
+
+  {{#each (findFixes (lookup releasedCommits pkg.name))}}
+    - **{{this.scope}}:**
+    {{this.subject}}
+    {{#if this.hash}}({{this.hash}}){{/if}}
+  {{/each}}
+
+{{/if}}
+{{#if (hasPerformance (lookup releasedCommits pkg.name))}}
+  ### ⚡ Performance Improvements
+
+  {{#each (findPerformance (lookup releasedCommits pkg.name))}}
+    - **{{this.scope}}:**
+    {{this.subject}}
+    {{#if this.hash}}({{this.hash}}){{/if}}
+  {{/each}}
+
+{{/if}}
+{{#if (call pkg "hasDependencyUpdates" releasedVersions)}}
+  ### 📦 Dependencies
+
+  {{#each (call pkg "getDependencyUpdates" releasedVersions)}}
+    - 📦 update
+    {{this.packageName}}
+    to
+    {{this.newVersion}}
+  {{/each}}
+
+{{/if}}
+
+{{existing}}

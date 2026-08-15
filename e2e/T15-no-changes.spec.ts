@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture';
+import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture.js';
 
 describe('T15 - no changes since last release', () => {
   afterEach(() => {
@@ -17,7 +17,7 @@ describe('T15 - no changes since last release', () => {
 
     expect(fixture.getPackageJson('pkg-a').version).toBe(beforeVersion);
     expect(new Set(fixture.tags())).toEqual(beforeTags);
-    expect(outcome.stdout).toContain('[Release] ⚠ SKIP     pkg-a@1.0.0');
-    expect(outcome.stdout).not.toContain('[Release] 📝 WRITE    pkg-a CHANGELOG.md');
+    expect(outcome.stderr).toContain('[report] ⚠ SKIP     pkg-a@1.0.0');
+    expect(outcome.stderr).not.toContain('WRITE    pkg-a CHANGELOG.md');
   });
 });

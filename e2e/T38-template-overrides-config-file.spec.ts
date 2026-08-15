@@ -1,41 +1,35 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture';
+import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture.js';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-describe('template overrides via .semantic-release.json', () => {
+describe('template overrides via .release.json', () => {
   afterEach(() => {
     disposeMonorepoFixtures();
   });
 
-  it('prioritizes .semantic-release.json template overrides over package.json config', () => {
+  it('prioritizes .release.json template overrides over package.json config', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
 
-    const packageTemplate = path.join(fixture.workDir, 'templates', 'package-template.hbs');
-    const fileTemplate = path.join(fixture.workDir, 'templates', 'file-template.hbs');
-    writeFileSync(packageTemplate, 'release from package json\n');
-    writeFileSync(fileTemplate, 'release from semantic release file\n');
+    fixture.writeTemplate('templates/package-template.hbs', 'release from package json\n');
+    fixture.writeTemplate('templates/file-template.hbs', 'release from release json file\n');
 
     const rootPackageJsonPath = path.join(fixture.workDir, 'package.json');
     const rootPackageJson = JSON.parse(readFileSync(rootPackageJsonPath, 'utf-8')) as {
-      releaseTemplates?: {
-        releaseCommitTemplate?: string;
-      };
+      release?: { vcs?: { template?: string } };
       [key: string]: unknown;
     };
-    rootPackageJson.releaseTemplates = {
-      releaseCommitTemplate: 'templates/package-template.hbs',
+    rootPackageJson.release = {
+      vcs: { template: 'templates/package-template.hbs' },
     };
     writeFileSync(rootPackageJsonPath, `${JSON.stringify(rootPackageJson, null, 2)}\n`);
 
-    const configFilePath = path.join(fixture.workDir, '.semantic-release.json');
+    const configFilePath = path.join(fixture.workDir, '.release.json');
     writeFileSync(
       configFilePath,
       `${JSON.stringify(
         {
-          releaseTemplates: {
-            releaseCommitTemplate: 'templates/file-template.hbs',
-          },
+          vcs: { template: 'templates/file-template.hbs' },
         },
         null,
         2,
@@ -46,6 +40,6 @@ describe('template overrides via .semantic-release.json', () => {
     const outcome = fixture.release();
 
     expect(outcome.status).toBe('passed');
-    expect(fixture.run('vcs log -1 --pretty=%s')).toBe('release from semantic release file');
+    expect(fixture.run('git log -1 --pretty=%s')).toBe('release from release json file');
   });
 });

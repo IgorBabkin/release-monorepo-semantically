@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture';
+import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture.js';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -8,24 +8,24 @@ describe('template overrides via package.json config', () => {
     disposeMonorepoFixtures();
   });
 
-  it('uses template overrides from releaseTemplates config', () => {
+  it('uses template overrides from the release.<step> config section', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
 
-    const customReleaseTemplate = path.join(fixture.workDir, 'templates', 'release-from-config.hbs');
-    writeFileSync(customReleaseTemplate, 'release from config\n');
-
-    const customChangelogTemplate = path.join(fixture.workDir, 'templates', 'changelog-from-config.hbs');
-    writeFileSync(customChangelogTemplate, '# CONFIG {{entry.version}}\n{{#each entry.fixes}}{{this.subject}}{{/each}}');
+    fixture.writeTemplate('templates/release-from-config.hbs', 'release from config\n');
+    fixture.writeTemplate(
+      'templates/changelog-from-config.hbs',
+      '# CONFIG {{lookup releasedVersions pkg.name}}\n{{#each (lookup releasedCommits pkg.name)}}{{this.subject}}{{/each}}',
+    );
 
     const rootPackageJsonPath = path.join(fixture.workDir, 'package.json');
     const rootPackageJson = JSON.parse(readFileSync(rootPackageJsonPath, 'utf-8')) as {
       workspaces: string[];
-      releaseTemplates?: { releaseCommitTemplate?: string; changelogTemplate?: string };
+      release?: { vcs?: { template?: string }; changelog?: { template?: string } };
       [key: string]: unknown;
     };
-    rootPackageJson.releaseTemplates = {
-      releaseCommitTemplate: 'templates/release-from-config.hbs',
-      changelogTemplate: 'templates/changelog-from-config.hbs',
+    rootPackageJson.release = {
+      vcs: { template: 'templates/release-from-config.hbs' },
+      changelog: { template: 'templates/changelog-from-config.hbs' },
     };
     writeFileSync(rootPackageJsonPath, `${JSON.stringify(rootPackageJson, null, 2)}\n`);
 
@@ -33,7 +33,7 @@ describe('template overrides via package.json config', () => {
     const outcome = fixture.release();
 
     expect(outcome.status).toBe('passed');
-    expect(fixture.run('vcs log -1 --pretty=%s')).toBe('release from config');
+    expect(fixture.run('git log -1 --pretty=%s')).toBe('release from config');
 
     const changelog = readFileSync(path.join(fixture.workDir, 'packages', 'pkg-a', 'CHANGELOG.md'), 'utf-8');
     expect(changelog).toContain('# CONFIG 1.0.1');
