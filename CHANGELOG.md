@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.1...v1.9.2) (2026-08-15)
+
+
+### Bug Fixes
+
+* use pnpm's --no-git-checks flag instead of nonexistent --no-vcs-checks ([e9bf869](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e9bf869ad480ae229e79157b5e9e8819519ae41a))
+
 ## [1.9.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.0...v1.9.1) (2026-08-15)
 
 
