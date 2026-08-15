@@ -5,10 +5,8 @@ import { z } from 'zod';
 export const CONFIG_KEY = 'vcs';
 
 export const PLUGIN_CONFIG_SCHEMA = z.object({
-  disabled: z.boolean().optional(),
   dryRun: z.boolean().default(false),
   template: z.string().optional(),
-  priority: z.number().optional(),
   kind: z.enum(['git']).default('git'),
 });
 export type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;

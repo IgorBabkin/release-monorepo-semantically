@@ -3,8 +3,6 @@ import { z } from 'zod';
 export const CONFIG_KEY = 'package-json';
 
 export const PLUGIN_CONFIG_SCHEMA = z.object({
-  disabled: z.boolean().optional(),
   dryRun: z.boolean().default(false),
-  priority: z.number().optional(),
 });
 export type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;

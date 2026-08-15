@@ -1,5 +1,9 @@
 # UML Models for Release Domain
 
+> **These diagrams are a conceptual design sketch, not a description of the current codebase.** `ReleaseController`, `CommitParser`, `SemverCalculator`, `VcsService`, and `PackageRelease` below don't exist as classes anywhere in `src/` and never have. They illustrate the domain's responsibilities at a design level, one abstraction removed from the real names.
+>
+> For the actual architecture: each release step is a `<Name>Controller` under `src/features/<name>/` (`ReportController`, `PackageController`, `PackageManagerController`, `ChangelogController`, `VCSController`, `ReleaseNotesController`), domain types live in `src/domain/` (`NpmPackage`, `ConventionalCommit`, `SemVerBumpType`), and infrastructure services live in `src/services/`. The CLI is a set of independent steps, not one controller — see `SPECS.md` and `README.md`.
+
 This directory contains UML diagrams documenting the Object-Oriented design of the release task domain.
 
 ## Quick Start
@@ -13,7 +17,9 @@ This directory contains UML diagrams documenting the Object-Oriented design of t
 ## Diagrams Overview
 
 ### 1. `uml-release-domain.puml` - Complete Domain Model
+
 This diagram shows the complete class structure of the release domain, including:
+
 - **ReleaseController**: Main controller class that coordinates the release workflow
 - **CommitParser**: Static utility class for parsing conventional commits
 - **SemverCalculator**: Static utility class for semantic version calculations
@@ -22,7 +28,9 @@ This diagram shows the complete class structure of the release domain, including
 - **Relationships**: Shows how classes interact and depend on each other
 
 ### 2. `uml-release-sequence.puml` - Release Workflow Sequence
+
 This sequence diagram illustrates the complete release workflow:
+
 1. Package discovery phase
 2. Dependency graph building
 3. Topological sorting
@@ -31,7 +39,9 @@ This sequence diagram illustrates the complete release workflow:
 6. Finalization (lockfile, commit, push)
 
 ### 3. `uml-domain-entities.puml` - Core Domain Entities
+
 This diagram focuses on the core domain entities using DDD (Domain-Driven Design) concepts:
+
 - **PackageRelease**: Aggregate root containing all release information
 - **NpmPackage**: Entity representing a package in the monorepo
 - **ConventionalCommit**: Entity representing a parsed commit
@@ -39,7 +49,9 @@ This diagram focuses on the core domain entities using DDD (Domain-Driven Design
 - **ChangelogEntry**: Value object for changelog entries
 
 ### 4. `uml-service-layer.puml` - Service Layer Architecture
+
 This diagram shows the service layer architecture:
+
 - **ReleaseController**: Main controller coordinating the workflow
 - **CommitParser**: Domain service for commit parsing
 - **SemverCalculator**: Domain service for version calculations
@@ -50,6 +62,7 @@ This diagram shows the service layer architecture:
 ### Mermaid Format (Recommended)
 
 The diagrams are available in **Mermaid format** in [`uml-diagrams.md`](uml-diagrams.md), which renders directly on:
+
 - **GitHub**: View the file directly in the repository
 - **GitLab**: Native Mermaid support
 - **VS Code**: Install "Markdown Preview Mermaid Support" extension
@@ -69,17 +82,21 @@ The original PlantUML files (`.puml`) are also available. To view them:
 ## Domain Concepts
 
 ### Aggregate Root
+
 - **PackageRelease**: The main aggregate that encapsulates all information needed to release a package, including the package itself, commits, dependency updates, and version information.
 
 ### Domain Services
+
 - **CommitParser**: Handles parsing and validation of conventional commits
 - **SemverCalculator**: Implements semantic versioning logic and bump calculations
 
 ### Value Objects
+
 - **DependencyUpdate**: Immutable representation of a dependency version change
 - **ChangelogEntry**: Structured representation of changelog content
 
 ### Entities
+
 - **NpmPackage**: Represents a package with identity (name)
 - **ConventionalCommit**: Represents a commit with identity (hash)
 

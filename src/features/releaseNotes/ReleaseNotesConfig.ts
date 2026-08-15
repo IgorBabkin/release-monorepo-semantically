@@ -13,10 +13,8 @@ export const PLUGIN_CONFIG_SCHEMA = z.object({
     .regex(/^[^/\s]+\/[^/\s]+$/)
     .optional(),
   token: z.string().trim().min(1).optional(),
-  disabled: z.boolean().optional(),
   dryRun: z.boolean().default(false),
   template: z.string().optional(),
-  priority: z.number().optional(),
   kind: z.enum(['github']).default('github'),
 });
 export type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;

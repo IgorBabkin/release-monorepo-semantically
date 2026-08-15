@@ -4,10 +4,12 @@ CLI for semantic versioning and release automation in `pnpm` monorepos.
 
 It discovers workspace packages, analyzes conventional commits per package scope, bumps versions in dependency order, updates internal dependency versions, generates changelogs, creates a release commit and tags, optionally creates GitHub Releases, and publishes to npm.
 
+The tool is a set of discrete steps rather than a single command: one step analyzes the repository and produces a release context, and each other step consumes that context to do one job. Your CI pipeline decides which steps to run and in what order — the tool doesn't orchestrate itself. This makes it easy to skip a step (no GitHub token? skip `release-notes`), add your own steps in between, or re-run a single step in isolation.
+
 ## Requirements
 
-- Node.js: `>=24.14.0 <25`
-- pnpm: `10.20.0`
+- Node.js: `>=20.11`
+- pnpm
 - Git repository with conventional commits
 
 ## Installation
@@ -16,10 +18,48 @@ It discovers workspace packages, analyzes conventional commits per package scope
 pnpm add -D release-monorepo-semantically
 ```
 
-Run from your monorepo root:
+## Usage
+
+Every step after `report` takes the JSON it produced via `--context`. A minimal pipeline, run from your monorepo root:
 
 ```bash
-pnpm monorepo-semantic-release
+RELEASE_CONTEXT=$(monorepo-semantic-release report)
+
+monorepo-semantic-release package-json    --context "$RELEASE_CONTEXT"
+monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"
+monorepo-semantic-release changelog       --context "$RELEASE_CONTEXT"
+monorepo-semantic-release vcs             --context "$RELEASE_CONTEXT"
+```
+
+`report` only writes its JSON context to stdout — nothing else goes there, so it's safe to capture directly like this. Progress messages from every step go to stderr.
+
+### GitHub Actions example
+
+```yaml
+- name: Generate release context
+  run: |
+    RELEASE_CONTEXT=$(monorepo-semantic-release report)
+    echo "RELEASE_CONTEXT=$RELEASE_CONTEXT" >> "$GITHUB_ENV"
+
+- name: Update internal dependency versions
+  run: monorepo-semantic-release package-json --context "$RELEASE_CONTEXT"
+
+- name: Bump versions
+  run: monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"
+
+- name: Generate changelogs
+  run: monorepo-semantic-release changelog --context "$RELEASE_CONTEXT"
+
+- name: Commit, tag and push
+  run: monorepo-semantic-release vcs --context "$RELEASE_CONTEXT"
+
+- name: Publish to npm
+  run: monorepo-semantic-release package-manager publish --context "$RELEASE_CONTEXT"
+
+- name: Create GitHub releases
+  run: monorepo-semantic-release release-notes --context "$RELEASE_CONTEXT"
+  env:
+    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Commit conventions
@@ -35,134 +75,59 @@ Non-release types: `docs`, `test`, `ci`, `chore`, `refactor`, `style`.
 
 Package scope is matched by package name.
 
-## Release flow
+## Steps
 
-1. Discover workspace packages from root `package.json` workspaces.
-2. Exclude private packages.
-3. Sort packages so dependencies are processed first.
-4. Read commits since `<package-name>@<version>` tag.
-5. Compute bump type (`major > minor > patch > none`).
-6. Update package versions and internal dependency versions.
-7. Render changelog entries.
-8. Create one release commit and per-package tags.
-9. Push commit/tags (unless disabled).
-10. Create GitHub Releases (if configured).
-11. Publish released packages (unless disabled).
+Every step accepts `--context <json>` (except `report`, which produces it) and `--dry-run` (preview only; no files, git state, or publishes change). Steps run in a fresh process each time, so `--context` is how state passes between them.
 
-## CLI options
+| Command           | Action      | Does                                                                                                                                                                                                                                          |
+| ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `report`          | (only one)  | Discovers workspace packages, computes version bumps from commits since each package's last release tag, fails if the working tree isn't clean. Writes the release context as JSON to stdout.                                                 |
+| `package-json`    | (only one)  | Updates internal dependency versions in each released package's `package.json` to exact versions.                                                                                                                                             |
+| `package-manager` | _(default)_ | Bumps each released package's version via `pnpm version`.                                                                                                                                                                                     |
+| `package-manager` | `publish`   | Publishes each released package via `pnpm publish`. Kept separate from the version bump so a pipeline can't reach the registry by accident.                                                                                                   |
+| `changelog`       | (only one)  | Renders and prepends a changelog entry per released package. `--template <path>` and `--changelog-name <value>` (default `CHANGELOG.md`) override the defaults.                                                                               |
+| `vcs`             | _(default)_ | Runs `commit`, `tag`, and `push` in that order in one invocation.                                                                                                                                                                             |
+| `vcs`             | `commit`    | Stages everything and creates the release commit. `--template <path>` overrides the message template.                                                                                                                                         |
+| `vcs`             | `tag`       | Creates a `<package-name>@<version>` tag per released package.                                                                                                                                                                                |
+| `vcs`             | `push`      | Pushes `HEAD` and, if any packages were released, the new tags.                                                                                                                                                                               |
+| `release-notes`   | (only one)  | Creates a GitHub Release per released package via the `gh` CLI. Needs `repository`/`token` from config or the `GITHUB_REPOSITORY`/`GITHUB_TOKEN` environment variables, and `gh` on `PATH`. `--template <path>` overrides the notes template. |
 
-```bash
-monorepo-semantic-release [options]
+`vcs commit`/`vcs tag`/`vcs push` exist so a pipeline can skip pushing (e.g. to inspect a release commit locally) without giving up tagging or committing.
 
-Options:
-  --dry-run                        Preview changes without mutating files/vcs/publish
-  --no-push                        Skip vcs push
-  --no-publish                     Skip packageManager publish
-  --changelog-template <path>      Override changelog template
-  --release-commit-template <path> Override release commit template
-  -h, --help                       Show help
-```
+## Configuration
 
-## Template overrides
-
-You can override templates via CLI options, a root `package.json` section, or `.semantic-release.json`.
-
-`package.json`:
+Steps read settings from a `release` section in the root `package.json`, a root `.release.json` file, or the corresponding CLI flag (wins over both). When both files configure the same step, `.release.json`'s section replaces `package.json`'s entirely rather than merging field by field; steps configured only in `package.json` are unaffected. Each step reads its own key:
 
 ```json
 {
   "release": {
-    "releaseTemplates": {
-      "changelogTemplate": "templates/changelog.hbs",
-      "releaseCommitTemplate": "templates/release-commit-msg.hbs"
-    }
+    "vcs": { "template": "templates/release-commit-msg.hbs" },
+    "changelog": { "template": "templates/changelog.hbs", "changelogName": "CHANGELOG.md" },
+    "release-notes": { "repository": "acme/repo", "token": "..." },
+    "package-manager": { "kind": "pnpm" }
   }
 }
 ```
 
-`.semantic-release.json`:
+`.release.json` uses the same shape without the `release` wrapper:
 
 ```json
 {
-  "releaseTemplates": {
-    "changelogTemplate": "templates/changelog.hbs",
-    "releaseCommitTemplate": "templates/release-commit-msg.hbs"
-  }
+  "vcs": { "template": "templates/release-commit-msg.hbs" }
 }
 ```
 
-Precedence (highest to lowest): CLI flags, `.semantic-release.json`, `package.json` config, built-in defaults.
+`dryRun: true` in any section makes that step always preview, equivalent to always passing `--dry-run` to it.
 
-Built-in templates:
+## Templates
 
-- `templates/changelog.hbs`
-- `templates/release-commit-msg.hbs`
-- `templates/github-release-notes.hbs`
+Default templates ship with the package and are used automatically. Override per step with `--template <path>` (relative to the working directory) or the matching config section:
 
-## GitHub Releases
+- `changelog` — per-package changelog entry
+- `vcs` (used by the `commit` action) — release commit message
+- `release-notes` — GitHub release notes body
 
-GitHub release creation runs only when all conditions are met:
-
-- `GITHUB_ACTIONS=true`
-- `GITHUB_REPOSITORY` is set (for example `owner/repo`)
-- `GITHUB_TOKEN` is set
-- `gh` CLI is available
-- not `--dry-run`
-- not `--no-push`
-
-Each released package creates a release:
-
-- tag: `<package-name>@<version>`
-- title: `<package-name> v<version>`
-- notes rendered from `templates/github-release-notes.hbs`
-
-## Plugin architecture
-
-Release lifecycle is implemented by plugins:
-
-- `PackageJsonPlugin`: updates internal dependency versions in `package.json`
-- `ChangelogPlugin`: writes per-package changelog updates
-- `GitPlugin`: creates release commit, tags, and push
-- `GithubPlugin`: creates GitHub Releases
-- `PackageManagerPlugin`: bumps package version and publishes
-
-## Plugin selection and order
-
-You can choose which plugins run and in what order with `plugins`.
-
-`package.json`:
-
-```json
-{
-  "release": {
-    "plugins": [
-      { "name": "package-json" },
-      { "name": "changelog", "template": "templates/changelog.hbs", "changelogName": "CHANGELOG.md" },
-      { "name": "vcs", "template": "templates/release-commit-msg.hbs" },
-      { "name": "releaseNotes", "template": "templates/releaseNotes-release-notes.hbs" },
-      { "name": "packageManager" }
-    ]
-  }
-}
-```
-
-`.semantic-release.json`:
-
-```json
-{
-  "plugins": [
-    { "name": "package-json" },
-    { "name": "changelog", "template": "templates/changelog.hbs", "changelogName": "CHANGELOG.md" },
-    { "name": "vcs", "template": "templates/release-commit-msg.hbs" },
-    { "name": "releaseNotes", "template": "templates/releaseNotes-release-notes.hbs" },
-    { "name": "packageManager" }
-  ]
-}
-```
-
-Default order: `["package-json", "changelog", "git", "github", "npm"]`.
-For `changelog`, `git`, and `github` plugins, `template` is required.  
-For `changelog`, `changelogName` is optional and defaults to `CHANGELOG.md`.
+Templates are [Handlebars](https://handlebarsjs.com/), with `now`, `hasBreakingChanges`, `hasFeatures`, `hasFixes`, `hasPerformance`, `findBreakingChanges`, `findFeatures`, `findFixes`, `findPerformance`, `lookup`, and `call` helpers registered.
 
 ## Development
 
@@ -178,4 +143,5 @@ pnpm run lint
 
 - Internal monorepo dependencies are written as exact versions.
 - Tag format is fixed: `<package-name>@<version>`.
-- In `--dry-run`, no files/git/releases/publish actions are performed.
+- Private packages (`"private": true`) are never released.
+- `--dry-run` on any step performs no file, git, or registry mutation for that step.

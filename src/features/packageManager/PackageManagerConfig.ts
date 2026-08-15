@@ -5,9 +5,7 @@ import { z } from 'zod';
 export const CONFIG_KEY = 'package-manager';
 
 export const PLUGIN_CONFIG_SCHEMA = z.object({
-  disabled: z.boolean().optional(),
   dryRun: z.boolean().default(false),
-  priority: z.number().optional(),
   kind: z.enum(['npm', 'pnpm', 'yarn']).default('pnpm'),
 });
 export type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;
