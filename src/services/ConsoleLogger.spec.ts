@@ -7,7 +7,7 @@ describe('ConsoleLogger', () => {
   });
 
   it('given a release step when info logs then it prefixes the message with an emoji', () => {
-    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const infoSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const logger = new ConsoleLogger('Release');
 
     logger.info('SKIP     pkg-a@1.0.0');
@@ -16,7 +16,7 @@ describe('ConsoleLogger', () => {
   });
 
   it('given a plain message when info logs then it preserves the message text', () => {
-    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const infoSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const logger = new ConsoleLogger('Release');
 
     logger.info('plain message');

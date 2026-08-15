@@ -15,7 +15,7 @@ describe('T35 - dry run has no side effects', () => {
     const beforeStatus = fixture.run('git status --porcelain');
     const beforePackageJson = fixture.run('cat packages/pkg-a/package.json');
 
-    const outcome = fixture.release('--dry-run');
+    const outcome = fixture.release({ dryRun: true });
 
     expect(outcome.status).toBe('passed');
     expect(fixture.run('git rev-parse HEAD')).toBe(beforeHead);

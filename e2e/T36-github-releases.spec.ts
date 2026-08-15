@@ -1,19 +1,18 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture.js';
 
-describe('T36 - releaseNotes releases via plugin', () => {
+describe('T36 - GitHub release notes via the release-notes step', () => {
   afterEach(() => {
     disposeMonorepoFixtures();
   });
 
-  it('creates releaseNotes release entries when running in releaseNotes actions environment', () => {
+  it('creates a GitHub release entry when the release-notes step runs', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
     fixture.commit('fix(pkg-a): ship release notes', 'pkg-a');
 
-    const outcome = fixture.release(undefined, {
-      GITHUB_ACTIONS: 'true',
-      GITHUB_REPOSITORY: 'acme/repo',
-      GITHUB_TOKEN: 'token',
+    const outcome = fixture.release({
+      releaseNotes: true,
+      env: { GITHUB_REPOSITORY: 'acme/repo', GITHUB_TOKEN: 'token' },
     });
 
     expect(outcome.status).toBe('passed');
@@ -28,24 +27,27 @@ describe('T36 - releaseNotes releases via plugin', () => {
     ]);
   });
 
-  it('skips releaseNotes release creation on dry-run and when push is disabled', () => {
+  it('skips release creation on dry-run even when the release-notes step is requested', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
     fixture.commit('fix(pkg-a): no release artifact', 'pkg-a');
 
-    const dryRunOutcome = fixture.release('--dry-run', {
-      GITHUB_ACTIONS: 'true',
-      GITHUB_REPOSITORY: 'acme/repo',
-      GITHUB_TOKEN: 'token',
+    const outcome = fixture.release({
+      dryRun: true,
+      releaseNotes: true,
+      env: { GITHUB_REPOSITORY: 'acme/repo', GITHUB_TOKEN: 'token' },
     });
-    expect(dryRunOutcome.status).toBe('passed');
-    expect(fixture.githubReleases()).toEqual([]);
 
-    const noPushOutcome = fixture.release('--no-push', {
-      GITHUB_ACTIONS: 'true',
-      GITHUB_REPOSITORY: 'acme/repo',
-      GITHUB_TOKEN: 'token',
-    });
-    expect(noPushOutcome.status).toBe('passed');
+    expect(outcome.status).toBe('passed');
+    expect(fixture.githubReleases()).toEqual([]);
+  });
+
+  it('does not create a release when the release-notes step is not part of the pipeline', () => {
+    const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
+    fixture.commit('fix(pkg-a): no release notes requested', 'pkg-a');
+
+    const outcome = fixture.release();
+
+    expect(outcome.status).toBe('passed');
     expect(fixture.githubReleases()).toEqual([]);
   });
 });

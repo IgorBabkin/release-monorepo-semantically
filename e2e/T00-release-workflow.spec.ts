@@ -9,7 +9,7 @@ describe('release CLI e2e', () => {
     disposeMonorepoFixtures();
   });
 
-  it('given a releaseable change when the cli runs then it pushes tags and publishes bumped packages by default', () => {
+  it('given a releaseable change when the standard pipeline runs then it pushes tags and publishes bumped packages', () => {
     const fixture = createMonorepoFixture([{ name: 'pkg-a', version: '1.0.0' }]);
 
     fixture.commit('fix(pkg-a): exercise release flow', 'pkg-a');
