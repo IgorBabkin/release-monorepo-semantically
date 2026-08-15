@@ -16,7 +16,7 @@ export class PNPMPackageManager implements PackageManager {
   }
 
   publish(cwd: string): void {
-    execSync('pnpm publish --no-vcs-checks', {
+    execSync('pnpm publish --no-git-checks', {
       cwd,
       stdio: 'pipe',
     });
