@@ -1,4 +1,4 @@
-name: publish
+name: release
 
 on:
   push:
@@ -17,18 +17,19 @@ permissions:
 
 jobs:
   test:
-    name: Run All Tests
+    name: Lint, typecheck, and test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6.3.0
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
+      - run: pnpm run typecheck
       - run: pnpm test
       - run: pnpm run test:e2e
 
@@ -39,9 +40,8 @@ jobs:
       name: production
       url: https://www.npmjs.com/package/release-monorepo-semantically
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
