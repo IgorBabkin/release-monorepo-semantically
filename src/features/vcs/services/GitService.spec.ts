@@ -16,8 +16,8 @@ describe('GitService', () => {
 
     service.commit('ci(release): publish [skip-ci]\n\nbody');
 
-    expect(execSync).toHaveBeenNthCalledWith(1, 'vcs add .');
-    expect(execSync).toHaveBeenNthCalledWith(2, 'vcs commit --allow-empty -F -', {
+    expect(execSync).toHaveBeenNthCalledWith(1, 'git add .');
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git commit --allow-empty -F -', {
       input: 'ci(release): publish [skip-ci]\n\nbody',
       stdio: ['pipe', 'inherit', 'inherit'],
     });
@@ -58,9 +58,9 @@ describe('GitService', () => {
     service.push(false);
     service.push(true);
 
-    expect(execSync).toHaveBeenNthCalledWith(1, 'vcs push');
-    expect(execSync).toHaveBeenNthCalledWith(2, 'vcs push');
-    expect(execSync).toHaveBeenNthCalledWith(3, 'vcs push --tags');
+    expect(execSync).toHaveBeenNthCalledWith(1, 'git push');
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git push');
+    expect(execSync).toHaveBeenNthCalledWith(3, 'git push --tags');
   });
 
   it('given a tag name when createTag runs then vcs tag command is executed', () => {
@@ -77,7 +77,7 @@ describe('GitService', () => {
 
     expect(service.isWorkingTreeClean()).toBe(true);
     expect(service.isWorkingTreeClean()).toBe(false);
-    expect(execSync).toHaveBeenNthCalledWith(1, 'vcs status --porcelain', { encoding: 'utf-8' });
-    expect(execSync).toHaveBeenNthCalledWith(2, 'vcs status --porcelain', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(1, 'git status --porcelain', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git status --porcelain', { encoding: 'utf-8' });
   });
 });

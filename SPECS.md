@@ -688,6 +688,71 @@ monorepo-semantic-release
 
 **Note:** Individual packages do not need a `release` script. The root script handles all packages automatically.
 
+## CI Integration User Story
+
+**As a CI pipeline**, I want to run the release process as a sequence of discrete, independently-invocable steps so that each feature/controller can be controlled, skipped, or extended without modifying the core tool.
+
+### Flow
+
+```
+Step 1 — Generate release report
+  monorepo-semantic-release report
+  └─ Analyzes commits, calculates version bumps, builds release context
+  └─ Serializes result to JSON and writes it to RELEASE_CONTEXT env var
+
+Step 2 — Run each feature/controller in order, passing the context
+
+  monorepo-semantic-release package-json --context "$RELEASE_CONTEXT"
+  └─ Updates internal dependency versions in each package.json
+
+  monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"
+  └─ Bumps package versions via pnpm version
+
+  monorepo-semantic-release changelog --context "$RELEASE_CONTEXT"
+  └─ Generates and prepends changelog entries
+
+  monorepo-semantic-release vcs --context "$RELEASE_CONTEXT"
+  └─ Stages files, creates release commit, creates git tags, pushes
+
+  monorepo-semantic-release release-notes --context "$RELEASE_CONTEXT"
+  └─ Creates GitHub release entries via gh CLI
+```
+
+### Example GitHub Actions Workflow
+
+```yaml
+- name: Generate release context
+  run: |
+    RELEASE_CONTEXT=$(monorepo-semantic-release report)
+    echo "RELEASE_CONTEXT=$RELEASE_CONTEXT" >> $GITHUB_ENV
+
+- name: Update package.json dependencies
+  run: monorepo-semantic-release package-json --context "$RELEASE_CONTEXT"
+
+- name: Bump versions
+  run: monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"
+
+- name: Generate changelogs
+  run: monorepo-semantic-release changelog --context "$RELEASE_CONTEXT"
+
+- name: Commit, tag and push
+  run: monorepo-semantic-release vcs --context "$RELEASE_CONTEXT"
+
+- name: Create GitHub releases
+  run: monorepo-semantic-release release-notes --context "$RELEASE_CONTEXT"
+  env:
+    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Key Properties
+
+- **Report step is read-only** — it never modifies files, commits, or pushes; safe to run speculatively
+- **Each controller is idempotent in isolation** — it receives the full context and performs only its own concern
+- **Context is the contract** — the JSON blob passed via `--context` is the sole input to each controller; no shared mutable state between steps
+- **Steps can be skipped or reordered** — the CI pipeline owns orchestration; the tool provides building blocks
+
+---
+
 ## Use Cases
 
 ### Use Case 1: Simple Feature Release

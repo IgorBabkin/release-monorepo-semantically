@@ -30,23 +30,23 @@ export class GitService implements VSCService {
   }
 
   isWorkingTreeClean(): boolean {
-    const output = execSync('vcs status --porcelain', { encoding: 'utf-8' }).trim();
+    const output = execSync('git status --porcelain', { encoding: 'utf-8' }).trim();
     return output.length === 0;
   }
 
   commit(message: string): void {
     const normalizedMessage = message.trim();
-    execSync('vcs add .');
-    execSync('vcs commit --allow-empty -F -', {
+    execSync('git add .');
+    execSync('git commit --allow-empty -F -', {
       input: normalizedMessage,
       stdio: ['pipe', 'inherit', 'inherit'],
     });
   }
 
   push(includeTags: boolean): void {
-    execSync('vcs push');
+    execSync('git push');
     if (includeTags) {
-      execSync('vcs push --tags');
+      execSync('git push --tags');
     }
   }
 }
