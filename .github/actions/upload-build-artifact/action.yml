@@ -1,0 +1,25 @@
+name: Upload build artifact
+description: Uploads the compiled dist/ output so downstream jobs can reuse it without rebuilding
+
+inputs:
+  name:
+    description: Artifact name
+    required: false
+    default: build-output
+  path:
+    description: Path to upload
+    required: false
+    default: dist
+  retention-days:
+    description: Days to retain the artifact
+    required: false
+    default: '1'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        retention-days: ${{ inputs.retention-days }}
