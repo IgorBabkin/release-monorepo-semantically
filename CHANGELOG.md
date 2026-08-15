@@ -1,3 +1,23 @@
+# [1.9.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.8.0...v1.9.0) (2026-08-15)
+
+
+### Bug Fixes
+
+* exclude test files from the published package ([e20537c](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e20537c1a4c4e7c5b3ca6f5f2035fd0bff4bc2b4))
+* make the step-based CLI actually run, end to end ([923b8ce](https://github.com/IgorBabkin/release-monorepo-semantically/commit/923b8ce233e19c5b6267260f69cb2c524cf4e35e))
+* pin semantic-release's default npm/github plugins via pnpm overrides ([aeb3947](https://github.com/IgorBabkin/release-monorepo-semantically/commit/aeb39475d26beff047df1d3ac4dd58342e97d963))
+* **refactor:** big refactoring ([fba6d0f](https://github.com/IgorBabkin/release-monorepo-semantically/commit/fba6d0f4a0332845649560417454672b19fd41db))
+* **refactor:** big refactoring ([a23f947](https://github.com/IgorBabkin/release-monorepo-semantically/commit/a23f947d33003d21959289870c10f54682092a29))
+* repair collateral from the plugins→features rename ([1bbddd3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/1bbddd3fa90afa66bb8542050d80e27e13a9c611))
+* repair e2e suite for the step-based CLI and fix bugs it exposed ([7af7792](https://github.com/IgorBabkin/release-monorepo-semantically/commit/7af7792a99f896061995cf04cafa30170a2d0942))
+* use github context in publish workflow ([9fc852e](https://github.com/IgorBabkin/release-monorepo-semantically/commit/9fc852ebea2b748f22f530bade5c7931acba1ce9))
+
+
+### Features
+
+* **config:** move changelog file name into plugin config ([6c1e5d3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/6c1e5d3fef49b51eac08b2d7064268e575454d1a))
+* **config:** require templates for rendered plugins ([cf603dd](https://github.com/IgorBabkin/release-monorepo-semantically/commit/cf603dd21f1a612820d99d061e3ce01c4531bf7a))
+
 # [1.8.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.7.1...v1.8.0) (2026-03-08)
 
 
