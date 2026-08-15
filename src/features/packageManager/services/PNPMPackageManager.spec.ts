@@ -22,7 +22,7 @@ describe('PNPMPackageManager.publish', () => {
 
     pm.publish('/repo/packages/a');
 
-    expect(cp.execSync).toHaveBeenCalledWith('pnpm publish --no-vcs-checks', {
+    expect(cp.execSync).toHaveBeenCalledWith('pnpm publish --no-git-checks', {
       cwd: '/repo/packages/a',
       stdio: 'pipe',
     });
