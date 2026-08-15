@@ -2,9 +2,9 @@ import 'reflect-metadata';
 
 import { execFileSync } from 'node:child_process';
 import { bindTo, register } from 'ts-ioc-container';
-import { ReleaseNotesCreateOptions, ReleaseNotesService, ReleaseNotesServiceKey } from './ReleaseNotesService';
+import { ReleaseNotesCreateOptions, ReleaseNotesService, ReleaseNotesServiceKey } from './ReleaseNotesService.js';
 
-import { whenConfig } from '../ReleaseNotesConfig';
+import { whenConfig } from '../ReleaseNotesConfig.js';
 
 @register(bindTo(ReleaseNotesServiceKey), whenConfig('kind', 'github'))
 export class GithubService implements ReleaseNotesService {

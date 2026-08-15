@@ -1,6 +1,6 @@
 import { IContainer, IContainerModule, Registration as R } from 'ts-ioc-container';
-import { PackageManagerController } from './PackageManagerController';
-import { PNPMPackageManager } from './services/PNPMPackageManager';
+import { PackageManagerController } from './PackageManagerController.js';
+import { PNPMPackageManager } from './services/PNPMPackageManager.js';
 
 export class PackageManagerModule implements IContainerModule {
   applyTo(container: IContainer): void {

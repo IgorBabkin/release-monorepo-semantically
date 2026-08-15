@@ -2,11 +2,11 @@ import 'reflect-metadata';
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { globSync } from 'glob';
-import { PackageJSON } from '../domain/PackageJSON';
+import { PackageJSON } from '../domain/PackageJSON.js';
 import path from 'node:path';
-import { isPresent, uniqBy } from '../utils/utils';
+import { isPresent, uniqBy } from '../utils/utils.js';
 import { bindTo, inject, register, SingleToken } from 'ts-ioc-container';
-import { globalConfig } from '../domain/GlobalConfig';
+import { globalConfig } from '../domain/GlobalConfig.js';
 
 /**
  * @description Works relative to cwd

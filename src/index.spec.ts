@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Container } from 'ts-ioc-container';
-import { Application } from 'ib-commander';
+import { Application } from './cli/Application.js';
 import { IMock, It, Mock } from 'moq.ts';
-import { runCli } from './index';
+import { runCli } from './index.js';
 
 describe('runCli', () => {
   afterEach(() => {

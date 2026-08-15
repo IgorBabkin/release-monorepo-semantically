@@ -1,31 +1,64 @@
-import { bindTo, hook, IContainer, inject, register } from 'ts-ioc-container';
-import { NpmPackage, PackageName, PackageVersion } from '../../domain/NpmPackage';
-import { IFileSystemServiceKey } from '../../services/NodeFileSystemService';
-import { VSCService, VSCServiceKey } from '../vcs/services/VSCService';
-import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
-import { OutputService, OutputServiceKey } from '../../services/OutputService';
-import { onDefault } from 'ib-commander';
-import { execute } from '../../utils/hooks';
-import { sortLessDependenciesFirst } from '../../utils/sortLessDependenciesFirst';
-import { ConventionalCommit } from '../../domain/ConventionalCommit';
-import { bumpTypeToString, SemVerBumpType } from '../../domain/SemVerBumpType';
-import { serializeContext } from '../../domain/ReleaseControllerContext';
+import { bindTo, IContainer, inject, register } from 'ts-ioc-container';
+import { NpmPackage, PackageName, PackageVersion } from '../../domain/NpmPackage.js';
+import { IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
+import { VSCService, VSCServiceKey } from '../vcs/services/VSCService.js';
+import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
+import { OutputService, OutputServiceKey } from '../../services/OutputService.js';
+import { DirtyWorkingTreeException } from '../../exceptions/DomainException.js';
+import { action, command, execute, onDefault, schema } from '../../cli/index.js';
+import { Command } from 'commander';
+import { z } from 'zod';
+import { constant as c } from '../../utils/utils.js';
+import { sortLessDependenciesFirst } from '../../utils/sortLessDependenciesFirst.js';
+import { ConventionalCommit } from '../../domain/ConventionalCommit.js';
+import { bumpTypeToString, SemVerBumpType } from '../../domain/SemVerBumpType.js';
+import { serializeContext } from '../../domain/ReleaseControllerContext.js';
+
+// `report` only reads the repository, so --dry-run is accepted (pipelines pass
+// it to every step uniformly) and has nothing to suppress.
+export const REPORT_OPTIONS = z.object({
+  dryRun: z.boolean().default(false),
+});
+
+// Arrow function, not `function`: ts-ioc-container's token resolver treats any
+// function with a `.prototype` as a class to `new`, which a plain function
+// declaration has and an arrow function does not. Declared before the class
+// so the constructor's @inject decorator (evaluated at class-definition time)
+// isn't reading it out of its temporal dead zone.
+export const resolvePublicPackages = (container: IContainer): NpmPackage[] => {
+  const fs = IFileSystemServiceKey.resolve(container);
+  const { workspaces = [] } = fs.readPackageJsonOrFail('./');
+  const packageJsonList = fs.findManyPackageJsonByGlob(workspaces);
+  return sortLessDependenciesFirst(packageJsonList.map(([pkgPath, pkg]) => NpmPackage.createFromPackage(pkg, pkgPath)).filter((p) => !p.isPrivate));
+};
 
 @register(bindTo('report'))
 export class ReportController {
   constructor(
     @inject(VSCServiceKey) private vsc: VSCService,
-    @inject(ILoggerKey) private logger: ILogger,
+    @inject(ILoggerKey.args('report')) private logger: ILogger,
     @inject(OutputServiceKey) private output: OutputService,
+    @inject(resolvePublicPackages) private publicPackages: NpmPackage[],
   ) {}
 
   @onDefault(execute())
-  @hook('generate')
-  generate(@inject(resolvePublicPackages) publicPackages: NpmPackage[]): void {
+  @command(c(new Command().option('--dry-run', 'Accepted for symmetry with the other steps; report never writes')))
+  @schema(c(REPORT_OPTIONS))
+  @action('generate', execute())
+  generate(): void {
+    // Checked here, not in `vcs commit`: the package-json/package-manager/
+    // changelog steps are expected to leave the tree dirty, and `vcs commit`
+    // stages everything with `git add .`. Catching pre-existing unrelated
+    // changes has to happen before the pipeline starts, or they get swept
+    // into the release commit.
+    if (!this.vsc.isWorkingTreeClean()) {
+      throw new DirtyWorkingTreeException();
+    }
+
     const releasedVersions = new Map<PackageName, PackageVersion>();
     const releasedCommits = new Map<PackageName, ConventionalCommit[]>();
 
-    for (const pkg of publicPackages) {
+    for (const pkg of this.publicPackages) {
       const pkgReleaseCommits = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag()).filter((c) => c.matchesScope(pkg.name) && c.isReleaseTrigger());
       const dependencyUpdates = pkg.getDependencyUpdates(releasedVersions);
       const versionBump = Math.max(...pkgReleaseCommits.map((c) => c.bumpType), dependencyUpdates.length ? SemVerBumpType.MINOR : SemVerBumpType.NONE);
@@ -43,7 +76,7 @@ export class ReportController {
 
     const body = serializeContext({
       releasedVersions,
-      releasedPackages: publicPackages.filter((pkg) => releasedVersions.has(pkg.name)),
+      releasedPackages: this.publicPackages.filter((pkg) => releasedVersions.has(pkg.name)),
       releasedCommits,
     });
 
@@ -53,11 +86,4 @@ export class ReportController {
   private logStep(step: 'SKIP' | 'BUMP', detail: string): void {
     this.logger.info(`${step.padEnd(8)} ${detail}`);
   }
-}
-
-export function resolvePublicPackages(c: IContainer): NpmPackage[] {
-  const fs = IFileSystemServiceKey.resolve(c);
-  const { workspaces = [] } = fs.readPackageJsonOrFail('./');
-  const packageJsonList = fs.findManyPackageJsonByGlob(workspaces);
-  return sortLessDependenciesFirst(packageJsonList.map(([pkgPath, pkg]) => NpmPackage.createFromPackage(pkg, pkgPath)).filter((p) => !p.isPrivate));
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NpmPackage } from './NpmPackage';
+import { NpmPackage } from './NpmPackage.js';
 
 function makePkg(deps: Record<string, string> = {}, devDeps: Record<string, string> = {}) {
   return new NpmPackage('pkg-a', '/repo/pkg-a', '1.0.0', false, deps, devDeps);

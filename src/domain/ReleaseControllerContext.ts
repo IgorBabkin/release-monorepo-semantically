@@ -1,5 +1,5 @@
-import { ConventionalCommit, ConventionalCommitJSON } from './ConventionalCommit';
-import { NpmPackage, NpmPackageJSON } from './NpmPackage';
+import { ConventionalCommit, ConventionalCommitJSON } from './ConventionalCommit.js';
+import { NpmPackage, NpmPackageJSON } from './NpmPackage.js';
 
 export interface ReleaseControllerContext {
   releasedVersions: Map<string, string>;

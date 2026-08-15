@@ -1,11 +1,11 @@
 import { describe, it } from 'vitest';
 import { It, Mock, Times } from 'moq.ts';
-import { ReleaseNotesController } from './ReleaseNotesController';
-import { NpmPackage } from '../../domain/NpmPackage';
-import { serializeContext } from '../../domain/ReleaseControllerContext';
-import { ReleaseNotesService } from './services/ReleaseNotesService';
-import { IRenderService } from '../../services/HandlebarsRenderService';
-import { ILogger } from '../../services/ConsoleLogger';
+import { ReleaseNotesController } from './ReleaseNotesController.js';
+import { NpmPackage } from '../../domain/NpmPackage.js';
+import { serializeContext } from '../../domain/ReleaseControllerContext.js';
+import { ReleaseNotesService } from './services/ReleaseNotesService.js';
+import { IRenderService } from '../../services/HandlebarsRenderService.js';
+import { ILogger } from '../../services/ConsoleLogger.js';
 
 describe('ReleaseNotesController', () => {
   const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
@@ -31,7 +31,10 @@ describe('ReleaseNotesController', () => {
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const renderService = new Mock<IRenderService>().setup((m) => m.render(It.IsAny(), It.IsAny(), It.IsAny())).returns('rendered release notes');
 
-    new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object()).createGithubRelease({ context });
+    new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object()).createGithubRelease({
+      context,
+      dryRun: config.dryRun,
+    });
 
     github.verify((m) => m.isCliAvailable(), Times.Once());
     github.verify(
@@ -74,10 +77,13 @@ describe('ReleaseNotesController', () => {
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const renderService = new Mock<IRenderService>().setup((m) => m.render(It.IsAny(), It.IsAny(), It.IsAny())).returns('');
 
-    new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object()).createGithubRelease({ context });
+    new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object()).createGithubRelease({
+      context,
+      dryRun: config.dryRun,
+    });
 
     github.verify((m) => m.createRelease(It.IsAny()), Times.Never());
     renderService.verify((m) => m.render(It.IsAny(), It.IsAny(), It.IsAny()), Times.Never());
-    logger.verify((m) => m.info('SKIP   RELEASE  pkg-a@1.0.1'), Times.Once());
+    logger.verify((m) => m.info('SKIP     RELEASE  pkg-a@1.0.1 (dry-run)'), Times.Once());
   });
 });

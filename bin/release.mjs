@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-import { createRequire } from 'node:module';
+import { runCli } from '../dist/index.js';
 
-const require = createRequire(import.meta.url);
-const { runCli } = require('../dist/index.js');
-
-process.exit(runCli());
+process.exit(runCli(process.argv.slice(2)));

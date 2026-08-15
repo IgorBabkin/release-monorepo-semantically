@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPresent, uniqBy } from './utils';
+import { isPresent, uniqBy } from './utils.js';
 
 describe('uniqBy', () => {
   it('given duplicate values when uniqBy runs then it keeps first occurrence by predicate', () => {

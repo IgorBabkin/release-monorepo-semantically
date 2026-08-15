@@ -43,3 +43,24 @@ export class InvalidReleasePluginsConfigException extends DomainException {
     super('INVALID_RELEASE_PLUGINS_CONFIG', `Invalid release plugin configuration: ${reason}. Allowed plugin ids: package-json, changelog, git, github, npm`);
   }
 }
+
+export class InvalidConfigException extends DomainException {
+  constructor(section: string, detail: string) {
+    super('INVALID_CONFIG', `Invalid release configuration for "${section}": ${detail}`);
+  }
+}
+
+export class MissingGithubCredentialsException extends DomainException {
+  constructor() {
+    super(
+      'MISSING_GITHUB_CREDENTIALS',
+      'GitHub releases need a repository and token: set release.release-notes.repository/token, or the GITHUB_REPOSITORY/GITHUB_TOKEN environment variables',
+    );
+  }
+}
+
+export class MissingControllerException extends DomainException {
+  constructor() {
+    super('MISSING_CONTROLLER', 'Usage: monorepo-semantic-release <controller> [action] [--flags...]');
+  }
+}

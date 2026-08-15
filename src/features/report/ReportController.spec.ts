@@ -1,25 +1,42 @@
 import { describe, expect, it } from 'vitest';
 import { It, Mock, Times } from 'moq.ts';
 import { IContainer } from 'ts-ioc-container';
-import { ReportController, resolvePublicPackages } from './ReportController';
-import { NpmPackage } from '../../domain/NpmPackage';
-import { ConventionalCommit } from '../../domain/ConventionalCommit';
-import { deserializeContext } from '../../domain/ReleaseControllerContext';
-import { VSCService } from '../vcs/services/VSCService';
-import { ILogger } from '../../services/ConsoleLogger';
-import { OutputService } from '../../services/OutputService';
-import { IFileSystemService } from '../../services/NodeFileSystemService';
+import { ReportController, resolvePublicPackages } from './ReportController.js';
+import { NpmPackage } from '../../domain/NpmPackage.js';
+import { ConventionalCommit } from '../../domain/ConventionalCommit.js';
+import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
+import { VSCService } from '../vcs/services/VSCService.js';
+import { ILogger } from '../../services/ConsoleLogger.js';
+import { OutputService } from '../../services/OutputService.js';
+import { IFileSystemService } from '../../services/NodeFileSystemService.js';
+import { DirtyWorkingTreeException } from '../../exceptions/DomainException.js';
 
 describe('ReportController.generate', () => {
+  it('given a dirty working tree when generate runs then it fails before touching anything', () => {
+    const vsc = new Mock<VSCService>().setup((m) => m.isWorkingTreeClean()).returns(false);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+    const output = new Mock<OutputService>();
+
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg]);
+
+    expect(() => controller.generate()).toThrow(DirtyWorkingTreeException);
+    output.verify((m) => m.write(It.IsAny()), Times.Never());
+  });
+
   it('given no release-triggering commits when generate runs then packages are skipped and output contains empty context', () => {
-    const vsc = new Mock<VSCService>().setup((m) => m.findManyCommitsSinceTag(It.IsAny())).returns([]);
+    const vsc = new Mock<VSCService>()
+      .setup((m) => m.isWorkingTreeClean())
+      .returns(true)
+      .setup((m) => m.findManyCommitsSinceTag(It.IsAny()))
+      .returns([]);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
 
-    const controller = new ReportController(vsc.object(), logger.object(), output.object());
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg]);
 
-    controller.generate([pkg]);
+    controller.generate();
 
     logger.verify((m) => m.info('SKIP     pkg-a@1.0.0'), Times.Once());
     output.verify(
@@ -36,6 +53,8 @@ describe('ReportController.generate', () => {
 
   it('given release-triggering commits when generate runs then packages are bumped and output contains serialized context', () => {
     const vsc = new Mock<VSCService>()
+      .setup((m) => m.isWorkingTreeClean())
+      .returns(true)
       .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0'))
       .returns([ConventionalCommit.parse('feat(pkg-a): add feature')])
       .setup((m) => m.findManyCommitsSinceTag('pkg-b@2.0.0'))
@@ -43,11 +62,11 @@ describe('ReportController.generate', () => {
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
 
-    const controller = new ReportController(vsc.object(), logger.object(), output.object());
     const pkgA = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0' }, '/repo/packages/pkg-b');
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB]);
 
-    controller.generate([pkgA, pkgB]);
+    controller.generate();
 
     output.verify(
       (m) =>

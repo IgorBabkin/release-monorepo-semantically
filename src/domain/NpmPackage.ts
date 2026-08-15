@@ -1,8 +1,8 @@
-import { PackageJSON } from './PackageJSON';
-import { Sortable } from '../utils/sortLessDependenciesFirst';
-import { DependencyVersionChange } from './ReleaseTypes';
-import { SemVerBumpType } from './SemVerBumpType';
-import { MissingDependencyVersionException } from '../exceptions/DomainException';
+import { PackageJSON } from './PackageJSON.js';
+import { Sortable } from '../utils/sortLessDependenciesFirst.js';
+import { DependencyVersionChange } from './ReleaseTypes.js';
+import { SemVerBumpType } from './SemVerBumpType.js';
+import { MissingDependencyVersionException } from '../exceptions/DomainException.js';
 
 export interface NpmPackageJSON {
   name: string;

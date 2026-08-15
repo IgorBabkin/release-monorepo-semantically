@@ -1,22 +1,20 @@
 import 'reflect-metadata';
 
-import { DomainException } from './DomainException';
-import { bindTo, register, SingleToken } from 'ts-ioc-container';
+import { DomainException } from './DomainException.js';
+import { bindTo, register, singleton } from 'ts-ioc-container';
+import { IErrorHandler, IErrorHandlerKey } from '../cli/IErrorHandler.js';
 
-export interface IExceptionHandler {
-  handle(error: unknown): void;
-}
-
-export const IExceptionHandlerKey = new SingleToken<IExceptionHandler>('IExceptionHandler');
-
-@register(bindTo(IExceptionHandlerKey))
-export class ExceptionHandler implements IExceptionHandler {
-  handle(error: unknown): void {
+// Application resolves IErrorHandlerKey and calls handleError() when a
+// command throws.
+@register(bindTo(IErrorHandlerKey), singleton())
+export class ExceptionHandler implements IErrorHandler {
+  handleError(error: unknown): void {
     if (error instanceof DomainException) {
       console.error(`[${error.code}] ${error.message}`);
-      return;
+    } else {
+      console.error(error);
     }
 
-    console.error(error);
+    process.exitCode = 1;
   }
 }

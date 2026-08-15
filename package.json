@@ -4,13 +4,20 @@
   "description": "cli commands to manage versioning of package in monorepo and generate changelog",
   "license": "ISC",
   "author": "",
+  "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "bin": {
     "monorepo-semantic-release": "bin/release.mjs"
   },
   "files": [
     "dist",
-    "templates",
     "bin"
   ],
   "publishConfig": {
@@ -26,7 +33,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
+    "build": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })\" && tsc && node scripts/copy-templates.mjs",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "lint": "eslint src/",
@@ -41,9 +48,8 @@
     "commander": "14.0.3",
     "glob": "^10.3.10",
     "handlebars": "^4.7.8",
-    "ib-commander": "^1.6.0",
     "reflect-metadata": "^0.2.2",
-    "ts-ioc-container": "47.3.1",
+    "ts-ioc-container": "56.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -64,6 +70,7 @@
     "moq.ts": "^10.0.8",
     "prettier": "^3.8.1",
     "semantic-release": "^24.2.9",
+    "tsx": "^4.23.12",
     "typescript": "^5.3.3",
     "typescript-eslint": "^8.54.0",
     "vitest": "^4.0.18"

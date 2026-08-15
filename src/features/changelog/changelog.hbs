@@ -1,39 +1,39 @@
 # {{lookup releasedVersions pkg.name}} ({{now}})
 
-{{#if (hasBreakingChanges releasedCommits)}}
+{{#if (hasBreakingChanges (lookup releasedCommits pkg.name))}}
   ### 💥 BREAKING CHANGES
 
-  {{#each (findBreakingChanges releasedCommits)}}
+  {{#each (findBreakingChanges (lookup releasedCommits pkg.name))}}
     - **{{this.scope}}:**
     {{this.subject}}
     {{#if this.hash}}({{this.hash}}){{/if}}
   {{/each}}
 
 {{/if}}
-{{#if (hasFeatures releasedCommits)}}
+{{#if (hasFeatures (lookup releasedCommits pkg.name))}}
   ### ✨ Features
 
-  {{#each (findFeatures releasedCommits)}}
+  {{#each (findFeatures (lookup releasedCommits pkg.name))}}
     - **{{this.scope}}:**
     {{this.subject}}
     {{#if this.hash}}({{this.hash}}){{/if}}
   {{/each}}
 
 {{/if}}
-{{#if (hasFixes releasedCommits)}}
+{{#if (hasFixes (lookup releasedCommits pkg.name))}}
   ### 🐞 Bug Fixes
 
-  {{#each (findFixes releasedCommits)}}
+  {{#each (findFixes (lookup releasedCommits pkg.name))}}
     - **{{this.scope}}:**
     {{this.subject}}
     {{#if this.hash}}({{this.hash}}){{/if}}
   {{/each}}
 
 {{/if}}
-{{#if (hasPerformance releasedCommits)}}
+{{#if (hasPerformance (lookup releasedCommits pkg.name))}}
   ### ⚡ Performance Improvements
 
-  {{#each (findPerformance releasedCommits)}}
+  {{#each (findPerformance (lookup releasedCommits pkg.name))}}
     - **{{this.scope}}:**
     {{this.subject}}
     {{#if this.hash}}({{this.hash}}){{/if}}

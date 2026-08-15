@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ConsoleLogger } from './ConsoleLogger';
+import { ConsoleLogger } from './ConsoleLogger.js';
 
 describe('ConsoleLogger', () => {
   afterEach(() => {

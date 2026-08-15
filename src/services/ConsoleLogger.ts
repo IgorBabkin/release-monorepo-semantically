@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { bindTo, inject, register, SingleToken } from 'ts-ioc-container';
+import { bindTo, register, SingleToken } from 'ts-ioc-container';
 
 type StepName = 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG';
 
@@ -16,12 +16,15 @@ export interface ILogger {
   info(...args: unknown[]): void;
 }
 
-export const ILoggerKey = new SingleToken<ILogger>('ILogger');
-export const ILoggerTopicKey = new SingleToken<string>('ILoggerTopic');
+// Deliberately not named 'ILogger': ib-commander's SetupModule registers its own
+// logger under that token name, and SingleToken identity is the name.
+export const ILoggerKey = new SingleToken<ILogger>('ReleaseLogger');
 
 @register(bindTo(ILoggerKey))
 export class ConsoleLogger implements ILogger {
-  constructor(@inject(ILoggerTopicKey) private topic: string) {}
+  // The topic arrives via ILoggerKey.args('<topic>'); undecorated so the
+  // container fills it from the resolution arguments.
+  constructor(private topic: string = 'release') {}
 
   private supportsColor(): boolean {
     return Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;

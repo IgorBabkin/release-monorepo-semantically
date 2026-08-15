@@ -1,14 +1,16 @@
 import { describe, it } from 'vitest';
 import { It, Mock, Times } from 'moq.ts';
-import { ChangelogController } from './ChangelogController';
-import { NpmPackage } from '../../domain/NpmPackage';
-import { ConventionalCommit } from '../../domain/ConventionalCommit';
-import { serializeContext } from '../../domain/ReleaseControllerContext';
-import { IRenderService } from '../../services/HandlebarsRenderService';
-import { IFileSystemService } from '../../services/NodeFileSystemService';
-import { ILogger } from '../../services/ConsoleLogger';
+import { ChangelogController } from './ChangelogController.js';
+import { NpmPackage } from '../../domain/NpmPackage.js';
+import { ConventionalCommit } from '../../domain/ConventionalCommit.js';
+import { serializeContext } from '../../domain/ReleaseControllerContext.js';
+import { IRenderService } from '../../services/HandlebarsRenderService.js';
+import { IFileSystemService } from '../../services/NodeFileSystemService.js';
+import { ILogger } from '../../services/ConsoleLogger.js';
+import { PLUGIN_CONFIG_SCHEMA } from './ChangelogConfig.js';
 
 describe('ChangelogController', () => {
+  const defaultConfig = PLUGIN_CONFIG_SCHEMA.parse({});
   const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
   const commits = [ConventionalCommit.parse('fix(pkg-a): patch')];
   const releasedVersions = new Map([['pkg-a', '1.0.1']]);
@@ -27,7 +29,10 @@ describe('ChangelogController', () => {
       .returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    new ChangelogController('/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({ context });
+    new ChangelogController(defaultConfig, '/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({
+      context,
+      dryRun: false,
+    });
 
     renderService.verify(
       (m) =>
@@ -54,7 +59,10 @@ describe('ChangelogController', () => {
       .returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    new ChangelogController('/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({ context });
+    new ChangelogController(defaultConfig, '/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({
+      context,
+      dryRun: false,
+    });
 
     renderService.verify(
       (m) =>
@@ -79,9 +87,10 @@ describe('ChangelogController', () => {
       .returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    new ChangelogController('/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({
+    new ChangelogController(defaultConfig, '/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({
       changelogName: 'HISTORY.md',
       context,
+      dryRun: false,
     });
 
     fs.verify((m) => m.writeFile('/repo/packages/pkg-a/HISTORY.md', 'new changelog'), Times.Once());
@@ -97,9 +106,10 @@ describe('ChangelogController', () => {
       .returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    new ChangelogController('/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({
+    new ChangelogController(defaultConfig, '/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({
       template: 'templates/custom.hbs',
       context,
+      dryRun: false,
     });
 
     renderService.verify(

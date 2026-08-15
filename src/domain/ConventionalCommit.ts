@@ -1,4 +1,4 @@
-import { SemVerBumpType } from './SemVerBumpType';
+import { SemVerBumpType } from './SemVerBumpType.js';
 
 export interface ConventionalCommitJSON {
   type: string;

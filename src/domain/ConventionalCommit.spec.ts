@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ConventionalCommit } from './ConventionalCommit';
-import { SemVerBumpType } from './SemVerBumpType';
+import { ConventionalCommit } from './ConventionalCommit.js';
+import { SemVerBumpType } from './SemVerBumpType.js';
 
 describe('ConventionalCommit', () => {
   describe('parse', () => {

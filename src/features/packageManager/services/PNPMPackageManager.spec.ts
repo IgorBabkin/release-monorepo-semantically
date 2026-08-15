@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('node:child_process', () => ({ execSync: vi.fn() }));
 import * as cp from 'node:child_process';
-import { PNPMPackageManager } from './PNPMPackageManager';
+import { PNPMPackageManager } from './PNPMPackageManager.js';
 
 describe('PNPMPackageManager.bumpVersion', () => {
   it('runs pnpm version with provided version in provided cwd', () => {

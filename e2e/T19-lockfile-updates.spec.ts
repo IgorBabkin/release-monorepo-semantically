@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createMonorepoFixture, disposeMonorepoFixtures, runFixtureCommandCapture } from './releaseFixture';
+import { createMonorepoFixture, disposeMonorepoFixtures, runFixtureCommandCapture } from './releaseFixture.js';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 

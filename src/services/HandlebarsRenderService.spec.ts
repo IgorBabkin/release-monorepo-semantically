@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { HandlebarsRenderService } from './HandlebarsRenderService';
+import { HandlebarsRenderService } from './HandlebarsRenderService.js';
 
 describe('HandlebarsRenderService.render', () => {
   const tempRoots: string[] = [];

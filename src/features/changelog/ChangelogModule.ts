@@ -1,5 +1,5 @@
 import { IContainer, IContainerModule, Registration as R } from 'ts-ioc-container';
-import { ChangelogController } from './ChangelogController';
+import { ChangelogController } from './ChangelogController.js';
 
 export class ChangelogModule implements IContainerModule {
   applyTo(container: IContainer): void {

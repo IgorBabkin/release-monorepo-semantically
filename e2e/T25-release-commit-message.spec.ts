@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture';
+import { createMonorepoFixture, disposeMonorepoFixtures } from './releaseFixture.js';
 
 describe('T25 - release commit message format', () => {
   afterEach(() => {

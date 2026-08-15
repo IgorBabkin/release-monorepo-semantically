@@ -1,35 +1,35 @@
-import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
-import { execute } from '../../utils/hooks';
-import { bindTo, hook, inject, register } from 'ts-ioc-container';
+import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
+import { bindTo, inject, register } from 'ts-ioc-container';
 import { z } from 'zod';
-import { pluginsConfigService } from '../../services/PluginsConfigService';
-import { PackageManager, PackageManagerKey } from './services/PackageManager';
-import { PLUGIN_CONFIG_SCHEMA } from './PackageManagerConfig';
-import { command, schema } from 'ib-commander';
-import { Command } from 'commander';
-import { constant as c } from '../../utils/utils';
-import { deserializeContext } from '../../domain/ReleaseControllerContext';
+import { pluginsConfigService } from '../../services/PluginsConfigService.js';
+import { PackageManager, PackageManagerKey } from './services/PackageManager.js';
+import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './PackageManagerConfig.js';
+import { action, command, execute, onDefault, schema } from '../../cli/index.js';
+import { constant as c } from '../../utils/utils.js';
+import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
+import { isDryRun, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
 
-export const PACKAGE_MANAGER_OPTIONS = z.object({
-  context: z.string(),
-});
-
-@register(bindTo('packageManager'))
+@register(bindTo('package-manager'))
 export class PackageManagerController {
   constructor(
-    @inject(pluginsConfigService('package-manager', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
+    @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,
     @inject(PackageManagerKey) private readonly packageManager: PackageManager,
-    @inject(ILoggerKey.args('PackageManagerPlugin')) private readonly logger: ILogger,
+    @inject(ILoggerKey.args('package-manager')) private readonly logger: ILogger,
   ) {}
 
-  @command(c(new Command().requiredOption('--context <value>', 'Semantic release report')))
-  @schema(c(PACKAGE_MANAGER_OPTIONS))
-  @hook('bump-version', execute())
-  bumpVersion({ context }: z.infer<typeof PACKAGE_MANAGER_OPTIONS>): void {
-    const { releasedPackages, releasedVersions } = deserializeContext(context);
+  // Only the version bump runs by default; publishing is an explicit action so
+  // that a pipeline cannot push to the registry by accident.
+  @onDefault(execute())
+  @command(c(stepCommand()))
+  @schema(c(STEP_OPTIONS))
+  @action('bump-version', execute())
+  bumpVersion(options: StepOptions): void {
+    const { releasedPackages, releasedVersions } = deserializeContext(options.context);
+    const dryRun = isDryRun(options, this.config);
+
     for (const pkg of releasedPackages) {
       const newVersion = releasedVersions.get(pkg.name)!;
-      if (this.config!.dryRun) {
+      if (dryRun) {
         this.logger.info(`SKIP     BUMP     ${pkg.name}@${newVersion} (dry-run)`);
         continue;
       }
@@ -38,15 +38,17 @@ export class PackageManagerController {
     }
   }
 
-  @command(c(new Command().requiredOption('--context <value>', 'Semantic release report')))
-  @schema(c(PACKAGE_MANAGER_OPTIONS))
-  @hook('publish', execute())
-  publishAllPackages({ context }: z.infer<typeof PACKAGE_MANAGER_OPTIONS>): void {
-    const { releasedPackages, releasedVersions } = deserializeContext(context);
+  @command(c(stepCommand()))
+  @schema(c(STEP_OPTIONS))
+  @action('publish', execute())
+  publishAllPackages(options: StepOptions): void {
+    const { releasedPackages, releasedVersions } = deserializeContext(options.context);
+    const dryRun = isDryRun(options, this.config);
+
     for (const pkg of releasedPackages) {
       const newVersion = releasedVersions.get(pkg.name)!;
-      if (this.config!.dryRun) {
-        this.logger.info(`SKIP     PUBLISH      ${pkg.name}@${newVersion} (dry-run)`);
+      if (dryRun) {
+        this.logger.info(`SKIP     PUBLISH  ${pkg.name}@${newVersion} (dry-run)`);
         continue;
       }
       this.packageManager.publish(pkg.dirname);

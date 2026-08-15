@@ -1,11 +1,11 @@
 import { describe, it } from 'vitest';
 import { It, Mock, Times } from 'moq.ts';
-import { VCSController } from './VCSController';
-import { NpmPackage } from '../../domain/NpmPackage';
-import { serializeContext } from '../../domain/ReleaseControllerContext';
-import { VSCService } from './services/VSCService';
-import { IRenderService } from '../../services/HandlebarsRenderService';
-import { ILogger } from '../../services/ConsoleLogger';
+import { VCSController } from './VCSController.js';
+import { NpmPackage } from '../../domain/NpmPackage.js';
+import { serializeContext } from '../../domain/ReleaseControllerContext.js';
+import { VSCService } from './services/VSCService.js';
+import { IRenderService } from '../../services/HandlebarsRenderService.js';
+import { ILogger } from '../../services/ConsoleLogger.js';
 
 describe('VCSController', () => {
   const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
@@ -34,9 +34,9 @@ describe('VCSController', () => {
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
     const controller = new VCSController(config as never, '/repo', vcs.object(), renderService.object(), logger.object());
-    controller.commitChanges({ context });
-    controller.createTags({ context });
-    controller.pushChanges({ context });
+    controller.commitChanges({ context, dryRun: config.dryRun });
+    controller.createTags({ context, dryRun: config.dryRun });
+    controller.pushChanges({ context, dryRun: config.dryRun });
 
     renderService.verify(
       (m) =>

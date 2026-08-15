@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SemVerBumpType, bumpVersion } from './SemVerBumpType';
+import { SemVerBumpType, bumpVersion } from './SemVerBumpType.js';
 
 describe('bumpVersion', () => {
   it('should bump major version', () => {

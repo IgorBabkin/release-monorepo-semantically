@@ -1,12 +1,13 @@
 import 'reflect-metadata';
 
+import { execute } from '../cli/execute.js';
+
 import { readFileSync } from 'node:fs';
 import Handlebars from 'handlebars';
-import { ConventionalCommit, filterCommitsByType } from '../domain/ConventionalCommit';
-import { TemplateInvocationTargetException, TemplateMethodNotFunctionException } from '../exceptions/DomainException';
+import { ConventionalCommit, filterCommitsByType } from '../domain/ConventionalCommit.js';
+import { TemplateInvocationTargetException, TemplateMethodNotFunctionException } from '../exceptions/DomainException.js';
 import { bindTo, inject, onConstruct, register, SingleToken, singleton } from 'ts-ioc-container';
-import { execute } from '../utils/hooks';
-import { globalConfig } from '../domain/GlobalConfig';
+import { globalConfig } from '../domain/GlobalConfig.js';
 import path from 'node:path';
 
 export interface IRenderService {

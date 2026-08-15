@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { NpmPackage } from '../domain/NpmPackage';
-import { sortLessDependenciesFirst } from './sortLessDependenciesFirst';
+import { NpmPackage } from '../domain/NpmPackage.js';
+import { sortLessDependenciesFirst } from './sortLessDependenciesFirst.js';
 
 function createPkg(name: string, deps: Record<string, string> = {}): NpmPackage {
   return new NpmPackage(name, `/${name}`, '1.0.0', false, deps, {});

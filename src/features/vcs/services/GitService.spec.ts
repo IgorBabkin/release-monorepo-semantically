@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { execSync } from 'node:child_process';
-import { GitService } from './GitService';
+import { GitService } from './GitService.js';
 
 vi.mock('node:child_process', () => ({
   execSync: vi.fn(),

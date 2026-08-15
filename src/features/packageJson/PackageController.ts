@@ -1,32 +1,29 @@
-import { bindTo, hook, inject, register } from 'ts-ioc-container';
-import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService';
-import { ILogger, ILoggerKey } from '../../services/ConsoleLogger';
-import { execute } from '../../utils/hooks';
+import { bindTo, inject, register } from 'ts-ioc-container';
+import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
+import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
 import { z } from 'zod';
-import { pluginsConfigService } from '../../services/PluginsConfigService';
-import { PLUGIN_CONFIG_SCHEMA } from './PackageJsonConfig';
-import { command, schema } from 'ib-commander';
-import { Command } from 'commander';
-import { constant as c } from '../../utils/utils';
-import { deserializeContext } from '../../domain/ReleaseControllerContext';
+import { pluginsConfigService } from '../../services/PluginsConfigService.js';
+import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './PackageJsonConfig.js';
+import { action, command, execute, onDefault, schema } from '../../cli/index.js';
+import { constant as c } from '../../utils/utils.js';
+import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
+import { isDryRun, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
 
-export const PACKAGE_OPTIONS = z.object({
-  context: z.string(),
-});
-
-@register(bindTo('package'))
+@register(bindTo('package-json'))
 export class PackageController {
   constructor(
-    @inject(pluginsConfigService('package-json', PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA> | null,
+    @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,
     @inject(IFileSystemServiceKey) private readonly fs: IFileSystemService,
-    @inject(ILoggerKey.args('PackageJsonPlugin')) private readonly logger: ILogger,
+    @inject(ILoggerKey.args('package-json')) private readonly logger: ILogger,
   ) {}
 
-  @command(c(new Command().requiredOption('--context <value>', 'Semantic release report')))
-  @schema(c(PACKAGE_OPTIONS))
-  @hook('update-dependencies', execute())
-  updateDependencies({ context }: z.infer<typeof PACKAGE_OPTIONS>): void {
-    const { releasedPackages, releasedVersions } = deserializeContext(context);
+  @onDefault(execute())
+  @command(c(stepCommand()))
+  @schema(c(STEP_OPTIONS))
+  @action('update-dependencies', execute())
+  updateDependencies(options: StepOptions): void {
+    const { releasedPackages, releasedVersions } = deserializeContext(options.context);
+    const dryRun = isDryRun(options, this.config);
 
     for (const pkg of releasedPackages) {
       const changes = pkg.getDependencyUpdates(releasedVersions);
@@ -42,13 +39,13 @@ export class PackageController {
         this.logger.info(`BUMP     ${change.packageName}@${change.newVersion}`);
       }
 
-      if (this.config!.dryRun) {
-        this.logger.info(`SKIP     SAVE ${pkg.name} package.json (dry-run)`);
+      if (dryRun) {
+        this.logger.info(`SKIP     SAVE     ${pkg.name} package.json (dry-run)`);
         continue;
       }
 
       this.fs.writeToPackageJsonOrFail(pkg.dirname, packageJson);
-      this.logger.info(`SAVE    ${pkg.name} package.json`);
+      this.logger.info(`SAVE     ${pkg.name} package.json`);
     }
   }
 }
