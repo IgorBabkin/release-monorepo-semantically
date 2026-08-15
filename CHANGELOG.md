@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.0...v1.9.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* skip creating a git tag if it already exists ([d71e8c1](https://github.com/IgorBabkin/release-monorepo-semantically/commit/d71e8c11728917ab59d1690cd669fe8ee82ca7ea))
+
 # [1.9.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.8.0...v1.9.0) (2026-08-15)
 
 
