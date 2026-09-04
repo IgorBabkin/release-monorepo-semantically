@@ -8,8 +8,17 @@ import { whenPackageManagerConfigEqual } from '../PackageManagerConfig.js';
 
 @register(bindTo(PackageManagerKey), whenPackageManagerConfigEqual('kind', 'pnpm'))
 export class PNPMPackageManager implements PackageManager {
+  readonly lockfileName = 'pnpm-lock.yaml';
+
   bumpVersion(cwd: string, version: string): void {
     execSync(`pnpm version ${version} --no-git-tag-version`, {
+      cwd,
+      stdio: 'pipe',
+    });
+  }
+
+  refreshLockfile(cwd: string): void {
+    execSync('pnpm install --lockfile-only --ignore-scripts', {
       cwd,
       stdio: 'pipe',
     });

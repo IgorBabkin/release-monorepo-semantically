@@ -75,15 +75,16 @@ Each row is a real, automated spec in `e2e/`. Numbering has gaps (T01–T14 don'
 | T36 | `T36-github-releases.spec.ts`                         | `release-notes` creates a GitHub Release; skipped on `--dry-run` or when not invoked |
 | T37 | `T37-template-overrides-package-json-section.spec.ts` | `release.changelog.changelogName` writes to a non-default changelog file name        |
 | T38 | `T38-template-overrides-config-file.spec.ts`          | `.release.json` overrides the same step's `package.json` config                      |
+| T39 | `T39-dependency-block-preserved.spec.ts`              | A bump lands in the block it was declared in; the lockfile is refreshed after it     |
 
 ## 6) Execution procedure
 
 1. Baseline validation: `pnpm run lint`, `pnpm test`, `pnpm run test:e2e`
-2. All 25 files above run as part of `pnpm run test:e2e`; there's no separate per-test invocation
+2. All 26 files above run as part of `pnpm run test:e2e`; there's no separate per-test invocation
 3. On failure, vitest's output already includes: the failing assertion, expected vs. actual, and the fixture's temp directory is left in place until the process exits (the fixture doesn't clean up on assertion failure mid-run within the same process)
 
 ## 7) Acceptance criteria
 
-- All of T00, T20, T24, T25, T28, T29, T35 pass (highest-risk: bump correctness, dependency propagation, partial-failure ordering, dry-run safety)
+- All of T00, T20, T24, T25, T28, T29, T35, T39 pass (highest-risk: bump correctness, dependency propagation, manifest/lockfile consistency, partial-failure ordering, dry-run safety)
 - No regressions in the rest of the matrix
 - Any failure is reproducible from a clean checkout via `pnpm run test:e2e`

@@ -13,6 +13,44 @@ describe('NpmPackage', () => {
     expect(p.hasDependency('missing')).toBe(false);
   });
 
+  it('getDependencyUpdates reports the block a runtime dependency was read from', () => {
+    const p = makePkg({ 'lib-a': '^1.0.0' });
+
+    expect(p.getDependencyUpdates(new Map([['lib-a', '1.1.0']]))).toEqual([
+      { packageName: 'lib-a', oldVersion: '^1.0.0', newVersion: '1.1.0', sections: ['dependencies'] },
+    ]);
+  });
+
+  it('getDependencyUpdates reports devDependencies when that is where the dependency lives', () => {
+    const p = makePkg({}, { 'lib-a': '1.0.0' });
+
+    expect(p.getDependencyUpdates(new Map([['lib-a', '1.1.0']]))).toEqual([
+      { packageName: 'lib-a', oldVersion: '1.0.0', newVersion: '1.1.0', sections: ['devDependencies'] },
+    ]);
+  });
+
+  it('getDependencyUpdates reports every block declaring an outdated dependency', () => {
+    const p = makePkg({ 'lib-a': '1.0.0' }, { 'lib-a': '^1.0.0' });
+
+    expect(p.getDependencyUpdates(new Map([['lib-a', '1.1.0']]))).toEqual([
+      { packageName: 'lib-a', oldVersion: '1.0.0', newVersion: '1.1.0', sections: ['dependencies', 'devDependencies'] },
+    ]);
+  });
+
+  it('getDependencyUpdates skips blocks already on the released version', () => {
+    const p = makePkg({ 'lib-a': '1.1.0' }, { 'lib-a': '1.0.0' });
+
+    expect(p.getDependencyUpdates(new Map([['lib-a', '1.1.0']]))).toEqual([
+      { packageName: 'lib-a', oldVersion: '1.0.0', newVersion: '1.1.0', sections: ['devDependencies'] },
+    ]);
+  });
+
+  it('getDependencyUpdates ignores a dependency that is not declared at all', () => {
+    const p = makePkg({ 'lib-a': '1.0.0' });
+
+    expect(p.getDependencyUpdates(new Map([['lib-b', '1.1.0']]))).toEqual([]);
+  });
+
   it('getDependencyNames filters to internal set', () => {
     const p = makePkg({ 'lib-a': '1.0.0', react: '18.0.0' });
     const names = new Set(['lib-a', 'lib-b']);
