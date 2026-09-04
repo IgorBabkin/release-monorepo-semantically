@@ -431,9 +431,39 @@ Handled by the `package-json` step (dependency versions) and the `package-manage
 - Updates package.json atomically
 - Standard pnpm behavior (more reliable than manual JSON editing)
 
-#### 4.2 Update pnpm-lock.yaml
+#### 4.2 Update internal dependency versions
 
-After updating all package.json files, regenerate the lockfile:
+An internal dependency is bumped **in the block it was declared in**:
+a `devDependencies` entry is rewritten as a `devDependencies` entry, a
+`dependencies` entry as a `dependencies` entry, and a dependency declared in
+both is refreshed in both.
+
+**IMPORTANT:** The step never creates a block a package did not already have.
+Writing every bump into `dependencies` turns a dev-only dependency into a
+runtime one and ships consumers a duplicate copy of a package they already
+resolve themselves.
+
+`peerDependencies` is never rewritten. A peer range (`>=56`) states which
+versions a consumer may pair the package with; pinning it to the version just
+released would be wrong.
+
+#### 4.3 Update pnpm-lock.yaml
+
+Rewriting a manifest changes a specifier the lockfile has recorded, so after
+the manifests are written the `package-json` step regenerates the lockfile:
+
+```bash
+pnpm install --lockfile-only --ignore-scripts
+```
+
+Resolution only — a release step runs against an already-installed workspace
+and must not touch `node_modules`. The refreshed lockfile is picked up by
+`vcs commit` along with the manifests, so the committed tree installs cleanly;
+without it every later `pnpm install --frozen-lockfile` fails with
+`ERR_PNPM_OUTDATED_LOCKFILE`, on release branches and feature branches alike.
+
+The refresh is skipped when nothing was rewritten, when the workspace has no
+lockfile, and under `--dry-run`.
 
 ### Phase 5: Git Operations
 

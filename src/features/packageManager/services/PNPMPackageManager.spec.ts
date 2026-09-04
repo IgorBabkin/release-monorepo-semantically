@@ -28,3 +28,20 @@ describe('PNPMPackageManager.publish', () => {
     });
   });
 });
+
+describe('PNPMPackageManager.refreshLockfile', () => {
+  it('resolves the lockfile against the rewritten manifests without installing', () => {
+    const pm = new PNPMPackageManager();
+
+    pm.refreshLockfile('/repo');
+
+    expect(cp.execSync).toHaveBeenCalledWith('pnpm install --lockfile-only --ignore-scripts', {
+      cwd: '/repo',
+      stdio: 'pipe',
+    });
+  });
+
+  it('names the lockfile it maintains', () => {
+    expect(new PNPMPackageManager().lockfileName).toBe('pnpm-lock.yaml');
+  });
+});

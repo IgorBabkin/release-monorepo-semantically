@@ -24,6 +24,8 @@ interface PackageFixture {
   version: string;
   private?: boolean;
   dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
 }
 
 export interface ReleaseOptions {
@@ -64,8 +66,12 @@ export interface MonorepoFixture {
     name: string;
     version: string;
     dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+    peerDependencies?: Record<string, string>;
     private?: boolean;
   };
+  /** Every `pnpm install ...` the release invoked, as the argument list it was called with. */
+  packageManagerInstalls: () => string[];
   /** Runs a single `monorepo-semantic-release <args...>` invocation. */
   runCli: (args: string[], envOverrides?: NodeJS.ProcessEnv) => ExecResult;
   /** Writes a custom template under the fixture's `templates/` dir, creating it if needed. */
@@ -103,6 +109,7 @@ export function createMonorepoFixture(packages: PackageFixture[], withRemote = t
   const remoteDir = path.join(tempRoot, 'remote.git');
   const fixtureBinDir = path.join(tempRoot, 'bin');
   const publishedPackagesLog = path.join(tempRoot, 'published-packages.log');
+  const packageManagerInstallsLog = path.join(tempRoot, 'package-manager-installs.log');
   const githubReleasesLog = path.join(tempRoot, 'github-releases.log');
   const workDir = path.join(tempRoot, 'workspace');
   mkdirSync(fixtureBinDir, { recursive: true });
@@ -118,6 +125,13 @@ const args = process.argv.slice(2);
 if (args[0] === 'publish') {
   const pkg = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8'));
   appendFileSync(process.env.MONOREPO_SEMREL_PUBLISH_LOG, \`\${pkg.name}@\${pkg.version}\\n\`);
+  process.exit(0);
+}
+
+// Recorded rather than forwarded: the fixture wires node_modules up by hand
+// and its packages are not on any registry, so a real resolution would fail.
+if (args[0] === 'install') {
+  appendFileSync(process.env.MONOREPO_SEMREL_INSTALL_LOG, args.join(' ') + '\\n');
   process.exit(0);
 }
 
@@ -169,6 +183,7 @@ process.exit(1);
     ...process.env,
     PATH: `${fixtureBinDir}:${process.env.PATH ?? ''}`,
     MONOREPO_SEMREL_PUBLISH_LOG: publishedPackagesLog,
+    MONOREPO_SEMREL_INSTALL_LOG: packageManagerInstallsLog,
     MONOREPO_SEMREL_GITHUB_RELEASE_LOG: githubReleasesLog,
   };
 
@@ -200,6 +215,8 @@ process.exit(1);
       version: pkg.version,
       ...(pkg.private ? { private: true } : {}),
       ...(pkg.dependencies ? { dependencies: pkg.dependencies } : {}),
+      ...(pkg.devDependencies ? { devDependencies: pkg.devDependencies } : {}),
+      ...(pkg.peerDependencies ? { peerDependencies: pkg.peerDependencies } : {}),
     };
     writeFileSync(path.join(packagePath, 'package.json'), `${JSON.stringify(packageJsonContent, null, 2)}\n`);
     writeFileSync(path.join(packagePath, 'README.md'), 'initial\n');
@@ -280,6 +297,10 @@ process.exit(1);
       const output = runCommandCapture(`cat ${JSON.stringify(publishedPackagesLog)}`, workDir, fixtureEnv);
       return output.status === 'passed' && output.stdout ? output.stdout.split('\n').filter(Boolean) : [];
     },
+    packageManagerInstalls(): string[] {
+      const output = runCommandCapture(`cat ${JSON.stringify(packageManagerInstallsLog)}`, workDir, fixtureEnv);
+      return output.status === 'passed' && output.stdout ? output.stdout.split('\n').filter(Boolean) : [];
+    },
     githubReleases() {
       const output = runCommandCapture(`cat ${JSON.stringify(githubReleasesLog)}`, workDir, fixtureEnv);
       if (output.status !== 'passed' || !output.stdout) {
@@ -305,6 +326,8 @@ process.exit(1);
         name: string;
         version: string;
         dependencies?: Record<string, string>;
+        devDependencies?: Record<string, string>;
+        peerDependencies?: Record<string, string>;
         private?: boolean;
       };
     },

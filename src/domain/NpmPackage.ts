@@ -1,6 +1,6 @@
 import { PackageJSON } from './PackageJSON.js';
 import { Sortable } from '../utils/sortLessDependenciesFirst.js';
-import { DependencyVersionChange } from './ReleaseTypes.js';
+import { DEPENDENCY_SECTIONS, DependencySection, DependencyVersionChange } from './ReleaseTypes.js';
 import { SemVerBumpType } from './SemVerBumpType.js';
 import { MissingDependencyVersionException } from '../exceptions/DomainException.js';
 
@@ -57,28 +57,38 @@ export class NpmPackage implements Sortable {
     return `${this.name}@${this.version}`;
   }
 
-  private findDependencyVersionByNameOrFail(depName: string): string {
-    const dependencyVersion = this.dependencies[depName] ?? this.devDependencies[depName];
+  private findDependencyVersionByNameOrFail(depName: string, sections: DependencySection[]): string {
+    const dependencyVersion = sections.map((section) => this[section][depName]).find(Boolean);
     if (!dependencyVersion) {
       throw new MissingDependencyVersionException(this.name, depName);
     }
     return dependencyVersion;
   }
 
-  private hasOutdatedDependency(depName: string, newVersion: string): boolean {
-    const dependencyVersion = this.dependencies[depName] ?? this.devDependencies[depName];
-    return Boolean(dependencyVersion) && dependencyVersion !== newVersion;
+  /**
+   * Every block that declares `depName` at something other than `newVersion`.
+   * A dependency can legitimately be declared twice (a devDependency next to a
+   * runtime one), and each declaration has to be refreshed, or the release
+   * leaves a stale specifier behind.
+   */
+  private findOutdatedDependencySections(depName: string, newVersion: string): DependencySection[] {
+    return DEPENDENCY_SECTIONS.filter((section) => {
+      const dependencyVersion = this[section][depName];
+      return Boolean(dependencyVersion) && dependencyVersion !== newVersion;
+    });
   }
 
   getDependencyUpdates(releasedVersions: Map<string, string>): DependencyVersionChange[] {
     const changes: DependencyVersionChange[] = [];
 
     for (const [depName, newVersion] of releasedVersions) {
-      if (this.hasOutdatedDependency(depName, newVersion)) {
+      const sections = this.findOutdatedDependencySections(depName, newVersion);
+      if (sections.length > 0) {
         changes.push({
           packageName: depName,
-          oldVersion: this.findDependencyVersionByNameOrFail(depName),
+          oldVersion: this.findDependencyVersionByNameOrFail(depName, sections),
           newVersion,
+          sections,
         });
       }
     }
