@@ -1,3 +1,10 @@
+## [1.9.3](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.2...v1.9.3) (2026-09-04)
+
+
+### Bug Fixes
+
+* **package-json:** bump dependencies in place and refresh the lockfile ([e710ca8](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e710ca8df6840c8c25fef015513dc475ec946c68)), closes [#5](https://github.com/IgorBabkin/release-monorepo-semantically/issues/5)
+
 ## [1.9.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.1...v1.9.2) (2026-08-15)
 
 
