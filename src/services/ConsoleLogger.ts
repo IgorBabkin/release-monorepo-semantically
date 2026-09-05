@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 import { args, bindTo, inject, register, SingleToken } from 'ts-ioc-container';
 
-type StepName = 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG';
+type StepName = 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG' | 'PLAN' | 'SCAN' | 'DEPS';
 
 const STEP_FORMAT: Record<StepName, { emoji: string; color: number }> = {
   SKIP: { emoji: '⚠', color: 33 },
@@ -10,6 +10,9 @@ const STEP_FORMAT: Record<StepName, { emoji: string; color: number }> = {
   WRITE: { emoji: '📝', color: 36 },
   COMMIT: { emoji: '📦', color: 35 },
   TAG: { emoji: '🏷️', color: 34 },
+  PLAN: { emoji: '📋', color: 36 },
+  SCAN: { emoji: '🔍', color: 90 },
+  DEPS: { emoji: '🔗', color: 36 },
 };
 
 export interface ILogger {
@@ -40,7 +43,7 @@ export class ConsoleLogger implements ILogger {
   }
 
   private decorateStructuredMessage(message: string): string {
-    const match = message.match(/^(SKIP|BUMP|WRITE|COMMIT|TAG)\b/);
+    const match = message.match(/^(SKIP|BUMP|WRITE|COMMIT|TAG|PLAN|SCAN|DEPS)\b/);
     if (!match) {
       return message;
     }

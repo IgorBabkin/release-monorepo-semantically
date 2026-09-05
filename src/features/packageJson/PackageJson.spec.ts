@@ -53,6 +53,7 @@ describe('PackageController', () => {
     new PackageController(config as never, fs.object(), packageManager.object(), CWD, logger.object()).updateDependencies({
       context: contextOf(manifest, releasedVersions),
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     fs.verify((m) => m.readPackageJsonOrFail('/repo/packages/pkg-a'), Times.Once());
@@ -71,6 +72,7 @@ describe('PackageController', () => {
     new PackageController(config as never, fs.object(), packageManagerMock().object(), CWD, logger.object()).updateDependencies({
       context: contextOf(manifest, releasedVersions),
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     fs.verify((m) => m.readPackageJsonOrFail('/repo/packages/pkg-a'), Times.Once());
@@ -99,6 +101,7 @@ describe('PackageController', () => {
     new PackageController(config as never, fs.object(), packageManagerMock().object(), CWD, logger.object()).updateDependencies({
       context: contextOf(manifest, releasedVersions),
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     fs.verify(
@@ -127,6 +130,7 @@ describe('PackageController', () => {
     new PackageController(config as never, fs.object(), packageManagerMock().object(), CWD, loggerMock().object()).updateDependencies({
       context: contextOf(manifest, releasedVersions),
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     fs.verify(
@@ -147,6 +151,7 @@ describe('PackageController', () => {
     new PackageController(config as never, fs.object(), packageManagerMock().object(), CWD, loggerMock().object()).updateDependencies({
       context: contextOf(manifest, releasedVersions),
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     fs.verify(
@@ -169,6 +174,7 @@ describe('PackageController', () => {
     new PackageController(config as never, fs.object(), packageManager.object(), CWD, logger.object()).updateDependencies({
       context: contextOf(manifest, releasedVersions),
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     fs.verify((m) => m.fileExists('pnpm-lock.yaml'), Times.Once());
@@ -184,6 +190,7 @@ describe('PackageController', () => {
     new PackageController(config as never, fsMock({ ...manifest }, false).object(), packageManager.object(), CWD, loggerMock().object()).updateDependencies({
       context: contextOf(manifest, releasedVersions),
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     packageManager.verify((m) => m.refreshLockfile(It.IsAny()), Times.Never());
@@ -199,11 +206,34 @@ describe('PackageController', () => {
     new PackageController(config as never, fs.object(), packageManager.object(), CWD, logger.object()).updateDependencies({
       context: contextOf(manifest, new Map([['pkg-b', '1.0.0']])),
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     fs.verify((m) => m.readPackageJsonOrFail(It.IsAny()), Times.Never());
     fs.verify((m) => m.writeToPackageJsonOrFail(It.IsAny(), It.IsAny()), Times.Never());
     packageManager.verify((m) => m.refreshLockfile(It.IsAny()), Times.Never());
     logger.verify((m) => m.info(It.IsAny()), Times.Never());
+  });
+
+  it('given --verbose when a dependency is rewritten then the affected package, block and both versions are reported', () => {
+    const config = { dryRun: true };
+    const manifest = { name: 'pkg-a', version: '1.0.0', dependencies: { 'pkg-b': '^1.0.0' } };
+    const fs = fsMock({ ...manifest });
+    const logger = loggerMock();
+
+    new PackageController(config as never, fs.object(), packageManagerMock().object(), CWD, logger.object()).updateDependencies({
+      context: contextOf(
+        manifest,
+        new Map([
+          ['pkg-a', '1.0.1'],
+          ['pkg-b', '1.1.0'],
+        ]),
+      ),
+      dryRun: config.dryRun,
+      verbose: true,
+    });
+
+    logger.verify((m) => m.info('PLAN     pkg-a 1.0.0 -> 1.0.1 (patch, 0 commit(s), deps: pkg-b@1.1.0)'), Times.Once());
+    logger.verify((m) => m.info('DEPS     pkg-a pkg-b ^1.0.0 -> 1.1.0 in dependencies'), Times.Once());
   });
 });

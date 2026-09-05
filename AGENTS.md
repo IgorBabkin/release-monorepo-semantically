@@ -104,6 +104,7 @@ Expected outcomes:
 - Default templates: `src/features/changelog/changelog.hbs`, `src/features/vcs/release-commit-msg.hbs`, `src/features/releaseNotes/github-release-notes.hbs`.
 - Respect `--template` CLI overrides and `release.<step>` config overrides (`package.json`'s `release` section, or `.release.json`) — see `README.md` for precedence.
 - `--dry-run` on a step must not mutate files, create commits, create tags, push, or publish for that step.
+- `--verbose` on a step only adds observability lines (`SCAN`, `DEPS`, `PLAN`) to stderr. It must never change what the step does, and never write to stdout.
 - `report` is the only step with a precondition: it fails if the working tree isn't clean. Don't add that check to `vcs` — its job is to commit the changes the earlier steps just made, so the tree is expected to be dirty when it runs.
 
 ## Implementation Notes

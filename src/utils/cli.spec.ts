@@ -22,7 +22,7 @@ describe('stepCommand', () => {
 
     const options = STEP_OPTIONS.parse(command.opts());
 
-    expect(options).toEqual({ context: '{}', dryRun: false });
+    expect(options).toEqual({ context: '{}', dryRun: false, verbose: false });
   });
 
   it('given --dry-run when parsed then it overrides the default', () => {
@@ -32,6 +32,13 @@ describe('stepCommand', () => {
     const options = STEP_OPTIONS.parse(command.opts());
 
     expect(options.dryRun).toBe(true);
+  });
+
+  it('given --verbose when parsed then the step reports its release plan', () => {
+    const command = stepCommand();
+    command.parse(['node', 'script', '--context', '{}', '--verbose'], { from: 'node' });
+
+    expect(STEP_OPTIONS.parse(command.opts()).verbose).toBe(true);
   });
 
   it('given a flag meant for a sibling action when parsed then it is tolerated instead of raising an error', () => {

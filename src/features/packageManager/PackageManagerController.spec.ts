@@ -20,7 +20,7 @@ describe('PackageManagerController', () => {
     const packageManager = new Mock<PackageManager>().setup((m) => m.bumpVersion(It.IsAny(), It.IsAny())).returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    new PackageManagerController(config as never, packageManager.object(), logger.object()).bumpVersion({ context, dryRun: config.dryRun });
+    new PackageManagerController(config as never, packageManager.object(), logger.object()).bumpVersion({ context, dryRun: config.dryRun, verbose: false });
 
     packageManager.verify((m) => m.bumpVersion('/repo/packages/pkg-a', '1.0.1'), Times.Once());
     logger.verify((m) => m.info('BUMP     pkg-a@1.0.1'), Times.Once());
@@ -31,7 +31,7 @@ describe('PackageManagerController', () => {
     const packageManager = new Mock<PackageManager>().setup((m) => m.bumpVersion(It.IsAny(), It.IsAny())).returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    new PackageManagerController(config as never, packageManager.object(), logger.object()).bumpVersion({ context, dryRun: config.dryRun });
+    new PackageManagerController(config as never, packageManager.object(), logger.object()).bumpVersion({ context, dryRun: config.dryRun, verbose: false });
 
     packageManager.verify((m) => m.bumpVersion(It.IsAny(), It.IsAny()), Times.Never());
     logger.verify((m) => m.info('SKIP     BUMP     pkg-a@1.0.1 (dry-run)'), Times.Once());
@@ -42,7 +42,11 @@ describe('PackageManagerController', () => {
     const packageManager = new Mock<PackageManager>().setup((m) => m.publish(It.IsAny())).returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    new PackageManagerController(config as never, packageManager.object(), logger.object()).publishAllPackages({ context, dryRun: config.dryRun });
+    new PackageManagerController(config as never, packageManager.object(), logger.object()).publishAllPackages({
+      context,
+      dryRun: config.dryRun,
+      verbose: false,
+    });
 
     packageManager.verify((m) => m.publish(It.IsAny()), Times.Never());
     logger.verify((m) => m.info('SKIP     PUBLISH  pkg-a@1.0.1 (dry-run)'), Times.Once());
@@ -53,9 +57,24 @@ describe('PackageManagerController', () => {
     const packageManager = new Mock<PackageManager>().setup((m) => m.publish(It.IsAny())).returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
-    new PackageManagerController(config as never, packageManager.object(), logger.object()).publishAllPackages({ context, dryRun: config.dryRun });
+    new PackageManagerController(config as never, packageManager.object(), logger.object()).publishAllPackages({
+      context,
+      dryRun: config.dryRun,
+      verbose: false,
+    });
 
     packageManager.verify((m) => m.publish('/repo/packages/pkg-a'), Times.Once());
     logger.verify((m) => m.info('PUBLISH  pkg-a@1.0.1'), Times.Once());
+  });
+
+  it('given --verbose when bumpVersion runs then the affected package, versions and bump type are reported', () => {
+    const config = { dryRun: true };
+    const packageManager = new Mock<PackageManager>().setup((m) => m.bumpVersion(It.IsAny(), It.IsAny())).returns(undefined);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+
+    new PackageManagerController(config as never, packageManager.object(), logger.object()).bumpVersion({ context, dryRun: config.dryRun, verbose: true });
+
+    logger.verify((m) => m.info('PLAN     1 package(s) affected'), Times.Once());
+    logger.verify((m) => m.info('PLAN     pkg-a 1.0.0 -> 1.0.1 (patch, 0 commit(s))'), Times.Once());
   });
 });

@@ -34,6 +34,7 @@ describe('ReleaseNotesController', () => {
     new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object()).createGithubRelease({
       context,
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     github.verify((m) => m.isCliAvailable(), Times.Once());
@@ -80,6 +81,7 @@ describe('ReleaseNotesController', () => {
     new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object()).createGithubRelease({
       context,
       dryRun: config.dryRun,
+      verbose: false,
     });
 
     github.verify((m) => m.createRelease(It.IsAny()), Times.Never());

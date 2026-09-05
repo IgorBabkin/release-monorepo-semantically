@@ -10,6 +10,7 @@ import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './ReleaseNotesConfig.js';
 import { action, command, execute, onDefault, schema } from '../../cli/index.js';
 import { constant as c } from '../../utils/utils.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
+import { createReleasePlanReporter } from '../../domain/ReleasePlan.js';
 import { isDryRun, STEP_OPTIONS, stepCommand } from '../../utils/cli.js';
 
 export const RELEASE_NOTES_OPTIONS = STEP_OPTIONS.extend({
@@ -28,12 +29,15 @@ export class ReleaseNotesController {
     @inject(IRenderServiceKey) private readonly renderService: IRenderService,
   ) {}
 
+  private readonly reportPlan = createReleasePlanReporter((message) => this.logger.info(message));
+
   @onDefault(execute())
   @command(c(releaseNotesCommand()))
   @schema(c(RELEASE_NOTES_OPTIONS))
   @action('create', execute())
   createGithubRelease(options: z.infer<typeof RELEASE_NOTES_OPTIONS>): void {
     const releaseContext = deserializeContext(options.context);
+    this.reportPlan(releaseContext, options.verbose);
     const { releasedPackages, releasedVersions } = releaseContext;
     if (releasedPackages.length === 0) {
       return;

@@ -4,6 +4,7 @@ import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRend
 import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
+import { createReleasePlanReporter } from '../../domain/ReleasePlan.js';
 import path from 'node:path';
 import { z } from 'zod';
 import { action, command, execute, onDefault, schema } from '../../cli/index.js';
@@ -32,12 +33,15 @@ export class ChangelogController {
     @inject(ILoggerKey.args('changelog')) private readonly logger: ILogger,
   ) {}
 
+  private readonly reportPlan = createReleasePlanReporter((message) => this.logger.info(message));
+
   @onDefault(execute())
   @command(c(changelogCommand()))
   @schema(c(CHANGELOG_OPTIONS))
   @action('generate', execute())
   generateChangelog(options: z.infer<typeof CHANGELOG_OPTIONS>): void {
     const releaseContext = deserializeContext(options.context);
+    this.reportPlan(releaseContext, options.verbose);
     const { releasedPackages } = releaseContext;
     const template = options.template ?? this.config.template;
     const changelogName = options.changelogName ?? this.config.changelogName;
