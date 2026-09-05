@@ -247,8 +247,23 @@ interface ConventionalCommit {
 
 - Internal dependencies **MUST use exact versions** (not wildcards)
 - ✅ Correct: `"ts-ioc-container": "2.0.5"`
+- ✅ Also correct: `"ts-ioc-container": "workspace:*"` — see below
 - ❌ Incorrect: `"ts-ioc-container": "^2.0.5"`
 - This ensures precise dependency tracking and update detection
+
+**The `workspace:` protocol.** A specifier such as `workspace:*` or
+`workspace:^1.0.0` always resolves to the copy in this workspace, so it is
+never stale and is **never rewritten**. It still counts as an internal
+dependency for bump detection, so a dependent declaring one is released
+alongside the dependency it tracks; only the manifest rewrite is skipped.
+`pnpm publish` substitutes the real version into the published tarball, so
+consumers still receive an exact version.
+
+Rewriting such a specifier would be actively harmful: it replaces a local link
+with a version that is only published at the _end_ of the release, leaving the
+lockfile refresh below (§4.3) nothing to resolve, and the release deadlocks —
+the refresh needs the version published, and publishing needs the refresh to
+pass.
 
 #### 2.2 Determine Version Bump
 
@@ -463,7 +478,9 @@ without it every later `pnpm install --frozen-lockfile` fails with
 `ERR_PNPM_OUTDATED_LOCKFILE`, on release branches and feature branches alike.
 
 The refresh is skipped when nothing was rewritten, when the workspace has no
-lockfile, and under `--dry-run`.
+lockfile, and under `--dry-run`. A package whose internal dependencies are all
+declared with the `workspace:` protocol rewrites nothing, so it never triggers
+a refresh.
 
 ### Phase 5: Git Operations
 

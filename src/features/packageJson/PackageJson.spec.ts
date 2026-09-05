@@ -189,6 +189,60 @@ describe('PackageController', () => {
     packageManager.verify((m) => m.refreshLockfile(It.IsAny()), Times.Never());
   });
 
+  it('given a dependency declared with the workspace protocol then it is left untouched and no lockfile refresh runs', () => {
+    const config = { dryRun: false };
+    const manifest = { name: 'pkg-a', version: '1.0.0', devDependencies: { 'pkg-b': 'workspace:*' } };
+    const fs = fsMock({ ...manifest }, true);
+    const packageManager = packageManagerMock();
+    const logger = loggerMock();
+
+    new PackageController(config as never, fs.object(), packageManager.object(), CWD, logger.object()).updateDependencies({
+      context: contextOf(manifest, releasedVersions),
+      dryRun: config.dryRun,
+    });
+
+    fs.verify((m) => m.writeToPackageJsonOrFail(It.IsAny(), It.IsAny()), Times.Never());
+    packageManager.verify((m) => m.refreshLockfile(It.IsAny()), Times.Never());
+    logger.verify((m) => m.info(It.IsAny()), Times.Never());
+  });
+
+  it('given a workspace protocol range then it is left untouched', () => {
+    const config = { dryRun: false };
+    const manifest = { name: 'pkg-a', version: '1.0.0', dependencies: { 'pkg-b': 'workspace:^1.0.0' } };
+    const fs = fsMock({ ...manifest }, true);
+    const packageManager = packageManagerMock();
+
+    new PackageController(config as never, fs.object(), packageManager.object(), CWD, loggerMock().object()).updateDependencies({
+      context: contextOf(manifest, releasedVersions),
+      dryRun: config.dryRun,
+    });
+
+    fs.verify((m) => m.writeToPackageJsonOrFail(It.IsAny(), It.IsAny()), Times.Never());
+    packageManager.verify((m) => m.refreshLockfile(It.IsAny()), Times.Never());
+  });
+
+  it('given a workspace protocol devDependency next to an exact dependency then only the exact one is rewritten', () => {
+    const config = { dryRun: false };
+    const manifest = { name: 'pkg-a', version: '1.0.0', dependencies: { 'pkg-b': '1.0.0' }, devDependencies: { 'pkg-b': 'workspace:*' } };
+    const fs = fsMock({ ...manifest }, true);
+    const packageManager = packageManagerMock();
+
+    new PackageController(config as never, fs.object(), packageManager.object(), CWD, loggerMock().object()).updateDependencies({
+      context: contextOf(manifest, releasedVersions),
+      dryRun: config.dryRun,
+    });
+
+    fs.verify(
+      (m) =>
+        m.writeToPackageJsonOrFail(
+          '/repo/packages/pkg-a',
+          It.Is((v: PackageJSON) => v.dependencies?.['pkg-b'] === '1.1.0' && v.devDependencies?.['pkg-b'] === 'workspace:*'),
+        ),
+      Times.Once(),
+    );
+    packageManager.verify((m) => m.refreshLockfile(CWD), Times.Once());
+  });
+
   it('given no dependency changes when package is released then package.json is not rewritten', () => {
     const manifest = { name: 'pkg-a', version: '1.0.0', dependencies: { 'pkg-b': '1.0.0' } };
     const config = { dryRun: false };
