@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import Handlebars from 'handlebars';
 import { ConventionalCommit, filterCommitsByType } from '../domain/ConventionalCommit.js';
 import { TemplateInvocationTargetException, TemplateMethodNotFunctionException } from '../exceptions/DomainException.js';
-import { bindTo, inject, onConstruct, register, SingleToken, singleton } from 'ts-ioc-container';
+import { inject, onConstruct, register, SingleToken, singleton } from 'ts-ioc-container';
 import { globalConfig } from '../domain/GlobalConfig.js';
 import path from 'node:path';
 
@@ -16,7 +16,7 @@ export interface IRenderService {
 
 export const IRenderServiceKey = new SingleToken<IRenderService>('IRenderService');
 
-@register(bindTo(IRenderServiceKey), singleton())
+@register(IRenderServiceKey, singleton())
 export class HandlebarsRenderService implements IRenderService {
   constructor(@inject(globalConfig('cwd')) private readonly cwd: string) {}
 

@@ -1,6 +1,6 @@
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
 import { z } from 'zod';
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { inject, register } from 'ts-ioc-container';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService.js';
 import { pluginsConfigService } from '../../services/PluginsConfigService.js';
 import { globalConfig } from '../../domain/GlobalConfig.js';
@@ -18,7 +18,7 @@ export const VCS_OPTIONS = STEP_OPTIONS.extend({
 
 const vcsCommand = () => stepCommand().option('--template <path>', 'Handlebars template for the release commit message');
 
-@register(bindTo('vcs'))
+@register('vcs')
 export class VCSController {
   constructor(
     @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,

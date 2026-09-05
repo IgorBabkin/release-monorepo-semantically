@@ -1,4 +1,4 @@
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { inject, register } from 'ts-ioc-container';
 import { globalConfig } from '../../domain/GlobalConfig.js';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService.js';
 import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
@@ -23,7 +23,7 @@ const changelogCommand = () =>
     .option('--template <path>', 'Handlebars template for changelog entries')
     .option('--changelog-name <value>', 'Changelog file name (default CHANGELOG.md)');
 
-@register(bindTo('changelog'))
+@register('changelog')
 export class ChangelogController {
   constructor(
     @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,

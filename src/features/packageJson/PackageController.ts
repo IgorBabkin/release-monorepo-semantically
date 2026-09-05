@@ -1,4 +1,4 @@
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { inject, register } from 'ts-ioc-container';
 import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
 import { z } from 'zod';
@@ -13,7 +13,7 @@ import { isWorkspaceProtocol } from '../../domain/ReleaseTypes.js';
 import { validate } from '../../utils/zod.js';
 import { commandArgs } from '../../utils/ts-ioc-container.js';
 
-@register(bindTo('package-json'))
+@register('package-json')
 export class PackageController {
   constructor(
     @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,

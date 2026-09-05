@@ -1,4 +1,4 @@
-import { bindTo, IContainer, inject, register } from 'ts-ioc-container';
+import { IContainer, inject, register } from 'ts-ioc-container';
 import { NpmPackage, PackageName, PackageVersion } from '../../domain/NpmPackage.js';
 import { IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
 import { VSCService, VSCServiceKey } from '../vcs/services/VSCService.js';
@@ -23,7 +23,7 @@ export const resolvePublicPackages = (container: IContainer): NpmPackage[] => {
   return sortLessDependenciesFirst(packageJsonList.map(([pkgPath, pkg]) => NpmPackage.createFromPackage(pkg, pkgPath)).filter((p) => !p.isPrivate));
 };
 
-@register(bindTo('report'))
+@register('report')
 export class ReportController {
   constructor(
     @inject(VSCServiceKey) private vsc: VSCService,

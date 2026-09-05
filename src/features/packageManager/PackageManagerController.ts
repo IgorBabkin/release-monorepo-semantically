@@ -1,5 +1,5 @@
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { inject, register } from 'ts-ioc-container';
 import { z } from 'zod';
 import { pluginsConfigService } from '../../services/PluginsConfigService.js';
 import { PackageManager, PackageManagerKey } from './services/PackageManager.js';
@@ -10,7 +10,7 @@ import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand, type StepOptions } f
 import { validate } from '../../utils/zod.js';
 import { commandArgs } from '../../utils/ts-ioc-container.js';
 
-@register(bindTo('package-manager'))
+@register('package-manager')
 export class PackageManagerController {
   constructor(
     @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,
