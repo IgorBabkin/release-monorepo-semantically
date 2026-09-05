@@ -1,6 +1,6 @@
 {
   "name": "release-monorepo-semantically",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "description": "cli commands to manage versioning of package in monorepo and generate changelog",
   "license": "ISC",
   "author": "",

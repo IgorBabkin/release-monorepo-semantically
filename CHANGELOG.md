@@ -1,3 +1,10 @@
+## [1.9.4](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.3...v1.9.4) (2026-09-05)
+
+
+### Bug Fixes
+
+* never rewrite an internal dependency on the workspace protocol ([94682ca](https://github.com/IgorBabkin/release-monorepo-semantically/commit/94682caf4853fb60fa9f944052972d9e2a20dd5e)), closes [#8](https://github.com/IgorBabkin/release-monorepo-semantically/issues/8)
+
 ## [1.9.3](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.2...v1.9.3) (2026-09-04)
 
 
