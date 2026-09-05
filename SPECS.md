@@ -82,6 +82,13 @@ monorepo-semantic-release vcs             --context "$RELEASE_CONTEXT"
 
 - The JSON `report` wrote to stdout: released packages, their new versions, and the commits that triggered each bump
 
+**`--verbose`** (optional, every step)
+
+- Adds observability output on stderr; it never changes what the step does, and `report`'s stdout stays pure JSON
+- On `report`: every public package scanned in dependency order, the commits found since its last tag with the bump each one contributes, and the internal dependency updates that force a bump on their own
+- On every step: the release plan — how many packages are affected, and for each one `<from> -> <to>` with its bump type (`major`, `minor`, `patch`), the number of release-triggering commits behind it, and the internal dependency versions it picks up
+- The plan is reported once per invocation, even when a step fans out into several actions (`vcs` runs commit, tag and push)
+
 There is no `--no-push`/`--no-publish` equivalent: a pipeline that wants to skip pushing or publishing simply doesn't invoke `vcs push` (or invokes `vcs commit`/`vcs tag` instead of bare `vcs`) or `package-manager publish`.
 
 ## Workflow
@@ -540,6 +547,26 @@ Every step logs one line per action, tagged with its own name (`[report]`, `[vcs
 [vcs] PUSH     HEAD and 2 tag(s)
 [package-manager] PUBLISH  ts-ioc-container@2.1.0
 [package-manager] PUBLISH  @ts-ioc-container/react@1.6.0
+```
+
+### Console Output (`--verbose`, stderr)
+
+```
+[report] 🔍 SCAN     2 public package(s) in dependency order: ts-ioc-container, @ts-ioc-container/react
+[report] 🔍 SCAN     ts-ioc-container 4 commit(s) since ts-ioc-container@2.0.5, 2 release-triggering
+[report] 🔍 SCAN     ts-ioc-container <- feat(ts-ioc-container): add lazy providers [4518a1c] (minor)
+[report] 🚀 BUMP     ts-ioc-container 2.0.5 -> 2.1.0 (minor)
+[report] 🔍 SCAN     @ts-ioc-container/react 1 commit(s) since @ts-ioc-container/react@1.5.1, 0 release-triggering
+[report] 🔗 DEPS     @ts-ioc-container/react <- ts-ioc-container 2.0.5 -> 2.1.0 in dependencies (forces minor)
+[report] 🚀 BUMP     @ts-ioc-container/react 1.5.1 -> 1.6.0 (minor)
+[report] 📋 PLAN     2 package(s) affected
+[report] 📋 PLAN     ts-ioc-container 2.0.5 -> 2.1.0 (minor, 2 commit(s))
+[report] 📋 PLAN     @ts-ioc-container/react 1.5.1 -> 1.6.0 (minor, 0 commit(s), deps: ts-ioc-container@2.1.0)
+[changelog] 📋 PLAN     2 package(s) affected
+[changelog] 📋 PLAN     ts-ioc-container 2.0.5 -> 2.1.0 (minor, 2 commit(s))
+[changelog] 📋 PLAN     @ts-ioc-container/react 1.5.1 -> 1.6.0 (minor, 0 commit(s), deps: ts-ioc-container@2.1.0)
+[changelog] 📝 WRITE    ts-ioc-container CHANGELOG.md
+[changelog] 📝 WRITE    @ts-ioc-container/react CHANGELOG.md
 ```
 
 ### Console Output (`--dry-run`, stderr)

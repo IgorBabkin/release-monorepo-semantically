@@ -76,11 +76,12 @@ Each row is a real, automated spec in `e2e/`. Numbering has gaps (T01–T14 don'
 | T37 | `T37-template-overrides-package-json-section.spec.ts` | `release.changelog.changelogName` writes to a non-default changelog file name        |
 | T38 | `T38-template-overrides-config-file.spec.ts`          | `.release.json` overrides the same step's `package.json` config                      |
 | T39 | `T39-dependency-block-preserved.spec.ts`              | A bump lands in the block it was declared in; the lockfile is refreshed after it     |
+| T40 | `T40-verbose-observability.spec.ts`                   | `--verbose` explains affected packages, versions and bump types on stderr only       |
 
 ## 6) Execution procedure
 
 1. Baseline validation: `pnpm run lint`, `pnpm test`, `pnpm run test:e2e`
-2. All 26 files above run as part of `pnpm run test:e2e`; there's no separate per-test invocation
+2. All 27 files above run as part of `pnpm run test:e2e`; there's no separate per-test invocation
 3. On failure, vitest's output already includes: the failing assertion, expected vs. actual, and the fixture's temp directory is left in place until the process exits (the fixture doesn't clean up on assertion failure mid-run within the same process)
 
 ## 7) Acceptance criteria

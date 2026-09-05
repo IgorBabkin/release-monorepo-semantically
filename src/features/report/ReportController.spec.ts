@@ -20,7 +20,7 @@ describe('ReportController.generate', () => {
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg]);
 
-    expect(() => controller.generate()).toThrow(DirtyWorkingTreeException);
+    expect(() => controller.generate({ dryRun: false, verbose: false })).toThrow(DirtyWorkingTreeException);
     output.verify((m) => m.write(It.IsAny()), Times.Never());
   });
 
@@ -36,7 +36,7 @@ describe('ReportController.generate', () => {
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg]);
 
-    controller.generate();
+    controller.generate({ dryRun: false, verbose: false });
 
     logger.verify((m) => m.info('SKIP     pkg-a@1.0.0'), Times.Once());
     output.verify(
@@ -66,7 +66,7 @@ describe('ReportController.generate', () => {
     const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0' }, '/repo/packages/pkg-b');
     const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB]);
 
-    controller.generate();
+    controller.generate({ dryRun: false, verbose: false });
 
     output.verify(
       (m) =>
@@ -80,6 +80,69 @@ describe('ReportController.generate', () => {
     );
     logger.verify((m) => m.info('BUMP     pkg-a 1.0.0 -> 1.1.0 (minor)'), Times.Once());
     logger.verify((m) => m.info('BUMP     pkg-b 2.0.0 -> 2.0.1 (patch)'), Times.Once());
+  });
+
+  it('given --verbose when generate runs then every scanned package, its commits and the resulting plan are reported', () => {
+    const vsc = new Mock<VSCService>()
+      .setup((m) => m.isWorkingTreeClean())
+      .returns(true)
+      .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0'))
+      .returns([ConventionalCommit.parse('abc1234 feat(pkg-a): add feature'), ConventionalCommit.parse('def5678 docs(pkg-a): tweak readme')])
+      .setup((m) => m.findManyCommitsSinceTag('pkg-b@2.0.0'))
+      .returns([]);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+    const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
+
+    const pkgA = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+    const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0' }, '/repo/packages/pkg-b');
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB]);
+
+    controller.generate({ dryRun: false, verbose: true });
+
+    logger.verify((m) => m.info('SCAN     2 public package(s) in dependency order: pkg-a, pkg-b'), Times.Once());
+    logger.verify((m) => m.info('SCAN     pkg-a 2 commit(s) since pkg-a@1.0.0, 1 release-triggering'), Times.Once());
+    logger.verify((m) => m.info('SCAN     pkg-a <- feat(pkg-a): add feature [abc1234] (minor)'), Times.Once());
+    logger.verify((m) => m.info('SCAN     pkg-b 0 commit(s) since pkg-b@2.0.0, 0 release-triggering'), Times.Once());
+    logger.verify((m) => m.info('PLAN     1 package(s) affected'), Times.Once());
+    logger.verify((m) => m.info('PLAN     pkg-a 1.0.0 -> 1.1.0 (minor, 1 commit(s))'), Times.Once());
+  });
+
+  it('given --verbose when a dependent is bumped by an internal dependency then the dependency update is reported', () => {
+    const vsc = new Mock<VSCService>()
+      .setup((m) => m.isWorkingTreeClean())
+      .returns(true)
+      .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0'))
+      .returns([ConventionalCommit.parse('feat(pkg-a): add feature')])
+      .setup((m) => m.findManyCommitsSinceTag('pkg-b@2.0.0'))
+      .returns([]);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+    const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
+
+    const pkgA = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+    const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0', dependencies: { 'pkg-a': '1.0.0' } }, '/repo/packages/pkg-b');
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB]);
+
+    controller.generate({ dryRun: false, verbose: true });
+
+    logger.verify((m) => m.info('DEPS     pkg-b <- pkg-a 1.0.0 -> 1.1.0 in dependencies (forces minor)'), Times.Once());
+    logger.verify((m) => m.info('PLAN     pkg-b 2.0.0 -> 2.1.0 (minor, 0 commit(s), deps: pkg-a@1.1.0)'), Times.Once());
+  });
+
+  it('given no --verbose flag when generate runs then no plan or scan lines are reported', () => {
+    const vsc = new Mock<VSCService>()
+      .setup((m) => m.isWorkingTreeClean())
+      .returns(true)
+      .setup((m) => m.findManyCommitsSinceTag(It.IsAny()))
+      .returns([ConventionalCommit.parse('feat(pkg-a): add feature')]);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+    const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
+
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg]);
+
+    controller.generate({ dryRun: false, verbose: false });
+
+    logger.verify((m) => m.info(It.Is((message: unknown) => typeof message === 'string' && /^(PLAN|SCAN|DEPS)/.test(message))), Times.Never());
   });
 });
 

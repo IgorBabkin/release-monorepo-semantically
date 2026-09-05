@@ -34,3 +34,19 @@ export function bumpVersion(version: string, bumpType: SemVerBumpType): string {
       return version;
   }
 }
+
+/**
+ * The bump a released version represents, read back from the two versions.
+ * The release context carries each package's previous and new version but not
+ * the bump that produced it, so the later steps recover it here instead of the
+ * serialized context growing a field every step would have to keep in sync.
+ */
+export function detectBumpType(oldVersion: string, newVersion: string): SemVerBumpType {
+  const [oldMajor, oldMinor, oldPatch] = oldVersion.split('.').map(Number);
+  const [newMajor, newMinor, newPatch] = newVersion.split('.').map(Number);
+
+  if (newMajor > oldMajor) return SemVerBumpType.MAJOR;
+  if (newMajor === oldMajor && newMinor > oldMinor) return SemVerBumpType.MINOR;
+  if (newMajor === oldMajor && newMinor === oldMinor && newPatch > oldPatch) return SemVerBumpType.PATCH;
+  return SemVerBumpType.NONE;
+}

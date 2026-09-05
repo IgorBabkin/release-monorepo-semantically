@@ -15,6 +15,15 @@ describe('ConsoleLogger', () => {
     expect(infoSpy).toHaveBeenCalledWith('[Release]', '⚠ SKIP     pkg-a@1.0.0');
   });
 
+  it('given a verbose plan line when info logs then it prefixes the message with an emoji', () => {
+    const infoSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const logger = new ConsoleLogger('report');
+
+    logger.info('PLAN     1 package(s) affected');
+
+    expect(infoSpy).toHaveBeenCalledWith('[report]', '📋 PLAN     1 package(s) affected');
+  });
+
   it('given a plain message when info logs then it preserves the message text', () => {
     const infoSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const logger = new ConsoleLogger('Release');

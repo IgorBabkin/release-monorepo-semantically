@@ -77,7 +77,7 @@ Package scope is matched by package name.
 
 ## Steps
 
-Every step accepts `--context <json>` (except `report`, which produces it) and `--dry-run` (preview only; no files, git state, or publishes change). Steps run in a fresh process each time, so `--context` is how state passes between them.
+Every step accepts `--context <json>` (except `report`, which produces it), `--dry-run` (preview only; no files, git state, or publishes change), and `--verbose` (explain what is being released; see [Verbose output](#verbose-output)). Steps run in a fresh process each time, so `--context` is how state passes between them.
 
 | Command           | Action      | Does                                                                                                                                                                                                                                          |
 | ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -93,6 +93,40 @@ Every step accepts `--context <json>` (except `report`, which produces it) and `
 | `release-notes`   | (only one)  | Creates a GitHub Release per released package via the `gh` CLI. Needs `repository`/`token` from config or the `GITHUB_REPOSITORY`/`GITHUB_TOKEN` environment variables, and `gh` on `PATH`. `--template <path>` overrides the notes template. |
 
 `vcs commit`/`vcs tag`/`vcs push` exist so a pipeline can skip pushing (e.g. to inspect a release commit locally) without giving up tagging or committing.
+
+### Verbose output
+
+`--verbose` adds observability lines to a step's stderr output — which packages are affected, the versions they move between, and the bump type behind each one. Nothing else changes: the step does exactly the same work, and `report`'s stdout stays pure JSON.
+
+On `report` it explains how the plan was reached — every package scanned, the release-triggering commits found for it, and the internal dependency updates that force a bump on their own:
+
+```
+$ monorepo-semantic-release report --verbose
+[report] SCAN     2 public package(s) in dependency order: pkg-a, pkg-b
+[report] SCAN     pkg-a 2 commit(s) since pkg-a@1.0.0, 1 release-triggering
+[report] SCAN     pkg-a <- feat(pkg-a)!: rework api [4518a1c] (major)
+[report] BUMP     pkg-a 1.0.0 -> 2.0.0 (major)
+[report] SCAN     pkg-b 2 commit(s) since pkg-b@2.0.0, 1 release-triggering
+[report] SCAN     pkg-b <- fix(pkg-b): small fix [4e07b8d] (patch)
+[report] DEPS     pkg-b <- pkg-a 1.0.0 -> 2.0.0 in dependencies (forces minor)
+[report] BUMP     pkg-b 2.0.0 -> 2.1.0 (minor)
+[report] PLAN     2 package(s) affected
+[report] PLAN     pkg-a 1.0.0 -> 2.0.0 (major, 1 commit(s))
+[report] PLAN     pkg-b 2.0.0 -> 2.1.0 (minor, 1 commit(s), deps: pkg-a@2.0.0)
+```
+
+On every other step it reports the plan carried by the `--context` it was handed, so a step re-run on its own still says what it is about to release:
+
+```
+$ monorepo-semantic-release changelog --context "$RELEASE_CONTEXT" --verbose
+[changelog] PLAN     2 package(s) affected
+[changelog] PLAN     pkg-a 1.0.0 -> 2.0.0 (major, 1 commit(s))
+[changelog] PLAN     pkg-b 2.0.0 -> 2.1.0 (minor, 1 commit(s), deps: pkg-a@2.0.0)
+[changelog] WRITE    pkg-a CHANGELOG.md
+[changelog] WRITE    pkg-b CHANGELOG.md
+```
+
+The plan is printed once per invocation, even when a step fans out into several actions (`vcs` runs commit, tag and push). `package-json` additionally reports every dependency specifier it rewrites, with the block it lives in.
 
 ## Configuration
 
@@ -145,3 +179,4 @@ pnpm run lint
 - Tag format is fixed: `<package-name>@<version>`.
 - Private packages (`"private": true`) are never released.
 - `--dry-run` on any step performs no file, git, or registry mutation for that step.
+- `--verbose` on any step only adds stderr output; it never changes what the step does.

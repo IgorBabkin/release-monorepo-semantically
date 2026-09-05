@@ -7,6 +7,7 @@ import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './PackageJsonConfig.js';
 import { action, command, execute, onDefault, schema } from '../../cli/index.js';
 import { constant as c } from '../../utils/utils.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
+import { createReleasePlanReporter } from '../../domain/ReleasePlan.js';
 import { isDryRun, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
 import { PackageManager, PackageManagerKey } from '../packageManager/services/PackageManager.js';
 import { globalConfig } from '../../domain/GlobalConfig.js';
@@ -21,12 +22,16 @@ export class PackageController {
     @inject(ILoggerKey.args('package-json')) private readonly logger: ILogger,
   ) {}
 
+  private readonly reportPlan = createReleasePlanReporter((message) => this.logger.info(message));
+
   @onDefault(execute())
   @command(c(stepCommand()))
   @schema(c(STEP_OPTIONS))
   @action('update-dependencies', execute())
   updateDependencies(options: StepOptions): void {
-    const { releasedPackages, releasedVersions } = deserializeContext(options.context);
+    const releaseContext = deserializeContext(options.context);
+    this.reportPlan(releaseContext, options.verbose);
+    const { releasedPackages, releasedVersions } = releaseContext;
     const dryRun = isDryRun(options, this.config);
     let manifestsChanged = false;
 
@@ -49,6 +54,9 @@ export class PackageController {
             continue;
           }
           declaredDependencies[change.packageName] = change.newVersion;
+        }
+        if (options.verbose) {
+          this.logger.info(`DEPS     ${pkg.name} ${change.packageName} ${change.oldVersion} -> ${change.newVersion} in ${change.sections.join(', ')}`);
         }
         this.logger.info(`BUMP     ${change.packageName}@${change.newVersion}`);
       }

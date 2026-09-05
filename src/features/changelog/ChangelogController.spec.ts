@@ -32,6 +32,7 @@ describe('ChangelogController', () => {
     new ChangelogController(defaultConfig, '/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({
       context,
       dryRun: false,
+      verbose: false,
     });
 
     renderService.verify(
@@ -62,6 +63,7 @@ describe('ChangelogController', () => {
     new ChangelogController(defaultConfig, '/repo', renderService.object(), fs.object(), logger.object()).generateChangelog({
       context,
       dryRun: false,
+      verbose: false,
     });
 
     renderService.verify(
@@ -91,6 +93,7 @@ describe('ChangelogController', () => {
       changelogName: 'HISTORY.md',
       context,
       dryRun: false,
+      verbose: false,
     });
 
     fs.verify((m) => m.writeFile('/repo/packages/pkg-a/HISTORY.md', 'new changelog'), Times.Once());
@@ -110,6 +113,7 @@ describe('ChangelogController', () => {
       template: 'templates/custom.hbs',
       context,
       dryRun: false,
+      verbose: false,
     });
 
     renderService.verify(

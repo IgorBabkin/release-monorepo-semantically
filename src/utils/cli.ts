@@ -4,11 +4,13 @@ import { z } from 'zod';
 /**
  * Options every context-consuming step accepts. `--context` is the serialized
  * report produced by the `report` command; `--dry-run` previews the step and
- * always wins over the `dryRun` value in configuration.
+ * always wins over the `dryRun` value in configuration; `--verbose` adds the
+ * release plan the step is working from to its progress output.
  */
 export const STEP_OPTIONS = z.object({
   context: z.string(),
   dryRun: z.boolean().default(false),
+  verbose: z.boolean().default(false),
 });
 
 export type StepOptions = z.infer<typeof STEP_OPTIONS>;
@@ -18,6 +20,7 @@ export function stepCommand(): Command {
     new Command()
       .requiredOption('--context <value>', 'Release context JSON produced by the `report` command')
       .option('--dry-run', 'Preview this step without writing anything')
+      .option('--verbose', 'Report the affected packages, versions and bump types this step is working from')
       // A controller's default action can fan out into several methods (e.g.
       // `vcs` runs commit, then tag, then push) that all parse the same raw
       // argv against their own Command. A flag meant for a sibling action

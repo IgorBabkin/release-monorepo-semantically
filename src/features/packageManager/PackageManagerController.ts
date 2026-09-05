@@ -7,6 +7,7 @@ import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './PackageManagerConfig.js';
 import { action, command, execute, onDefault, schema } from '../../cli/index.js';
 import { constant as c } from '../../utils/utils.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
+import { createReleasePlanReporter } from '../../domain/ReleasePlan.js';
 import { isDryRun, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
 
 @register(bindTo('package-manager'))
@@ -17,6 +18,8 @@ export class PackageManagerController {
     @inject(ILoggerKey.args('package-manager')) private readonly logger: ILogger,
   ) {}
 
+  private readonly reportPlan = createReleasePlanReporter((message) => this.logger.info(message));
+
   // Only the version bump runs by default; publishing is an explicit action so
   // that a pipeline cannot push to the registry by accident.
   @onDefault(execute())
@@ -24,7 +27,9 @@ export class PackageManagerController {
   @schema(c(STEP_OPTIONS))
   @action('bump-version', execute())
   bumpVersion(options: StepOptions): void {
-    const { releasedPackages, releasedVersions } = deserializeContext(options.context);
+    const releaseContext = deserializeContext(options.context);
+    this.reportPlan(releaseContext, options.verbose);
+    const { releasedPackages, releasedVersions } = releaseContext;
     const dryRun = isDryRun(options, this.config);
 
     for (const pkg of releasedPackages) {
@@ -42,7 +47,9 @@ export class PackageManagerController {
   @schema(c(STEP_OPTIONS))
   @action('publish', execute())
   publishAllPackages(options: StepOptions): void {
-    const { releasedPackages, releasedVersions } = deserializeContext(options.context);
+    const releaseContext = deserializeContext(options.context);
+    this.reportPlan(releaseContext, options.verbose);
+    const { releasedPackages, releasedVersions } = releaseContext;
     const dryRun = isDryRun(options, this.config);
 
     for (const pkg of releasedPackages) {

@@ -34,9 +34,9 @@ describe('VCSController', () => {
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
 
     const controller = new VCSController(config as never, '/repo', vcs.object(), renderService.object(), logger.object());
-    controller.commitChanges({ context, dryRun: config.dryRun });
-    controller.createTags({ context, dryRun: config.dryRun });
-    controller.pushChanges({ context, dryRun: config.dryRun });
+    controller.commitChanges({ context, dryRun: config.dryRun, verbose: false });
+    controller.createTags({ context, dryRun: config.dryRun, verbose: false });
+    controller.pushChanges({ context, dryRun: config.dryRun, verbose: false });
 
     renderService.verify(
       (m) =>
@@ -52,5 +52,20 @@ describe('VCSController', () => {
     vcs.verify((m) => m.push(true), Times.Once());
     logger.verify((m) => m.info('TAG      pkg-a@1.0.1'), Times.Once());
     logger.verify((m) => m.info('PUSH     HEAD and 1 tag(s)'), Times.Once());
+  });
+
+  it('given --verbose when the default action runs commit, tag and push then the release plan is reported once', () => {
+    const config = { dryRun: true, template: undefined };
+    const vcs = new Mock<VSCService>().setup((m) => m.isWorkingTreeClean()).returns(true);
+    const renderService = new Mock<IRenderService>().setup((m) => m.render(It.IsAny(), It.IsAny(), It.IsAny())).returns('release commit message');
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+
+    const controller = new VCSController(config as never, '/repo', vcs.object(), renderService.object(), logger.object());
+    controller.commitChanges({ context, dryRun: config.dryRun, verbose: true });
+    controller.createTags({ context, dryRun: config.dryRun, verbose: true });
+    controller.pushChanges({ context, dryRun: config.dryRun, verbose: true });
+
+    logger.verify((m) => m.info('PLAN     1 package(s) affected'), Times.Once());
+    logger.verify((m) => m.info('PLAN     pkg-a 1.0.0 -> 1.0.1 (patch, 0 commit(s))'), Times.Once());
   });
 });

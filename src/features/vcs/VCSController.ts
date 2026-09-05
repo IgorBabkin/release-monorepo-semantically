@@ -9,6 +9,7 @@ import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './VCSConfig.js';
 import { action, command, execute, onDefault, schema } from '../../cli/index.js';
 import { constant as c } from '../../utils/utils.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
+import { createReleasePlanReporter } from '../../domain/ReleasePlan.js';
 import { isDryRun, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
 
 export const VCS_OPTIONS = STEP_OPTIONS.extend({
@@ -27,6 +28,10 @@ export class VCSController {
     @inject(ILoggerKey.args('vcs')) private readonly logger: ILogger,
   ) {}
 
+  // Arrow closure, so `this.logger` is read when the plan is reported rather
+  // than while the field initializer runs.
+  private readonly reportPlan = createReleasePlanReporter((message) => this.logger.info(message));
+
   // Declaration order is the execution order of the default action:
   // `monorepo-semantic-release vcs` commits, tags, then pushes.
   @onDefault(execute())
@@ -39,6 +44,7 @@ export class VCSController {
     // The clean-tree check that matters — catching pre-existing unrelated
     // changes before the pipeline touches anything — lives in `report`.
     const releaseContext = deserializeContext(options.context);
+    this.reportPlan(releaseContext, options.verbose);
     const template = options.template ?? this.config.template;
     const cwd = template ? this.cwd : import.meta.dirname;
     const commitMessage = this.renderService.render(template ?? './release-commit-msg.hbs', releaseContext, { cwd });
@@ -57,7 +63,9 @@ export class VCSController {
   @schema(c(STEP_OPTIONS))
   @action('tag', execute())
   createTags(options: StepOptions): void {
-    const { releasedPackages, releasedVersions } = deserializeContext(options.context);
+    const releaseContext = deserializeContext(options.context);
+    this.reportPlan(releaseContext, options.verbose);
+    const { releasedPackages, releasedVersions } = releaseContext;
     const dryRun = isDryRun(options, this.config);
 
     for (const pkg of releasedPackages) {
@@ -76,7 +84,9 @@ export class VCSController {
   @schema(c(STEP_OPTIONS))
   @action('push', execute())
   pushChanges(options: StepOptions): void {
-    const { releasedPackages } = deserializeContext(options.context);
+    const releaseContext = deserializeContext(options.context);
+    this.reportPlan(releaseContext, options.verbose);
+    const { releasedPackages } = releaseContext;
     const tagSuffix = releasedPackages.length > 0 ? ` and ${releasedPackages.length} tag(s)` : '';
 
     if (isDryRun(options, this.config)) {
