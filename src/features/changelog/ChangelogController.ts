@@ -6,11 +6,12 @@ import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
 import path from 'node:path';
 import { z } from 'zod';
-import { action, command, execute, onDefault, schema } from '../../cli/index.js';
-import { constant as c } from '../../utils/utils.js';
+import { action, execute, onDefault } from '../../cli/index.js';
 import { pluginsConfigService } from '../../services/PluginsConfigService.js';
 import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './ChangelogConfig.js';
-import { isDryRun, STEP_OPTIONS, stepCommand } from '../../utils/cli.js';
+import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand } from '../../utils/cli.js';
+import { validate } from '../../utils/zod.js';
+import { commandArgs } from '../../utils/ts-ioc-container.js';
 
 export const CHANGELOG_OPTIONS = STEP_OPTIONS.extend({
   template: z.string().trim().optional(),
@@ -33,10 +34,8 @@ export class ChangelogController {
   ) {}
 
   @onDefault(execute())
-  @command(c(changelogCommand()))
-  @schema(c(CHANGELOG_OPTIONS))
   @action('generate', execute())
-  generateChangelog(options: z.infer<typeof CHANGELOG_OPTIONS>): void {
+  generateChangelog(@inject(commandArgs, parseOptions(changelogCommand()), validate(CHANGELOG_OPTIONS)) options: z.infer<typeof CHANGELOG_OPTIONS>): void {
     const releaseContext = deserializeContext(options.context);
     const { releasedPackages } = releaseContext;
     const template = options.template ?? this.config.template;

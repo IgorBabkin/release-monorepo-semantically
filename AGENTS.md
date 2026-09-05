@@ -9,7 +9,7 @@ This repository contains a TypeScript CLI for semantic versioning and release ma
 Core entrypoints and modules:
 
 - `src/index.ts` wires the DI container and all feature modules.
-- `src/cli/` is the CLI framework itself: `Application` (controller/action routing), `execute` (parses a method's `@command`/`@schema` into a validated options object), `decorators` (`@command`, `@schema`, `@action`, `@onDefault`).
+- `src/cli/` is the CLI framework itself: `Application` (controller/action routing), `execute` (invokes the action method with its injected arguments), `decorators` (`@action`, `@onDefault`). An action's options come from a parameter injection pipe — `@inject(commandArgs, parseOptions(someCommand()), validate(SOME_OPTIONS))` — which feeds the raw argv through commander and then a zod schema; `commandArgs` lives in `src/utils/ts-ioc-container.ts`, `parseOptions` in `src/utils/cli.ts`, `validate` in `src/utils/zod.ts`.
 - `src/features/<name>/<Name>Controller.ts` is each step's entrypoint (`report`, `package-json`, `package-manager`, `changelog`, `vcs`, `release-notes`); `src/features/<name>/<Name>Config.ts` is its config schema.
 - `src/services/` contains filesystem, git, rendering, package manager, and logging services.
 - `src/features/<name>/*.hbs` are each step's default Handlebars templates (`changelog.hbs`, `release-commit-msg.hbs`, `github-release-notes.hbs`); `scripts/copy-templates.mjs` copies them into `dist/` as part of `pnpm run build` since `tsc` only emits `.ts` output.

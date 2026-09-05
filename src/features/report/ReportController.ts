@@ -5,20 +5,11 @@ import { VSCService, VSCServiceKey } from '../vcs/services/VSCService.js';
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
 import { OutputService, OutputServiceKey } from '../../services/OutputService.js';
 import { DirtyWorkingTreeException } from '../../exceptions/DomainException.js';
-import { action, command, execute, onDefault, schema } from '../../cli/index.js';
-import { Command } from 'commander';
-import { z } from 'zod';
-import { constant as c } from '../../utils/utils.js';
+import { action, execute, onDefault } from '../../cli/index.js';
 import { sortLessDependenciesFirst } from '../../utils/sortLessDependenciesFirst.js';
 import { ConventionalCommit } from '../../domain/ConventionalCommit.js';
 import { bumpTypeToString, SemVerBumpType } from '../../domain/SemVerBumpType.js';
 import { serializeContext } from '../../domain/ReleaseControllerContext.js';
-
-// `report` only reads the repository, so --dry-run is accepted (pipelines pass
-// it to every step uniformly) and has nothing to suppress.
-export const REPORT_OPTIONS = z.object({
-  dryRun: z.boolean().default(false),
-});
 
 // Arrow function, not `function`: ts-ioc-container's token resolver treats any
 // function with a `.prototype` as a class to `new`, which a plain function
@@ -42,9 +33,10 @@ export class ReportController {
   ) {}
 
   @onDefault(execute())
-  @command(c(new Command().option('--dry-run', 'Accepted for symmetry with the other steps; report never writes')))
-  @schema(c(REPORT_OPTIONS))
   @action('generate', execute())
+  // No options parameter: `report` only reads the repository, so it has
+  // nothing for --dry-run to suppress. Nothing parses argv for this action,
+  // which is why a pipeline can still pass --dry-run to every step uniformly.
   generate(): void {
     // Checked here, not in `vcs commit`: the package-json/package-manager/
     // changelog steps are expected to leave the tree dirty, and `vcs commit`

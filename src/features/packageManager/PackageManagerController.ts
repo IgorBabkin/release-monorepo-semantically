@@ -4,10 +4,11 @@ import { z } from 'zod';
 import { pluginsConfigService } from '../../services/PluginsConfigService.js';
 import { PackageManager, PackageManagerKey } from './services/PackageManager.js';
 import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './PackageManagerConfig.js';
-import { action, command, execute, onDefault, schema } from '../../cli/index.js';
-import { constant as c } from '../../utils/utils.js';
+import { action, execute, onDefault } from '../../cli/index.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
-import { isDryRun, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
+import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
+import { validate } from '../../utils/zod.js';
+import { commandArgs } from '../../utils/ts-ioc-container.js';
 
 @register(bindTo('package-manager'))
 export class PackageManagerController {
@@ -20,10 +21,8 @@ export class PackageManagerController {
   // Only the version bump runs by default; publishing is an explicit action so
   // that a pipeline cannot push to the registry by accident.
   @onDefault(execute())
-  @command(c(stepCommand()))
-  @schema(c(STEP_OPTIONS))
   @action('bump-version', execute())
-  bumpVersion(options: StepOptions): void {
+  bumpVersion(@inject(commandArgs, parseOptions(stepCommand()), validate(STEP_OPTIONS)) options: StepOptions): void {
     const { releasedPackages, releasedVersions } = deserializeContext(options.context);
     const dryRun = isDryRun(options, this.config);
 
@@ -38,10 +37,8 @@ export class PackageManagerController {
     }
   }
 
-  @command(c(stepCommand()))
-  @schema(c(STEP_OPTIONS))
   @action('publish', execute())
-  publishAllPackages(options: StepOptions): void {
+  publishAllPackages(@inject(commandArgs, parseOptions(stepCommand()), validate(STEP_OPTIONS)) options: StepOptions): void {
     const { releasedPackages, releasedVersions } = deserializeContext(options.context);
     const dryRun = isDryRun(options, this.config);
 

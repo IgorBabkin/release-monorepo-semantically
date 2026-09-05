@@ -7,10 +7,11 @@ import { pluginsConfigService } from '../../services/PluginsConfigService.js';
 import { globalConfig } from '../../domain/GlobalConfig.js';
 import { ReleaseNotesService, ReleaseNotesServiceKey } from './services/ReleaseNotesService.js';
 import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './ReleaseNotesConfig.js';
-import { action, command, execute, onDefault, schema } from '../../cli/index.js';
-import { constant as c } from '../../utils/utils.js';
+import { action, execute, onDefault } from '../../cli/index.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
-import { isDryRun, STEP_OPTIONS, stepCommand } from '../../utils/cli.js';
+import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand } from '../../utils/cli.js';
+import { validate } from '../../utils/zod.js';
+import { commandArgs } from '../../utils/ts-ioc-container.js';
 
 export const RELEASE_NOTES_OPTIONS = STEP_OPTIONS.extend({
   template: z.string().trim().optional(),
@@ -29,10 +30,10 @@ export class ReleaseNotesController {
   ) {}
 
   @onDefault(execute())
-  @command(c(releaseNotesCommand()))
-  @schema(c(RELEASE_NOTES_OPTIONS))
   @action('create', execute())
-  createGithubRelease(options: z.infer<typeof RELEASE_NOTES_OPTIONS>): void {
+  createGithubRelease(
+    @inject(commandArgs, parseOptions(releaseNotesCommand()), validate(RELEASE_NOTES_OPTIONS)) options: z.infer<typeof RELEASE_NOTES_OPTIONS>,
+  ): void {
     const releaseContext = deserializeContext(options.context);
     const { releasedPackages, releasedVersions } = releaseContext;
     if (releasedPackages.length === 0) {

@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, type OptionValues } from 'commander';
 import { z } from 'zod';
 
 /**
@@ -32,3 +32,16 @@ export function stepCommand(): Command {
 }
 
 export const isDryRun = (options: { dryRun: boolean }, config: { dryRun: boolean }): boolean => options.dryRun || config.dryRun;
+
+/**
+ * Mapper that feeds raw process arguments to a commander `Command` and returns
+ * the parsed options. Everything from the first flag onwards belongs to this
+ * action — what precedes it is the controller and action name.
+ */
+export const parseOptions =
+  (command: Command) =>
+  (rawArgs: string[]): OptionValues => {
+    const firstFlag = rawArgs.findIndex((arg) => arg.startsWith('-'));
+    command.parse(firstFlag >= 0 ? ['node', 'script', ...rawArgs.slice(firstFlag)] : ['node', 'script']);
+    return command.opts();
+  };
