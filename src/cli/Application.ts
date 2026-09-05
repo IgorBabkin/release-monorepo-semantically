@@ -22,7 +22,7 @@ function parseControllerAndAction(argv: string[]): { controller: string; action:
 
 /**
  * Minimal replacement for ib-commander's Application: resolves a controller by
- * its bindTo name, runs the hooks registered under the requested action, and
+ * its @register key, runs the hooks registered under the requested action, and
  * routes failures to the bound IErrorHandler. Kept in-repo because ib-commander
  * pins ts-ioc-container ^47, which this project has moved past.
  */

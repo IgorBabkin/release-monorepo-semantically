@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { args, bindTo, inject, register, SingleToken } from 'ts-ioc-container';
+import { args, inject, register, SingleToken } from 'ts-ioc-container';
 
 type StepName = 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG';
 
@@ -20,7 +20,7 @@ export interface ILogger {
 // logger under that token name, and SingleToken identity is the name.
 export const ILoggerKey = new SingleToken<ILogger>('ReleaseLogger');
 
-@register(bindTo(ILoggerKey))
+@register(ILoggerKey)
 export class ConsoleLogger implements ILogger {
   // Callers inject via ILoggerKey.args('<topic>'); @inject(args(0)) is what
   // actually reads that extra resolution argument back out — an undecorated

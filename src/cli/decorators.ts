@@ -1,6 +1,4 @@
-import { addMethodMeta, append, getMethodMeta, hook, type HookType, type IContainer } from 'ts-ioc-container';
-import { Command } from 'commander';
-import { ZodObject } from 'zod';
+import { append, hook, type HookType } from 'ts-ioc-container';
 
 export const DEFAULT_ACTION = 'default';
 
@@ -13,11 +11,3 @@ export const action = (name: string, ...fns: HookType[]) => hook(name, append(..
 
 /** Runs when the controller is invoked without an action name. */
 export const onDefault = (...fns: HookType[]) => action(DEFAULT_ACTION, ...fns);
-
-export const command = (createCmd: (c: IContainer) => Command): MethodDecorator => addMethodMeta('command', () => createCmd);
-
-export const getCommand = (instance: object, methodName: string) => getMethodMeta('command', instance, methodName) as ((c: IContainer) => Command) | undefined;
-
-export const schema = (createSchema: (c: IContainer) => ZodObject): MethodDecorator => addMethodMeta('schema', () => createSchema);
-
-export const getSchema = (instance: object, methodName: string) => getMethodMeta('schema', instance, methodName) as ((c: IContainer) => ZodObject) | undefined;

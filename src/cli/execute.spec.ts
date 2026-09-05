@@ -1,59 +1,58 @@
 import 'reflect-metadata';
-import { describe, it } from 'vitest';
-import { It, Mock, Times } from 'moq.ts';
-import { type IContainer, type IHookContext } from 'ts-ioc-container';
+import { describe, expect, it } from 'vitest';
+import { Mock } from 'moq.ts';
+import { createHookContextFactory, type IContainer, inject } from 'ts-ioc-container';
 import { Command } from 'commander';
 import { z } from 'zod';
 import { execute } from './execute.js';
-import { command, schema } from './decorators.js';
+import { commandArgs } from '../utils/ts-ioc-container.js';
+import { parseOptions } from '../utils/cli.js';
+import { validate } from '../utils/zod.js';
+
+const OPTIONS = z.object({ name: z.string(), dryRun: z.boolean().default(false) });
 
 class Target {
-  @command(() => new Command().requiredOption('--name <value>', 'name'))
-  @schema(() => z.object({ name: z.string() }))
-  withCommand(options: { name: string }): void {
-    void options;
+  options?: z.infer<typeof OPTIONS>;
+  calledWithoutOptions = false;
+
+  withOptions(
+    @inject(commandArgs, parseOptions(new Command().option('--name <value>', 'name').option('--dry-run')), validate(OPTIONS))
+    options: z.infer<typeof OPTIONS>,
+  ): void {
+    this.options = options;
   }
 
-  noCommand(): void {}
+  withoutOptions(): void {
+    this.calledWithoutOptions = true;
+  }
 }
 
+const runHook = (instance: Target, methodName: keyof Target, argv: string[]) => {
+  const scope = new Mock<IContainer>().object();
+  execute()(createHookContextFactory({ args: argv })(instance, scope, methodName));
+};
+
 describe('execute', () => {
-  it('given a method with @command and @schema when the hook runs then it parses argv and invokes the method with the validated options', () => {
-    const container = new Mock<IContainer>().object();
+  it('given a parameter piping the raw argv through a command and a schema when the hook runs then the method gets the validated options', () => {
     const instance = new Target();
-    const context = new Mock<IHookContext>()
-      .setup((c) => c.instance)
-      .returns(instance)
-      .setup((c) => c.methodName)
-      .returns('withCommand')
-      .setup((c) => c.scope)
-      .returns(container)
-      .setup((c) => c.getInitialArgs())
-      .returns(['vcs', '--name', 'pkg-a'])
-      .setup((c) => c.invokeMethod(It.IsAny()))
-      .returns(undefined);
 
-    execute()(context.object());
+    runHook(instance, 'withOptions', ['vcs', 'commit', '--name', 'pkg-a', '--dry-run']);
 
-    context.verify(
-      (c) => c.invokeMethod(It.Is((call: { args?: unknown[] }) => JSON.stringify(call) === JSON.stringify({ args: [{ name: 'pkg-a' }] }))),
-      Times.Once(),
-    );
-    context.verify((c) => c.invokeMethod(), Times.Never());
+    expect(instance.options).toEqual({ name: 'pkg-a', dryRun: true });
   });
 
-  it('given a method with no @command when the hook runs then it invokes the method with its injected arguments', () => {
+  it('given argv that parses but does not satisfy the schema when the hook runs then it throws instead of calling the method', () => {
     const instance = new Target();
-    const context = new Mock<IHookContext>()
-      .setup((c) => c.instance)
-      .returns(instance)
-      .setup((c) => c.methodName)
-      .returns('noCommand')
-      .setup((c) => c.invokeMethod())
-      .returns(undefined);
 
-    execute()(context.object());
+    expect(() => runHook(instance, 'withOptions', ['vcs', 'commit', '--dry-run'])).toThrow(z.ZodError);
+    expect(instance.options).toBeUndefined();
+  });
 
-    context.verify((c) => c.invokeMethod(), Times.Once());
+  it('given a method with no injected parameters when the hook runs then it is invoked as is', () => {
+    const instance = new Target();
+
+    runHook(instance, 'withoutOptions', ['report']);
+
+    expect(instance.calledWithoutOptions).toBe(true);
   });
 });

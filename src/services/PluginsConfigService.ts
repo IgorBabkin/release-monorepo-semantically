@@ -1,4 +1,4 @@
-import { bindTo, IContainer, inject, onConstruct, register, shallowCache, SingleToken, singleton } from 'ts-ioc-container';
+import { IContainer, inject, onConstruct, register, shallowCache, SingleToken, singleton } from 'ts-ioc-container';
 import { z, ZodType } from 'zod';
 import { execute } from '../cli/execute.js';
 import path from 'node:path';
@@ -16,7 +16,7 @@ export interface IPluginsConfigService {
 export const IPluginsConfigServiceKey = new SingleToken<IPluginsConfigService>('IPluginsConfigService');
 export const pluginsConfigService = (key: string, schema: ZodType) => (c: IContainer) => IPluginsConfigServiceKey.resolve(c).getConfig(key, schema);
 
-@register(bindTo(IPluginsConfigServiceKey), singleton())
+@register(IPluginsConfigServiceKey, singleton())
 export class PluginsConfigService implements IPluginsConfigService {
   private config: Record<string, unknown> = {};
 

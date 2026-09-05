@@ -1,4 +1,4 @@
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { inject, register } from 'ts-ioc-container';
 import { globalConfig } from '../../domain/GlobalConfig.js';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService.js';
 import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
@@ -6,11 +6,12 @@ import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
 import path from 'node:path';
 import { z } from 'zod';
-import { action, command, execute, onDefault, schema } from '../../cli/index.js';
-import { constant as c } from '../../utils/utils.js';
+import { action, execute, onDefault } from '../../cli/index.js';
 import { pluginsConfigService } from '../../services/PluginsConfigService.js';
 import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './ChangelogConfig.js';
-import { isDryRun, STEP_OPTIONS, stepCommand } from '../../utils/cli.js';
+import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand } from '../../utils/cli.js';
+import { validate } from '../../utils/zod.js';
+import { commandArgs } from '../../utils/ts-ioc-container.js';
 
 export const CHANGELOG_OPTIONS = STEP_OPTIONS.extend({
   template: z.string().trim().optional(),
@@ -22,7 +23,7 @@ const changelogCommand = () =>
     .option('--template <path>', 'Handlebars template for changelog entries')
     .option('--changelog-name <value>', 'Changelog file name (default CHANGELOG.md)');
 
-@register(bindTo('changelog'))
+@register('changelog')
 export class ChangelogController {
   constructor(
     @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,
@@ -33,10 +34,8 @@ export class ChangelogController {
   ) {}
 
   @onDefault(execute())
-  @command(c(changelogCommand()))
-  @schema(c(CHANGELOG_OPTIONS))
   @action('generate', execute())
-  generateChangelog(options: z.infer<typeof CHANGELOG_OPTIONS>): void {
+  generateChangelog(@inject(commandArgs, parseOptions(changelogCommand()), validate(CHANGELOG_OPTIONS)) options: z.infer<typeof CHANGELOG_OPTIONS>): void {
     const releaseContext = deserializeContext(options.context);
     const { releasedPackages } = releaseContext;
     const template = options.template ?? this.config.template;

@@ -1,18 +1,19 @@
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { inject, register } from 'ts-ioc-container';
 import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
 import { z } from 'zod';
 import { pluginsConfigService } from '../../services/PluginsConfigService.js';
 import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './PackageJsonConfig.js';
-import { action, command, execute, onDefault, schema } from '../../cli/index.js';
-import { constant as c } from '../../utils/utils.js';
+import { action, execute, onDefault } from '../../cli/index.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
-import { isDryRun, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
+import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
 import { PackageManager, PackageManagerKey } from '../packageManager/services/PackageManager.js';
 import { globalConfig } from '../../domain/GlobalConfig.js';
 import { isWorkspaceProtocol } from '../../domain/ReleaseTypes.js';
+import { validate } from '../../utils/zod.js';
+import { commandArgs } from '../../utils/ts-ioc-container.js';
 
-@register(bindTo('package-json'))
+@register('package-json')
 export class PackageController {
   constructor(
     @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,
@@ -23,10 +24,8 @@ export class PackageController {
   ) {}
 
   @onDefault(execute())
-  @command(c(stepCommand()))
-  @schema(c(STEP_OPTIONS))
   @action('update-dependencies', execute())
-  updateDependencies(options: StepOptions): void {
+  updateDependencies(@inject(commandArgs, parseOptions(stepCommand()), validate(STEP_OPTIONS)) options: StepOptions): void {
     const { releasedPackages, releasedVersions } = deserializeContext(options.context);
     const dryRun = isDryRun(options, this.config);
     let manifestsChanged = false;

@@ -1,15 +1,16 @@
 import { ILogger, ILoggerKey } from '../../services/ConsoleLogger.js';
 import { z } from 'zod';
-import { bindTo, inject, register } from 'ts-ioc-container';
+import { inject, register } from 'ts-ioc-container';
 import { IRenderService, IRenderServiceKey } from '../../services/HandlebarsRenderService.js';
 import { pluginsConfigService } from '../../services/PluginsConfigService.js';
 import { globalConfig } from '../../domain/GlobalConfig.js';
 import { VSCService, VSCServiceKey } from './services/VSCService.js';
 import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './VCSConfig.js';
-import { action, command, execute, onDefault, schema } from '../../cli/index.js';
-import { constant as c } from '../../utils/utils.js';
+import { action, execute, onDefault } from '../../cli/index.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
-import { isDryRun, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
+import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
+import { validate } from '../../utils/zod.js';
+import { commandArgs } from '../../utils/ts-ioc-container.js';
 
 export const VCS_OPTIONS = STEP_OPTIONS.extend({
   template: z.string().trim().optional(),
@@ -17,7 +18,7 @@ export const VCS_OPTIONS = STEP_OPTIONS.extend({
 
 const vcsCommand = () => stepCommand().option('--template <path>', 'Handlebars template for the release commit message');
 
-@register(bindTo('vcs'))
+@register('vcs')
 export class VCSController {
   constructor(
     @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private readonly config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,
@@ -30,10 +31,8 @@ export class VCSController {
   // Declaration order is the execution order of the default action:
   // `monorepo-semantic-release vcs` commits, tags, then pushes.
   @onDefault(execute())
-  @command(c(vcsCommand()))
-  @schema(c(VCS_OPTIONS))
   @action('commit', execute())
-  commitChanges(options: z.infer<typeof VCS_OPTIONS>): void {
+  commitChanges(@inject(commandArgs, parseOptions(vcsCommand()), validate(VCS_OPTIONS)) options: z.infer<typeof VCS_OPTIONS>): void {
     // No working-tree-clean precondition here: this step's job is to commit
     // the changes the package-json/package-manager/changelog steps just made.
     // The clean-tree check that matters — catching pre-existing unrelated
@@ -53,10 +52,8 @@ export class VCSController {
   }
 
   @onDefault(execute())
-  @command(c(stepCommand()))
-  @schema(c(STEP_OPTIONS))
   @action('tag', execute())
-  createTags(options: StepOptions): void {
+  createTags(@inject(commandArgs, parseOptions(stepCommand()), validate(STEP_OPTIONS)) options: StepOptions): void {
     const { releasedPackages, releasedVersions } = deserializeContext(options.context);
     const dryRun = isDryRun(options, this.config);
 
@@ -72,10 +69,8 @@ export class VCSController {
   }
 
   @onDefault(execute())
-  @command(c(stepCommand()))
-  @schema(c(STEP_OPTIONS))
   @action('push', execute())
-  pushChanges(options: StepOptions): void {
+  pushChanges(@inject(commandArgs, parseOptions(stepCommand()), validate(STEP_OPTIONS)) options: StepOptions): void {
     const { releasedPackages } = deserializeContext(options.context);
     const tagSuffix = releasedPackages.length > 0 ? ` and ${releasedPackages.length} tag(s)` : '';
 

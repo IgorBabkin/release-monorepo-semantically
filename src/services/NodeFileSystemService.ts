@@ -5,7 +5,7 @@ import { globSync } from 'glob';
 import { PackageJSON } from '../domain/PackageJSON.js';
 import path from 'node:path';
 import { isPresent, uniqBy } from '../utils/utils.js';
-import { bindTo, inject, register, SingleToken } from 'ts-ioc-container';
+import { inject, register, SingleToken } from 'ts-ioc-container';
 import { globalConfig } from '../domain/GlobalConfig.js';
 
 /**
@@ -45,7 +45,7 @@ export interface IFileSystemService {
 }
 export const IFileSystemServiceKey = new SingleToken<IFileSystemService>('IFileSystemService');
 
-@register(bindTo(IFileSystemServiceKey))
+@register(IFileSystemServiceKey)
 export class NodeFileSystemService implements IFileSystemService {
   constructor(@inject(globalConfig('cwd')) private readonly cwd: string) {}
 
