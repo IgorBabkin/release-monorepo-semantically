@@ -10,6 +10,7 @@ import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
 import { isDryRun, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
 import { PackageManager, PackageManagerKey } from '../packageManager/services/PackageManager.js';
 import { globalConfig } from '../../domain/GlobalConfig.js';
+import { isWorkspaceProtocol } from '../../domain/ReleaseTypes.js';
 
 @register(bindTo('package-json'))
 export class PackageController {
@@ -37,20 +38,37 @@ export class PackageController {
       }
 
       const packageJson = this.fs.readPackageJsonOrFail(pkg.dirname);
+      let manifestRewritten = false;
 
       for (const change of changes) {
         // The bump goes back into the blocks the outdated version was read
         // from, and nowhere else. Writing it to `dependencies` unconditionally
         // left the devDependency it came from stale and handed consumers a
         // duplicate copy of a package they already had as a peer.
+        let changeApplied = false;
         for (const section of change.sections) {
           const declaredDependencies = packageJson[section];
-          if (declaredDependencies?.[change.packageName] === undefined) {
+          if (declaredDependencies === undefined) {
+            continue;
+          }
+          const declaredVersion = declaredDependencies[change.packageName];
+          if (declaredVersion === undefined || isWorkspaceProtocol(declaredVersion)) {
             continue;
           }
           declaredDependencies[change.packageName] = change.newVersion;
+          changeApplied = true;
         }
-        this.logger.info(`BUMP     ${change.packageName}@${change.newVersion}`);
+
+        if (changeApplied) {
+          manifestRewritten = true;
+          this.logger.info(`BUMP     ${change.packageName}@${change.newVersion}`);
+        }
+      }
+
+      // Every declaration was on the workspace protocol, so the manifest on
+      // disk is already correct and neither it nor the lockfile needs writing.
+      if (!manifestRewritten) {
+        continue;
       }
 
       if (dryRun) {

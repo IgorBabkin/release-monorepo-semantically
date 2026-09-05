@@ -10,6 +10,17 @@ export const DEPENDENCY_SECTIONS = ['dependencies', 'devDependencies'] as const;
 
 export type DependencySection = (typeof DEPENDENCY_SECTIONS)[number];
 
+/**
+ * A specifier using pnpm's `workspace:` protocol always points at the copy in
+ * this workspace, so it is never stale and must not be rewritten to an exact
+ * version. Rewriting it would replace a local link with a version that is only
+ * published later in the release, leaving the lockfile refresh with nothing to
+ * resolve. `pnpm publish` substitutes the real version into the tarball.
+ */
+export function isWorkspaceProtocol(specifier: string): boolean {
+  return specifier.startsWith('workspace:');
+}
+
 export interface DependencyVersionChange {
   packageName: string;
   oldVersion: string;
