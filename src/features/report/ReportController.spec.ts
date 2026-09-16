@@ -86,7 +86,7 @@ describe('ReportController.generate', () => {
 describe('resolvePublicPackages', () => {
   it('given workspace package json files when packages are resolved then private packages are excluded', () => {
     const fs = new Mock<IFileSystemService>()
-      .setup((m) => m.readPackageJsonOrFail('./'))
+      .setup((m) => m.readRootPackageJsonOrFail())
       .returns({ name: 'root', version: '1.0.0', workspaces: ['packages/*'] })
       .setup((m) => m.findManyPackageJsonByGlob(It.IsAny()))
       .returns([
@@ -97,7 +97,7 @@ describe('resolvePublicPackages', () => {
 
     const packages = resolvePublicPackages(container.object());
 
-    fs.verify((m) => m.readPackageJsonOrFail('./'), Times.Once());
+    fs.verify((m) => m.readRootPackageJsonOrFail(), Times.Once());
     fs.verify((m) => m.findManyPackageJsonByGlob(It.Is((v: string[]) => JSON.stringify(v) === JSON.stringify(['packages/*']))), Times.Once());
     expect(packages.map((p) => p.name)).toEqual(['pkg-a']);
   });

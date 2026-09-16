@@ -18,7 +18,10 @@ import { serializeContext } from '../../domain/ReleaseControllerContext.js';
 // isn't reading it out of its temporal dead zone.
 export const resolvePublicPackages = (container: IContainer): NpmPackage[] => {
   const fs = IFileSystemServiceKey.resolve(container);
-  const { workspaces = [] } = fs.readPackageJsonOrFail('./');
+  // Validated, not defaulted: a root manifest without `workspaces` used to
+  // resolve to zero packages and report "nothing to release", which reads like
+  // a clean run rather than a misconfigured repository.
+  const { workspaces } = fs.readRootPackageJsonOrFail();
   const packageJsonList = fs.findManyPackageJsonByGlob(workspaces);
   return sortLessDependenciesFirst(packageJsonList.map(([pkgPath, pkg]) => NpmPackage.createFromPackage(pkg, pkgPath)).filter((p) => !p.isPrivate));
 };

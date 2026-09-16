@@ -2,7 +2,9 @@ import 'reflect-metadata';
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { globSync } from 'glob';
-import { PackageJSON } from '../domain/PackageJSON.js';
+import { formatValidationIssues, PACKAGE_JSON_SCHEMA, PackageJSON, ROOT_PACKAGE_JSON_SCHEMA, RootPackageJSON } from '../domain/PackageJSON.js';
+import { InvalidPackageJsonException, InvalidRootPackageJsonException, MissingPackageJsonException } from '../exceptions/DomainException.js';
+import { z } from 'zod';
 import path from 'node:path';
 import { isPresent, uniqBy } from '../utils/utils.js';
 import { inject, register, SingleToken } from 'ts-ioc-container';
@@ -39,9 +41,16 @@ export interface IFileSystemService {
    */
   findManyPackageJsonByGlob(patterns: string[]): [string, PackageJSON][];
   /**
+   * Reads a released package's manifest and validates the fields a release
+   * depends on.
    * @param pkgPath Must be relative to cwd
    */
   readPackageJsonOrFail(pkgPath: string): PackageJSON;
+  /**
+   * Reads the workspace root manifest and validates that it declares the
+   * `workspaces` globs the packages are discovered through.
+   */
+  readRootPackageJsonOrFail(): RootPackageJSON;
 }
 export const IFileSystemServiceKey = new SingleToken<IFileSystemService>('IFileSystemService');
 
@@ -83,18 +92,44 @@ export class NodeFileSystemService implements IFileSystemService {
           return existsSync(packageJsonPath) ? packageJsonPath : undefined;
         })
         .filter<string>(isPresent)
-        .map((pkgPath) => {
-          const content = readFileSync(pkgPath, 'utf-8');
-          return [path.dirname(pkgPath), JSON.parse(content)];
-        }),
+        .map((pkgPath) => [path.dirname(pkgPath), this.parsePackageJson(pkgPath, PACKAGE_JSON_SCHEMA, InvalidPackageJsonException)]),
       (a, b) => a[0] === b[0],
     );
   }
 
   readPackageJsonOrFail(pkgPath: string, options?: { cwd?: string }): PackageJSON {
     const absolutePath = this.resolvePackageJsonPath(this.resolveAbsolutePath(pkgPath, options));
-    const content = readFileSync(absolutePath, 'utf-8');
-    return JSON.parse(content);
+    return this.parsePackageJson(absolutePath, PACKAGE_JSON_SCHEMA, InvalidPackageJsonException);
+  }
+
+  readRootPackageJsonOrFail(options?: { cwd?: string }): RootPackageJSON {
+    const absolutePath = this.resolvePackageJsonPath(this.resolveAbsolutePath('./', options));
+    return this.parsePackageJson<RootPackageJSON>(absolutePath, ROOT_PACKAGE_JSON_SCHEMA, InvalidRootPackageJsonException);
+  }
+
+  /**
+   * Validates without remapping: the object handed back is the one
+   * `JSON.parse` produced, so a manifest written back afterwards keeps its
+   * field order and the fields no schema here models.
+   */
+  private parsePackageJson<T extends PackageJSON>(absolutePath: string, schema: z.ZodType, Exception: new (filePath: string, reason: string) => Error): T {
+    if (!existsSync(absolutePath)) {
+      throw new MissingPackageJsonException(absolutePath);
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(readFileSync(absolutePath, 'utf-8'));
+    } catch (error) {
+      throw new Exception(absolutePath, `not valid JSON (${(error as Error).message})`);
+    }
+
+    const result = schema.safeParse(parsed);
+    if (!result.success) {
+      throw new Exception(absolutePath, formatValidationIssues(result.error));
+    }
+
+    return parsed as T;
   }
 
   private resolveAbsolutePath(paths: string, options: { cwd?: string } = {}) {
