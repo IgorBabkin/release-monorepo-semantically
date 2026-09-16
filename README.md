@@ -11,6 +11,15 @@ The tool is a set of discrete steps rather than a single command: one step analy
 - Node.js: `>=20.11`
 - pnpm
 - Git repository with conventional commits
+- A root `package.json` declaring `workspaces` (the globs the packages live under, e.g. `["packages/*"]`)
+- A `name` and a `major.minor.patch` `version` in every workspace package's `package.json`
+
+Every manifest is validated when it is read, and a missing or malformed field
+fails the step that read it with an explicit error — `INVALID_ROOT_PACKAGE_JSON`
+for the workspace root, `INVALID_PACKAGE_JSON` for a package,
+`MISSING_PACKAGE_JSON` when the file is not there — naming the file and the
+field. A root without `workspaces` used to resolve to zero packages and report
+"nothing to release".
 
 ## Installation
 
@@ -83,7 +92,7 @@ Every step accepts `--context <json>` (except `report`, which produces it) and `
 | ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `report`          | (only one)  | Discovers workspace packages, computes version bumps from commits since each package's last release tag, fails if the working tree isn't clean. Writes the release context as JSON to stdout.                                                 |
 | `package-json`    | (only one)  | Updates internal dependency versions in each released package's `package.json` to exact versions, in the `dependencies`/`devDependencies` block each was declared in (peer ranges are left alone), then refreshes the workspace lockfile.     |
-| `package-manager` | _(default)_ | Bumps each released package's version via `pnpm version`.                                                                                                                                                                                     |
+| `package-manager` | _(default)_ | Writes each released package's new version into its `package.json`.                                                                                                                                                                                     |
 | `package-manager` | `publish`   | Publishes each released package via `pnpm publish`. Kept separate from the version bump so a pipeline can't reach the registry by accident.                                                                                                   |
 | `changelog`       | (only one)  | Renders and prepends a changelog entry per released package. `--template <path>` and `--changelog-name <value>` (default `CHANGELOG.md`) override the defaults.                                                                               |
 | `vcs`             | _(default)_ | Runs `commit`, `tag`, and `push` in that order in one invocation.                                                                                                                                                                             |
@@ -145,3 +154,4 @@ pnpm run lint
 - Tag format is fixed: `<package-name>@<version>`.
 - Private packages (`"private": true`) are never released.
 - `--dry-run` on any step performs no file, git, or registry mutation for that step.
+- The version bump is written into `package.json` directly rather than through `pnpm version`, which delegates to npm: npm resolves the whole workspace first, which fails on `workspace:*` specifiers and runs install lifecycle scripts.
