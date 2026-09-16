@@ -72,6 +72,8 @@ export interface MonorepoFixture {
   };
   /** Every `pnpm install ...` the release invoked, as the argument list it was called with. */
   packageManagerInstalls: () => string[];
+  /** Every `pnpm version ...` the release invoked. A bump goes into the manifest directly, so this stays empty. */
+  packageManagerVersionCalls: () => string[];
   /** Runs a single `monorepo-semantic-release <args...>` invocation. */
   runCli: (args: string[], envOverrides?: NodeJS.ProcessEnv) => ExecResult;
   /** Writes a custom template under the fixture's `templates/` dir, creating it if needed. */
@@ -110,6 +112,7 @@ export function createMonorepoFixture(packages: PackageFixture[], withRemote = t
   const fixtureBinDir = path.join(tempRoot, 'bin');
   const publishedPackagesLog = path.join(tempRoot, 'published-packages.log');
   const packageManagerInstallsLog = path.join(tempRoot, 'package-manager-installs.log');
+  const packageManagerVersionsLog = path.join(tempRoot, 'package-manager-versions.log');
   const githubReleasesLog = path.join(tempRoot, 'github-releases.log');
   const workDir = path.join(tempRoot, 'workspace');
   mkdirSync(fixtureBinDir, { recursive: true });
@@ -132,6 +135,16 @@ if (args[0] === 'publish') {
 // and its packages are not on any registry, so a real resolution would fail.
 if (args[0] === 'install') {
   appendFileSync(process.env.MONOREPO_SEMREL_INSTALL_LOG, args.join(' ') + '\\n');
+  process.exit(0);
+}
+
+// Recorded and deliberately not forwarded: pnpm hands 'version' to npm, which
+// trips over workspace: specifiers and runs install lifecycle scripts. A
+// release writes the bump into the manifest itself, so any call landing here
+// is a regression - and the manifest it would have written stays unwritten,
+// failing whichever test expected the bump.
+if (args[0] === 'version') {
+  appendFileSync(process.env.MONOREPO_SEMREL_VERSION_LOG, args.join(' ') + '\\n');
   process.exit(0);
 }
 
@@ -184,6 +197,7 @@ process.exit(1);
     PATH: `${fixtureBinDir}:${process.env.PATH ?? ''}`,
     MONOREPO_SEMREL_PUBLISH_LOG: publishedPackagesLog,
     MONOREPO_SEMREL_INSTALL_LOG: packageManagerInstallsLog,
+    MONOREPO_SEMREL_VERSION_LOG: packageManagerVersionsLog,
     MONOREPO_SEMREL_GITHUB_RELEASE_LOG: githubReleasesLog,
   };
 
@@ -299,6 +313,10 @@ process.exit(1);
     },
     packageManagerInstalls(): string[] {
       const output = runCommandCapture(`cat ${JSON.stringify(packageManagerInstallsLog)}`, workDir, fixtureEnv);
+      return output.status === 'passed' && output.stdout ? output.stdout.split('\n').filter(Boolean) : [];
+    },
+    packageManagerVersionCalls(): string[] {
+      const output = runCommandCapture(`cat ${JSON.stringify(packageManagerVersionsLog)}`, workDir, fixtureEnv);
       return output.status === 'passed' && output.stdout ? output.stdout.split('\n').filter(Boolean) : [];
     },
     githubReleases() {

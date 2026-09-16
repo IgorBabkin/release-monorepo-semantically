@@ -470,10 +470,13 @@ sequenceDiagram
                 FSS-->>Controller: success
                 deactivate FSS
 
-                Controller->>PNPM: pnpm version
-                activate PNPM
-                PNPM-->>Controller: version updated
-                deactivate PNPM
+                Controller->>FSS: writeJson(package.json, { version })
+                activate FSS
+                FSS->>FS: write file
+                activate FS
+                deactivate FS
+                FSS-->>Controller: version updated
+                deactivate FSS
 
                 Controller->>Controller: generateChangelog()
                 Controller->>FSS: readFile/writeFile(CHANGELOG.md)

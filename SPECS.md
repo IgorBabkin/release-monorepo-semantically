@@ -102,7 +102,7 @@ There is no `--no-push`/`--no-publish` equivalent: a pipeline that wants to skip
   ↓
 2. `package-json --context <json>`     — update internal dependency versions in package.json
   ↓
-3. `package-manager --context <json>`  — run pnpm version <newVersion> per released package
+3. `package-manager --context <json>`  — write <newVersion> into each released package's package.json
   ↓
 4. `changelog --context <json>`        — generate & prepend CHANGELOG.md per released package
   ↓
@@ -435,16 +435,26 @@ Uses Handlebars template from `scripts/templates/changelog.hbs`:
 
 Handled by the `package-json` step (dependency versions) and the `package-manager` step (the version bump itself).
 
-#### 4.1 Update package.json using pnpm version
+#### 4.1 Update package.json by writing the version field
 
-**IMPORTANT:** Use `pnpm version` command to bump versions (not manual JSON editing).
+**IMPORTANT:** The bump is written into the manifest directly. Do **not** shell
+out to `pnpm version`.
 
-**Why `pnpm version`?**
+**Why not `pnpm version`?**
 
-- Validates semantic version format
-- Runs `preversion`, `version`, and `postversion` scripts from package.json
-- Updates package.json atomically
-- Standard pnpm behavior (more reliable than manual JSON editing)
+- pnpm hands `version` to npm, which resolves the whole workspace before it
+  writes. Inside a pnpm monorepo that fails with `EUNSUPPORTEDPROTOCOL` on a
+  sibling manifest's `workspace:*` specifier — a protocol npm only understands
+  from a workspace root it has been pointed at.
+- The same resolution runs install lifecycle scripts (`postinstall` included)
+  against a tree the release step has no business rebuilding.
+- It writes the new version *before* it fails, so a failed bump still leaves
+  the manifest changed.
+
+Everything it was used for is covered elsewhere: the version format is
+validated when the manifest is read (see `INVALID_PACKAGE_JSON` below), and the
+manifest keeps its field order and its unmodelled fields because the object
+written back is the one that was parsed.
 
 #### 4.2 Update internal dependency versions
 
@@ -591,9 +601,11 @@ If a step fails:
 - **`MISSING_GITHUB_CREDENTIALS`**: `release-notes` has no repository/token from config or `GITHUB_REPOSITORY`/`GITHUB_TOKEN`
 - **`GITHUB_CLI_UNAVAILABLE`**: `release-notes` needs `gh` on `PATH`
 - **`INVALID_CONFIG`**: `package.json`'s `release` section or `.release.json` failed to parse, or failed a step's config schema
-- **Missing/invalid `package.json` or `workspaces`**: thrown when `report` reads the repository
+- **`MISSING_PACKAGE_JSON`**: a manifest a step was told to read is not there
+- **`INVALID_PACKAGE_JSON`**: a package manifest is not valid JSON, or is missing `name`/`version`, or its `version` is not `major.minor.patch`, or a dependency block is not a map of specifiers
+- **`INVALID_ROOT_PACKAGE_JSON`**: the workspace root manifest declares no `workspaces` globs, so no package could be discovered
 - **Git errors**: git commands fail with their own stderr output (e.g. push rejected, no configured remote)
-- **`pnpm version`/`pnpm publish` errors**: pnpm fails if the version already exists or is invalid
+- **`pnpm publish` errors**: pnpm fails if the version already exists or is invalid
 - **Template errors**: Handlebars fails if a `--template` path is missing or invalid
 
 ## CI Integration User Story
@@ -614,7 +626,7 @@ Step 2 — Run each feature/controller in order, passing the context
   └─ Updates internal dependency versions in each package.json
 
   monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"
-  └─ Bumps package versions via pnpm version
+  └─ Writes the new version into each released package's package.json
 
   monorepo-semantic-release changelog --context "$RELEASE_CONTEXT"
   └─ Generates and prepends changelog entries
@@ -857,7 +869,7 @@ Affected: 📌 ts-ioc-container@2.1.0,@ts-ioc-container/react@1.6.0
 1. Detect all packages with release-worthy commits
 2. Calculate correct semantic version bumps (including dependency updates)
 3. Generate well-formatted changelogs with GitHub links
-4. Update package.json versions atomically using pnpm version
+4. Update package.json versions by writing the version field
 5. Create properly formatted git tags (package@version)
 6. Handle internal monorepo dependencies (exact versions)
 7. Sort packages topologically (dependencies first)

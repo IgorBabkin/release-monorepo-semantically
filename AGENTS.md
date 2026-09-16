@@ -69,7 +69,7 @@ The intended release flow is sequential and dependency-aware, split across steps
 
 1. `report`: discover workspace packages from the root `package.json`, excluding private packages; sort so dependencies are handled before dependents; read commits since each package's last `<package-name>@<version>` tag; determine the version bump from scoped commits plus internal dependency updates; write the result as JSON to stdout.
 2. `package-json --context <json>`: update internal dependency versions to exact versions.
-3. `package-manager --context <json>`: bump package versions via `pnpm version`.
+3. `package-manager --context <json>`: write the new version into each released package's `package.json`.
 4. `changelog --context <json>`: render and prepend changelog entries.
 5. `vcs --context <json>`: create one release commit, then tags for released packages, then push (its default action runs `commit`, `tag`, `push` in that order; each is also its own named action).
 6. `package-manager publish --context <json>` and `release-notes --context <json>`: optional, invoked separately by the pipeline.

@@ -14,6 +14,24 @@ export class MissingDependencyVersionException extends DomainException {
   }
 }
 
+export class MissingPackageJsonException extends DomainException {
+  constructor(filePath: string) {
+    super('MISSING_PACKAGE_JSON', `No package.json at ${filePath}`);
+  }
+}
+
+export class InvalidPackageJsonException extends DomainException {
+  constructor(filePath: string, reason: string) {
+    super('INVALID_PACKAGE_JSON', `Invalid package.json at ${filePath}: ${reason}`);
+  }
+}
+
+export class InvalidRootPackageJsonException extends DomainException {
+  constructor(filePath: string, reason: string) {
+    super('INVALID_ROOT_PACKAGE_JSON', `Invalid workspace root package.json at ${filePath}: ${reason}`);
+  }
+}
+
 export class GithubCliUnavailableException extends DomainException {
   constructor() {
     super('GITHUB_CLI_UNAVAILABLE', 'GitHub release creation requires `gh` CLI when running in GitHub Actions');
