@@ -1,3 +1,15 @@
+# [1.10.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.4...v1.10.0) (2026-09-16)
+
+
+### Bug Fixes
+
+* **package-manager:** write the version bump into package.json ([6bf2f76](https://github.com/IgorBabkin/release-monorepo-semantically/commit/6bf2f76cd9c859e68da2b2b55a25a7237d5c0c30))
+
+
+### Features
+
+* **validation:** fail with explicit errors on invalid manifests ([c588696](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c5886960c65203dec07d0599624974d6c8863e53))
+
 ## [1.9.4](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.3...v1.9.4) (2026-09-05)
 
 
