@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { args, inject, register, SingleToken } from 'ts-ioc-container';
+import { arg, inject, register, SingleToken } from 'ts-ioc-container';
 
 type StepName = 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG';
 
@@ -22,9 +22,9 @@ export const ILoggerKey = new SingleToken<ILogger>('ReleaseLogger');
 
 @register(ILoggerKey)
 export class ConsoleLogger implements ILogger {
-  // Callers inject via ILoggerKey.args('<topic>'); the mapper selects the first
+  // Callers inject via ILoggerKey.args('<topic>'); arg(0) selects the first
   // extra resolution argument and falls back to the default when it is absent.
-  constructor(@inject(args, (values) => values[0] as string | undefined) private topic: string = 'release') {}
+  constructor(@inject(arg(0)) private topic: string = 'release') {}
 
   private supportsColor(): boolean {
     return Boolean(process.stderr.isTTY) && !process.env.NO_COLOR;
