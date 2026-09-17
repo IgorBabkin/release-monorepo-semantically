@@ -63,6 +63,8 @@ Non-release types:
 
 `report` does not reject non-conventional commits; a message it can't parse is treated as `type: "unknown"` with no bump and is silently excluded.
 
+The mapping above is the default `report.bumps` config (`src/features/report/ReportConfig.ts`), not a hard-coded rule. A consumer can replace the matchers per level (type/scope/breaking/packages) via `.release.json` or `release.report` in `package.json` — see `README.md`'s Configuration section. `ConventionalCommit#bumpMatch(bumpConfig, packageName)` (`src/domain/ConventionalCommit.ts`) resolves the configured matchers against the commit itself for a given package and returns the highest bump level, or none.
+
 ### Release Flow
 
 The intended release flow is sequential and dependency-aware, split across steps:

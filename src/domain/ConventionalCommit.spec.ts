@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ConventionalCommit } from './ConventionalCommit.js';
+import { BumpMatchers, ConventionalCommit, DEFAULT_MAJOR_MATCHERS, DEFAULT_MINOR_MATCHERS, DEFAULT_PATCH_MATCHERS } from './ConventionalCommit.js';
 import { SemVerBumpType } from './SemVerBumpType.js';
+
+const DEFAULT_BUMPS: BumpMatchers = { major: DEFAULT_MAJOR_MATCHERS, minor: DEFAULT_MINOR_MATCHERS, patch: DEFAULT_PATCH_MATCHERS };
 
 describe('ConventionalCommit', () => {
   describe('parse', () => {
@@ -31,54 +33,99 @@ describe('ConventionalCommit', () => {
     });
   });
 
-  describe('bumpType', () => {
-    it('should return MAJOR for breaking change', () => {
-      const commit = ConventionalCommit.parse('feat(pkg)!: breaking');
-      expect(commit.bumpType).toBe(SemVerBumpType.MAJOR);
+  describe('bumpMatch', () => {
+    describe("default matchers (today's hard-coded behaviour)", () => {
+      it('given a breaking commit scoped to the package when resolved then it is a major bump', () => {
+        const commit = ConventionalCommit.parse('feat(pkg-a)!: breaking');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.MAJOR);
+      });
+
+      it('given a breaking commit scoped to a different package when resolved then it does not release this package', () => {
+        const commit = ConventionalCommit.parse('feat(pkg-b)!: breaking');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.NONE);
+      });
+
+      it('given a feat commit scoped to the package when resolved then it is a minor bump', () => {
+        const commit = ConventionalCommit.parse('feat(pkg-a): add feature');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.MINOR);
+      });
+
+      it('given a feat commit scoped to another package when resolved then it does not release this package', () => {
+        const commit = ConventionalCommit.parse('feat(pkg-b): add feature');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.NONE);
+      });
+
+      it('given a fix or perf commit scoped to the package when resolved then it is a patch bump', () => {
+        expect(ConventionalCommit.parse('fix(pkg-a): bug').bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.PATCH);
+        expect(ConventionalCommit.parse('perf(pkg-a): faster').bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.PATCH);
+      });
+
+      it('given a docs commit when resolved then it matches nothing', () => {
+        const commit = ConventionalCommit.parse('docs(pkg-a): update docs');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.NONE);
+      });
     });
 
-    it('should return MINOR for feat', () => {
-      const commit = ConventionalCommit.parse('feat(pkg): feature');
-      expect(commit.bumpType).toBe(SemVerBumpType.MINOR);
-    });
+    describe('configured matchers', () => {
+      it('given a docs(specs) commit with packages "*" when resolved then every package is patch-bumped', () => {
+        const bumps: BumpMatchers = {
+          major: DEFAULT_MAJOR_MATCHERS,
+          minor: DEFAULT_MINOR_MATCHERS,
+          patch: [...DEFAULT_PATCH_MATCHERS, { type: 'docs', scope: 'specs', packages: '*' }],
+        };
+        const commit = ConventionalCommit.parse('docs(specs): extract cross-package specs');
 
-    it('should return PATCH for fix', () => {
-      const commit = ConventionalCommit.parse('fix(pkg): bugfix');
-      expect(commit.bumpType).toBe(SemVerBumpType.PATCH);
-    });
+        expect(commit.bumpMatch(bumps, 'pkg-a')).toBe(SemVerBumpType.PATCH);
+        expect(commit.bumpMatch(bumps, 'pkg-b')).toBe(SemVerBumpType.PATCH);
+      });
 
-    it('should return PATCH for perf', () => {
-      const commit = ConventionalCommit.parse('perf(pkg): optimize');
-      expect(commit.bumpType).toBe(SemVerBumpType.PATCH);
-    });
+      it('given a matcher restricted to an explicit package list when resolved then only listed packages are bumped', () => {
+        const bumps: BumpMatchers = { major: [], minor: [], patch: [{ type: 'docs', scope: 'specs', packages: ['pkg-a'] }] };
+        const commit = ConventionalCommit.parse('docs(specs): update pkg-a docs');
 
-    it('should return NONE for docs', () => {
-      const commit = ConventionalCommit.parse('docs(pkg): update docs');
-      expect(commit.bumpType).toBe(SemVerBumpType.NONE);
-    });
-  });
+        expect(commit.bumpMatch(bumps, 'pkg-a')).toBe(SemVerBumpType.PATCH);
+        expect(commit.bumpMatch(bumps, 'pkg-b')).toBe(SemVerBumpType.NONE);
+      });
 
-  describe('isReleaseTrigger', () => {
-    it('should return true for feat', () => {
-      const commit = ConventionalCommit.parse('feat(pkg): feature');
-      expect(commit.isReleaseTrigger()).toBe(true);
-    });
+      it('given a matcher with scope "<package>" when resolved then it behaves like the default matchesScope rule', () => {
+        const bumps: BumpMatchers = { major: [], minor: [{ type: 'feat', scope: '<package>' }], patch: [] };
 
-    it('should return false for chore', () => {
-      const commit = ConventionalCommit.parse('chore(pkg): cleanup');
-      expect(commit.isReleaseTrigger()).toBe(false);
-    });
-  });
+        expect(ConventionalCommit.parse('feat(pkg-a): add feature').bumpMatch(bumps, 'pkg-a')).toBe(SemVerBumpType.MINOR);
+        expect(ConventionalCommit.parse('feat(pkg-b): add feature').bumpMatch(bumps, 'pkg-a')).toBe(SemVerBumpType.NONE);
+      });
 
-  describe('matchesScope', () => {
-    it('should match when scope equals package name', () => {
-      const commit = ConventionalCommit.parse('feat(my-pkg): feature');
-      expect(commit.matchesScope('my-pkg')).toBe(true);
-    });
+      it('given a repository-specific type-and-scope pair with no packages field when resolved then it falls back to scope-equals-package', () => {
+        const bumps: BumpMatchers = { major: [], minor: [], patch: [{ type: 'docs', scope: 'specs' }] };
 
-    it('should not match different scope', () => {
-      const commit = ConventionalCommit.parse('feat(other-pkg): feature');
-      expect(commit.matchesScope('my-pkg')).toBe(false);
+        expect(ConventionalCommit.parse('docs(specs): note').bumpMatch(bumps, 'specs')).toBe(SemVerBumpType.PATCH);
+        expect(ConventionalCommit.parse('docs(other): note').bumpMatch(bumps, 'specs')).toBe(SemVerBumpType.NONE);
+      });
+
+      it('given a type restricted to one scope when resolved then it does not match under a different scope', () => {
+        const bumps: BumpMatchers = { major: [], minor: [], patch: [{ type: 'docs', scope: 'specs', packages: '*' }] };
+        expect(ConventionalCommit.parse('docs(other): note').bumpMatch(bumps, 'pkg-a')).toBe(SemVerBumpType.NONE);
+      });
+
+      it('given a commit matching no matcher when resolved then it is not a release trigger', () => {
+        const bumps: BumpMatchers = { major: [], minor: [], patch: [] };
+        expect(ConventionalCommit.parse('ci(github): upgrade action').bumpMatch(bumps, 'pkg-a')).toBe(SemVerBumpType.NONE);
+      });
+
+      it('given two matchers on the same commit at different levels when resolved then the highest wins', () => {
+        const bumps: BumpMatchers = {
+          major: [{ type: 'feat', scope: '<package>' }],
+          minor: [{ type: 'feat', scope: '<package>' }],
+          patch: [{ type: 'feat', scope: '<package>' }],
+        };
+        expect(ConventionalCommit.parse('feat(pkg-a): add feature').bumpMatch(bumps, 'pkg-a')).toBe(SemVerBumpType.MAJOR);
+      });
+
+      it('given breaking: false when resolved then it only matches non-breaking commits', () => {
+        const bumps: BumpMatchers = { major: [], minor: [{ type: 'feat', scope: '<package>', breaking: false }], patch: [] };
+
+        expect(ConventionalCommit.parse('feat(pkg-a): add feature').bumpMatch(bumps, 'pkg-a')).toBe(SemVerBumpType.MINOR);
+        expect(ConventionalCommit.parse('feat(pkg-a)!: add feature').bumpMatch(bumps, 'pkg-a')).toBe(SemVerBumpType.NONE);
+      });
     });
   });
 });

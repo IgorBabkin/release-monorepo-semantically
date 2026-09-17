@@ -40,6 +40,16 @@
   {{/each}}
 
 {{/if}}
+{{#if (hasOthers (lookup releasedCommits pkg.name))}}
+  ### 📝 Other Changes
+
+  {{#each (findOthers (lookup releasedCommits pkg.name))}}
+    - **{{this.scope}}:**
+    {{this.subject}}
+    {{#if this.hash}}({{this.hash}}){{/if}}
+  {{/each}}
+
+{{/if}}
 {{#if (call pkg "hasDependencyUpdates" releasedVersions)}}
   ### 📦 Dependencies
 

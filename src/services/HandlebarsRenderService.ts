@@ -4,7 +4,7 @@ import { execute } from '../cli/execute.js';
 
 import { readFileSync } from 'node:fs';
 import Handlebars from 'handlebars';
-import { ConventionalCommit, filterCommitsByType } from '../domain/ConventionalCommit.js';
+import { ConventionalCommit, filterCommitsByType, filterCommitsExcludingTypes } from '../domain/ConventionalCommit.js';
 import { TemplateInvocationTargetException, TemplateMethodNotFunctionException } from '../exceptions/DomainException.js';
 import { inject, onConstruct, register, SingleToken, singleton } from 'ts-ioc-container';
 import { globalConfig } from '../domain/GlobalConfig.js';
@@ -73,6 +73,16 @@ export class HandlebarsRenderService implements IRenderService {
   @onConstruct(execute())
   registerFindPerformanceHelper(): void {
     Handlebars.registerHelper('findPerformance', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'perf'));
+  }
+
+  @onConstruct(execute())
+  registerHasOthersHelper(): void {
+    Handlebars.registerHelper('hasOthers', (commits: ConventionalCommit[]) => filterCommitsExcludingTypes(commits, ['feat', 'fix', 'perf']).length > 0);
+  }
+
+  @onConstruct(execute())
+  registerFindOthersHelper(): void {
+    Handlebars.registerHelper('findOthers', (commits: ConventionalCommit[]) => filterCommitsExcludingTypes(commits, ['feat', 'fix', 'perf']));
   }
 
   @onConstruct(execute())
