@@ -4,7 +4,7 @@ import { SemVerBumpType } from './SemVerBumpType.js';
 // Reserved scope token meaning "equals the name of the package being considered".
 export const PACKAGE_TOKEN = '<package>';
 
-export interface BumpMatcher {
+export interface BumpMatcherRule {
   type?: string;
   scope?: string;
   breaking?: boolean;
@@ -12,19 +12,19 @@ export interface BumpMatcher {
 }
 
 export interface BumpMatchers {
-  major: BumpMatcher[];
-  minor: BumpMatcher[];
-  patch: BumpMatcher[];
+  major: BumpMatcherRule[];
+  minor: BumpMatcherRule[];
+  patch: BumpMatcherRule[];
 }
 
-export const DEFAULT_MAJOR_MATCHERS: BumpMatcher[] = [{ breaking: true }];
-export const DEFAULT_MINOR_MATCHERS: BumpMatcher[] = [{ type: 'feat', scope: PACKAGE_TOKEN }];
-export const DEFAULT_PATCH_MATCHERS: BumpMatcher[] = [
+export const DEFAULT_MAJOR_MATCHERS: BumpMatcherRule[] = [{ breaking: true }];
+export const DEFAULT_MINOR_MATCHERS: BumpMatcherRule[] = [{ type: 'feat', scope: PACKAGE_TOKEN }];
+export const DEFAULT_PATCH_MATCHERS: BumpMatcherRule[] = [
   { type: 'fix', scope: PACKAGE_TOKEN },
   { type: 'perf', scope: PACKAGE_TOKEN },
 ];
 
-function criteriaMatches(commit: ConventionalCommit, matcher: BumpMatcher, packageName: string): boolean {
+function criteriaMatches(commit: ConventionalCommit, matcher: BumpMatcherRule, packageName: string): boolean {
   if (matcher.type !== undefined && commit.type !== matcher.type) return false;
   if (matcher.breaking !== undefined && commit.isBreaking !== matcher.breaking) return false;
   if (matcher.scope !== undefined) {
@@ -37,21 +37,25 @@ function criteriaMatches(commit: ConventionalCommit, matcher: BumpMatcher, packa
 // Scope decides which commits match; `packages` (or, absent it, the scope-equals-package
 // fallback) decides which packages a match releases. The `<package>` token ties both to the
 // same package, so it needs no separate attribution check.
-function attributionMatches(matcher: BumpMatcher, commit: ConventionalCommit, packageName: string): boolean {
+function attributionMatches(matcher: BumpMatcherRule, commit: ConventionalCommit, packageName: string): boolean {
   if (matcher.scope === PACKAGE_TOKEN) return true;
   if (matcher.packages === '*') return true;
   if (Array.isArray(matcher.packages)) return matcher.packages.includes(packageName);
   return commit.scope === packageName;
 }
 
-function matchesAny(commit: ConventionalCommit, matchers: BumpMatcher[], packageName: string): boolean {
+function matchesAny(commit: ConventionalCommit, matchers: BumpMatcherRule[], packageName: string): boolean {
   return matchers.some((matcher) => criteriaMatches(commit, matcher, packageName) && attributionMatches(matcher, commit, packageName));
 }
 
-/** Highest bump level this commit triggers for the given package, or NONE if it matches nothing. */
-export function resolveBumpLevel(commit: ConventionalCommit, bumps: BumpMatchers, packageName: string): SemVerBumpType {
-  if (matchesAny(commit, bumps.major, packageName)) return SemVerBumpType.MAJOR;
-  if (matchesAny(commit, bumps.minor, packageName)) return SemVerBumpType.MINOR;
-  if (matchesAny(commit, bumps.patch, packageName)) return SemVerBumpType.PATCH;
-  return SemVerBumpType.NONE;
+export class BumpMatcher {
+  constructor(private readonly bumps: BumpMatchers) {}
+
+  /** Highest bump level this commit triggers for the given package, or NONE if it matches nothing. */
+  resolveLevel(commit: ConventionalCommit, packageName: string): SemVerBumpType {
+    if (matchesAny(commit, this.bumps.major, packageName)) return SemVerBumpType.MAJOR;
+    if (matchesAny(commit, this.bumps.minor, packageName)) return SemVerBumpType.MINOR;
+    if (matchesAny(commit, this.bumps.patch, packageName)) return SemVerBumpType.PATCH;
+    return SemVerBumpType.NONE;
+  }
 }
