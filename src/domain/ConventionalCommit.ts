@@ -6,6 +6,16 @@ export interface ConventionalCommitJSON {
   hash: string | null;
 }
 
+// Reserved scope token meaning "equals the name of the package being considered".
+export const PACKAGE_TOKEN = '<package>';
+
+export interface BumpMatcherRule {
+  type?: string;
+  scope?: string;
+  breaking?: boolean;
+  packages?: '*' | string[];
+}
+
 export class ConventionalCommit {
   constructor(
     readonly type: string,
@@ -38,6 +48,31 @@ export class ConventionalCommit {
     const isBreaking = !!bang || commitMessage.includes('BREAKING CHANGE');
 
     return new ConventionalCommit(type, scope || null, subject, isBreaking, commitHash);
+  }
+
+  /** Whether this commit matches any of the given matchers for the given package. */
+  matchesAny(matchers: BumpMatcherRule[], packageName: string): boolean {
+    return matchers.some((matcher) => this.matchesCriteria(matcher, packageName) && this.matchesAttribution(matcher, packageName));
+  }
+
+  private matchesCriteria(matcher: BumpMatcherRule, packageName: string): boolean {
+    if (matcher.type !== undefined && this.type !== matcher.type) return false;
+    if (matcher.breaking !== undefined && this.isBreaking !== matcher.breaking) return false;
+    if (matcher.scope !== undefined) {
+      const expectedScope = matcher.scope === PACKAGE_TOKEN ? packageName : matcher.scope;
+      if (this.scope !== expectedScope) return false;
+    }
+    return true;
+  }
+
+  // Scope decides which commits match; `packages` (or, absent it, the scope-equals-package
+  // fallback) decides which packages a match releases. The `<package>` token ties both to the
+  // same package, so it needs no separate attribution check.
+  private matchesAttribution(matcher: BumpMatcherRule, packageName: string): boolean {
+    if (matcher.scope === PACKAGE_TOKEN) return true;
+    if (matcher.packages === '*') return true;
+    if (Array.isArray(matcher.packages)) return matcher.packages.includes(packageName);
+    return this.scope === packageName;
   }
 }
 
