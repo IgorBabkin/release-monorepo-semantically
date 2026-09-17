@@ -84,6 +84,8 @@ Non-release types: `docs`, `test`, `ci`, `chore`, `refactor`, `style`.
 
 Package scope is matched by package name.
 
+This mapping is `report`'s default configuration, not a fixed rule — see [Configuring release rules](#configuring-release-rules) to change or extend it.
+
 ## Steps
 
 Every step accepts `--context <json>` (except `report`, which produces it) and `--dry-run` (preview only; no files, git state, or publishes change). Steps run in a fresh process each time, so `--context` is how state passes between them.
@@ -92,7 +94,7 @@ Every step accepts `--context <json>` (except `report`, which produces it) and `
 | ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `report`          | (only one)  | Discovers workspace packages, computes version bumps from commits since each package's last release tag, fails if the working tree isn't clean. Writes the release context as JSON to stdout.                                                 |
 | `package-json`    | (only one)  | Updates internal dependency versions in each released package's `package.json` to exact versions, in the `dependencies`/`devDependencies` block each was declared in (peer ranges are left alone), then refreshes the workspace lockfile.     |
-| `package-manager` | _(default)_ | Writes each released package's new version into its `package.json`.                                                                                                                                                                                     |
+| `package-manager` | _(default)_ | Writes each released package's new version into its `package.json`.                                                                                                                                                                           |
 | `package-manager` | `publish`   | Publishes each released package via `pnpm publish`. Kept separate from the version bump so a pipeline can't reach the registry by accident.                                                                                                   |
 | `changelog`       | (only one)  | Renders and prepends a changelog entry per released package. `--template <path>` and `--changelog-name <value>` (default `CHANGELOG.md`) override the defaults.                                                                               |
 | `vcs`             | _(default)_ | Runs `commit`, `tag`, and `push` in that order in one invocation.                                                                                                                                                                             |
@@ -110,6 +112,14 @@ Steps read settings from a `release` section in the root `package.json`, a root 
 ```json
 {
   "release": {
+    "report": {
+      "bumps": {
+        "patch": [
+          { "type": "fix", "scope": "<package>" },
+          { "type": "perf", "scope": "<package>" }
+        ]
+      }
+    },
     "vcs": { "template": "templates/release-commit-msg.hbs" },
     "changelog": { "template": "templates/changelog.hbs", "changelogName": "CHANGELOG.md" },
     "release-notes": { "repository": "acme/repo", "token": "..." },
@@ -128,6 +138,54 @@ Steps read settings from a `release` section in the root `package.json`, a root 
 
 `dryRun: true` in any section makes that step always preview, equivalent to always passing `--dry-run` to it.
 
+## Configuring release rules
+
+`report`'s `bumps` config decides which commits release a package and at what level, replacing the hard-coded `feat`/`fix`/`perf`/breaking mapping from [Commit conventions](#commit-conventions). Each level (`major`, `minor`, `patch`) is a list of matchers; a commit matching **any** matcher at a level triggers that bump, and a commit matching matchers at more than one level resolves to the highest.
+
+A matcher:
+
+| Field      | Meaning                                                                                                                     | Omitted                                                                          |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `type`     | conventional-commit type (`feat`, `docs`, …)                                                                                | matches any type                                                                 |
+| `scope`    | literal scope, or the reserved token `"<package>"` meaning "equals the name of the package being considered"                | matches any scope                                                                |
+| `breaking` | `true` matches `!` or a `BREAKING CHANGE` body, `false` matches its absence                                                 | not considered                                                                   |
+| `packages` | which packages a match releases: `"*"` for every public package, or an explicit list. Ignored when `scope` is `"<package>"` | falls back to `scope === <the package being considered>`, i.e. today's behaviour |
+
+The default, applied when `bumps` isn't configured, is exactly [Commit conventions](#commit-conventions):
+
+```json
+{
+  "major": [{ "breaking": true }],
+  "minor": [{ "type": "feat", "scope": "<package>" }],
+  "patch": [
+    { "type": "fix", "scope": "<package>" },
+    { "type": "perf", "scope": "<package>" }
+  ]
+}
+```
+
+A configured `bumps` replaces the defaults **per level**, not by merging into them — configuring `patch` doesn't touch the default `major`/`minor` matchers, but it does replace the default `patch` matchers entirely (so a repository can also decide `perf` no longer releases). A commit matching no matcher is not a release trigger.
+
+Example: a repository that keeps cross-package specs in `specs/` and wants a `docs(specs)` commit to patch-bump every public package, in `.release.json`:
+
+```json
+{
+  "report": {
+    "bumps": {
+      "patch": [
+        { "type": "fix", "scope": "<package>" },
+        { "type": "perf", "scope": "<package>" },
+        { "type": "docs", "scope": "specs", "packages": "*" }
+      ]
+    }
+  }
+}
+```
+
+Note the `patch` list above repeats the default `fix`/`perf` matchers — since `bumps.patch` replaces rather than merges, the defaults have to be spelled out alongside the new rule to keep them.
+
+The default changelog template only renders `feat`/`fix`/`perf`/breaking commits under their own headings; anything else (including a newly release-triggering type like `docs`) renders under a generic "Other Changes" section (via the `hasOthers`/`findOthers` template helpers). Override `changelog`'s template if you want different grouping for a custom type.
+
 ## Templates
 
 Default templates ship with the package and are used automatically. Override per step with `--template <path>` (relative to the working directory) or the matching config section:
@@ -136,7 +194,7 @@ Default templates ship with the package and are used automatically. Override per
 - `vcs` (used by the `commit` action) — release commit message
 - `release-notes` — GitHub release notes body
 
-Templates are [Handlebars](https://handlebarsjs.com/), with `now`, `hasBreakingChanges`, `hasFeatures`, `hasFixes`, `hasPerformance`, `findBreakingChanges`, `findFeatures`, `findFixes`, `findPerformance`, `lookup`, and `call` helpers registered.
+Templates are [Handlebars](https://handlebarsjs.com/), with `now`, `hasBreakingChanges`, `hasFeatures`, `hasFixes`, `hasPerformance`, `hasOthers`, `findBreakingChanges`, `findFeatures`, `findFixes`, `findPerformance`, `findOthers`, `lookup`, and `call` helpers registered. `hasOthers`/`findOthers` cover any commit type that isn't `feat`, `fix`, or `perf` — the bucket a custom `report.bumps` matcher (e.g. `docs`) lands in.
 
 ## Development
 

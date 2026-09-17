@@ -1,4 +1,5 @@
 import { IContainer, inject, register } from 'ts-ioc-container';
+import { z } from 'zod';
 import { NpmPackage, PackageName, PackageVersion } from '../../domain/NpmPackage.js';
 import { IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
 import { VSCService, VSCServiceKey } from '../vcs/services/VSCService.js';
@@ -8,8 +9,11 @@ import { DirtyWorkingTreeException } from '../../exceptions/DomainException.js';
 import { action, execute, onDefault } from '../../cli/index.js';
 import { sortLessDependenciesFirst } from '../../utils/sortLessDependenciesFirst.js';
 import { ConventionalCommit } from '../../domain/ConventionalCommit.js';
+import { resolveBumpLevel } from '../../domain/BumpMatcher.js';
 import { bumpTypeToString, SemVerBumpType } from '../../domain/SemVerBumpType.js';
 import { serializeContext } from '../../domain/ReleaseControllerContext.js';
+import { pluginsConfigService } from '../../services/PluginsConfigService.js';
+import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './ReportConfig.js';
 
 // Arrow function, not `function`: ts-ioc-container's token resolver treats any
 // function with a `.prototype` as a class to `new`, which a plain function
@@ -33,6 +37,7 @@ export class ReportController {
     @inject(ILoggerKey.args('report')) private logger: ILogger,
     @inject(OutputServiceKey) private output: OutputService,
     @inject(resolvePublicPackages) private publicPackages: NpmPackage[],
+    @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,
   ) {}
 
   @onDefault(execute())
@@ -54,9 +59,13 @@ export class ReportController {
     const releasedCommits = new Map<PackageName, ConventionalCommit[]>();
 
     for (const pkg of this.publicPackages) {
-      const pkgReleaseCommits = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag()).filter((c) => c.matchesScope(pkg.name) && c.isReleaseTrigger());
+      const commitsSinceTag = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag());
+      const commitBumps = commitsSinceTag
+        .map((c) => [c, resolveBumpLevel(c, this.config.bumps, pkg.name)] as const)
+        .filter(([, level]) => level !== SemVerBumpType.NONE);
+      const pkgReleaseCommits = commitBumps.map(([c]) => c);
       const dependencyUpdates = pkg.getDependencyUpdates(releasedVersions);
-      const versionBump = Math.max(...pkgReleaseCommits.map((c) => c.bumpType), dependencyUpdates.length ? SemVerBumpType.MINOR : SemVerBumpType.NONE);
+      const versionBump = Math.max(...commitBumps.map(([, level]) => level), dependencyUpdates.length ? SemVerBumpType.MINOR : SemVerBumpType.NONE);
 
       if (versionBump === SemVerBumpType.NONE) {
         this.logStep('SKIP', `${pkg.name}@${pkg.version}`);

@@ -1,5 +1,3 @@
-import { SemVerBumpType } from './SemVerBumpType.js';
-
 export interface ConventionalCommitJSON {
   type: string;
   scope: string | null;
@@ -41,21 +39,9 @@ export class ConventionalCommit {
 
     return new ConventionalCommit(type, scope || null, subject, isBreaking, commitHash);
   }
-
-  get bumpType(): SemVerBumpType {
-    if (this.isBreaking) return SemVerBumpType.MAJOR;
-    if (this.type === 'feat') return SemVerBumpType.MINOR;
-    if (this.type === 'fix' || this.type === 'perf') return SemVerBumpType.PATCH;
-    return SemVerBumpType.NONE;
-  }
-
-  isReleaseTrigger(): boolean {
-    return this.bumpType !== SemVerBumpType.NONE;
-  }
-
-  matchesScope(packageName: string): boolean {
-    return this.scope === packageName;
-  }
 }
 
 export const filterCommitsByType = (commits: ConventionalCommit[], type: string): ConventionalCommit[] => commits.filter((commit) => commit.type === type);
+
+export const filterCommitsExcludingTypes = (commits: ConventionalCommit[], types: string[]): ConventionalCommit[] =>
+  commits.filter((commit) => !types.includes(commit.type));
