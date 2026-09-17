@@ -1,3 +1,10 @@
+## [1.12.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.12.0...v1.12.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* use [skip-ci] instead of [skip ci] in release commit message ([9e88558](https://github.com/IgorBabkin/release-monorepo-semantically/commit/9e88558cdad042ad61b2a4021b6648aec670f113)), closes [#19](https://github.com/IgorBabkin/release-monorepo-semantically/issues/19)
+
 # [1.12.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.11.0...v1.12.0) (2026-09-17)
 
 
