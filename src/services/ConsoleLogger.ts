@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { args, inject, register, SingleToken } from 'ts-ioc-container';
+import { arg, inject, register, SingleToken } from 'ts-ioc-container';
 
 type StepName = 'SKIP' | 'BUMP' | 'WRITE' | 'COMMIT' | 'TAG';
 
@@ -22,10 +22,9 @@ export const ILoggerKey = new SingleToken<ILogger>('ReleaseLogger');
 
 @register(ILoggerKey)
 export class ConsoleLogger implements ILogger {
-  // Callers inject via ILoggerKey.args('<topic>'); @inject(args(0)) is what
-  // actually reads that extra resolution argument back out — an undecorated
-  // parameter gets no metadata at all and silently falls back to its default.
-  constructor(@inject(args(0)) private topic: string = 'release') {}
+  // Callers inject via ILoggerKey.args('<topic>'); arg(0) selects the first
+  // extra resolution argument and falls back to the default when it is absent.
+  constructor(@inject(arg(0)) private topic: string = 'release') {}
 
   private supportsColor(): boolean {
     return Boolean(process.stderr.isTTY) && !process.env.NO_COLOR;

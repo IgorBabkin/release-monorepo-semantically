@@ -33,7 +33,51 @@ describe('ConventionalCommit', () => {
     });
   });
 
+  describe('getExplicitBump', () => {
+    it('should return MAJOR for [major] tag', () => {
+      expect(ConventionalCommit.getExplicitBump('[major] feat: subject')).toBe(SemVerBumpType.MAJOR);
+    });
+
+    it('should return MINOR for [minor] tag', () => {
+      expect(ConventionalCommit.getExplicitBump('[minor] feat: subject')).toBe(SemVerBumpType.MINOR);
+    });
+
+    it('should return PATCH for [patch] tag', () => {
+      expect(ConventionalCommit.getExplicitBump('[patch] feat: subject')).toBe(SemVerBumpType.PATCH);
+    });
+
+    it('should return NONE for [skip-bump] tag', () => {
+      expect(ConventionalCommit.getExplicitBump('[skip-bump] feat: subject')).toBe(SemVerBumpType.NONE);
+    });
+
+    it('should return undefined when no explicit bump tag is present', () => {
+      expect(ConventionalCommit.getExplicitBump('feat: subject')).toBeUndefined();
+    });
+  });
+
   describe('bumpMatch', () => {
+    describe('explicit bump tags', () => {
+      it('should prioritize [major] over conventional commits', () => {
+        const commit = ConventionalCommit.parse('[major] feat(pkg-a): subject');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.MAJOR);
+      });
+
+      it('should prioritize [minor] over conventional commits', () => {
+        const commit = ConventionalCommit.parse('[minor] feat(pkg-a)!: subject');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.MINOR);
+      });
+
+      it('should prioritize [patch] over conventional commits', () => {
+        const commit = ConventionalCommit.parse('[patch] feat(pkg-a)!: subject');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.PATCH);
+      });
+
+      it('should prioritize [skip-bump] over conventional commits', () => {
+        const commit = ConventionalCommit.parse('[skip-bump] feat(pkg-a)!: subject');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.NONE);
+      });
+    });
+
     describe("default matchers (today's hard-coded behaviour)", () => {
       it('given a breaking commit scoped to the package when resolved then it is a major bump', () => {
         const commit = ConventionalCommit.parse('feat(pkg-a)!: breaking');

@@ -6,6 +6,7 @@ export interface ConventionalCommitJSON {
   subject: string;
   isBreaking: boolean;
   hash: string | null;
+  explicitBump?: SemVerBumpType;
 }
 
 // Reserved scope token meaning "equals the name of the package being considered".
@@ -32,20 +33,33 @@ export const DEFAULT_PATCH_MATCHERS: BumpMatcherRule[] = [
 ];
 
 export class ConventionalCommit {
+  static getExplicitBump(commitMessage: string): SemVerBumpType | undefined {
+    if (/\[major\]/i.test(commitMessage)) return SemVerBumpType.MAJOR;
+    if (/\[minor\]/i.test(commitMessage)) return SemVerBumpType.MINOR;
+    if (/\[patch\]/i.test(commitMessage)) return SemVerBumpType.PATCH;
+    if (/\[skip-bump\]/i.test(commitMessage)) return SemVerBumpType.NONE;
+    return undefined;
+  }
+
   constructor(
     readonly type: string,
     readonly scope: string | null,
     readonly subject: string,
     readonly isBreaking: boolean,
     readonly hash: string | null = null,
+    readonly explicitBump: SemVerBumpType | undefined = undefined,
   ) {}
 
   toJSON(): ConventionalCommitJSON {
-    return { type: this.type, scope: this.scope, subject: this.subject, isBreaking: this.isBreaking, hash: this.hash };
+    const json: ConventionalCommitJSON = { type: this.type, scope: this.scope, subject: this.subject, isBreaking: this.isBreaking, hash: this.hash };
+    if (this.explicitBump !== undefined) {
+      json.explicitBump = this.explicitBump;
+    }
+    return json;
   }
 
   static fromJSON(data: ConventionalCommitJSON): ConventionalCommit {
-    return new ConventionalCommit(data.type, data.scope, data.subject, data.isBreaking, data.hash);
+    return new ConventionalCommit(data.type, data.scope, data.subject, data.isBreaking, data.hash, data.explicitBump);
   }
 
   static parse(raw: string): ConventionalCommit {
@@ -53,20 +67,23 @@ export class ConventionalCommit {
     const hashMatch = trimmedRaw.match(/^([0-9a-f]{7,40})\s+([\s\S]+)$/i);
     const commitHash = hashMatch ? hashMatch[1] : null;
     const commitMessage = hashMatch ? hashMatch[2] : trimmedRaw;
+    const explicitBump = ConventionalCommit.getExplicitBump(commitMessage);
+    const normalizedMessage = commitMessage.replace(/\[(?:major|minor|patch|skip-bump)\]\s*/i, '').trim();
 
-    const match = commitMessage.match(/^(\w+)(?:\(([^)]*)\))?(!)?\s*:\s*(.+)$/);
+    const match = normalizedMessage.match(/^(\w+)(?:\(([^)]*)\))?(!)?\s*:\s*(.+)$/);
     if (!match) {
-      return new ConventionalCommit('unknown', null, commitMessage, false, commitHash);
+      return new ConventionalCommit('unknown', null, commitMessage, false, commitHash, explicitBump);
     }
 
     const [, type, scope, bang, subject] = match;
     const isBreaking = !!bang || commitMessage.includes('BREAKING CHANGE');
 
-    return new ConventionalCommit(type, scope || null, subject, isBreaking, commitHash);
+    return new ConventionalCommit(type, scope || null, subject, isBreaking, commitHash, explicitBump);
   }
 
   /** Highest bump level this commit triggers for the given package, or NONE if it matches nothing. */
   bumpMatch(bumpConfig: BumpMatchers, packageName: string): SemVerBumpType {
+    if (this.explicitBump !== undefined) return this.explicitBump;
     if (this.matchesAny(bumpConfig.major, packageName)) return SemVerBumpType.MAJOR;
     if (this.matchesAny(bumpConfig.minor, packageName)) return SemVerBumpType.MINOR;
     if (this.matchesAny(bumpConfig.patch, packageName)) return SemVerBumpType.PATCH;

@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { AddOnConstructHookModule, Container } from 'ts-ioc-container';
+import { Container } from 'ts-ioc-container';
 import { CommonModule } from './modules/CommonModule.js';
 import { VCSModule } from './features/vcs/VCSModule.js';
 import { ReleaseNotesModule } from './features/releaseNotes/ReleaseNotesModule.js';
@@ -11,7 +11,6 @@ import { Application } from './cli/Application.js';
 
 export function runCli(args: string[], cwd = process.cwd()): number {
   const container = new Container({ tags: ['root'] })
-    .useModule(new AddOnConstructHookModule())
     .useModule(new CommonModule({ cwd }))
     .useModule(new ReportModule())
     .useModule(new VCSModule())

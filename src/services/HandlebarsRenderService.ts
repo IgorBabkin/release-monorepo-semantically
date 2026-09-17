@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 
 import { execute } from '../cli/execute.js';
-
 import { readFileSync } from 'node:fs';
 import Handlebars from 'handlebars';
 import { ConventionalCommit, filterCommitsByType, filterCommitsExcludingTypes } from '../domain/ConventionalCommit.js';
 import { TemplateInvocationTargetException, TemplateMethodNotFunctionException } from '../exceptions/DomainException.js';
-import { inject, onConstruct, register, SingleToken, singleton } from 'ts-ioc-container';
+import { inject, register, SingleToken, singleton } from 'ts-ioc-container';
+import { onResolveOnce, resolved } from '../utils/ts-ioc-container.js';
 import { globalConfig } from '../domain/GlobalConfig.js';
 import path from 'node:path';
 
@@ -16,7 +16,7 @@ export interface IRenderService {
 
 export const IRenderServiceKey = new SingleToken<IRenderService>('IRenderService');
 
-@register(IRenderServiceKey, singleton())
+@register(IRenderServiceKey, singleton(), resolved())
 export class HandlebarsRenderService implements IRenderService {
   constructor(@inject(globalConfig('cwd')) private readonly cwd: string) {}
 
@@ -30,62 +30,62 @@ export class HandlebarsRenderService implements IRenderService {
     return template(data);
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerNowHelper(): void {
     Handlebars.registerHelper('now', () => new Date().toISOString().slice(0, 10));
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerHasBreakingChangesHelper(): void {
     Handlebars.registerHelper('hasBreakingChanges', (commits: ConventionalCommit[]) => commits.some((commit) => commit.isBreaking));
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerHasFeaturesHelper(): void {
     Handlebars.registerHelper('hasFeatures', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'feat').length > 0);
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerFindFeaturesHelper(): void {
     Handlebars.registerHelper('findFeatures', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'feat'));
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerHasFixesHelper(): void {
     Handlebars.registerHelper('hasFixes', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'fix').length > 0);
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerFindFixesHelper(): void {
     Handlebars.registerHelper('findFixes', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'fix'));
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerFindBreakingHelper(): void {
     Handlebars.registerHelper('findBreakingChanges', (commits: ConventionalCommit[]) => commits.filter((commit) => commit.isBreaking));
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerHasPerformanceHelper(): void {
     Handlebars.registerHelper('hasPerformance', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'perf').length > 0);
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerFindPerformanceHelper(): void {
     Handlebars.registerHelper('findPerformance', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'perf'));
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerHasOthersHelper(): void {
     Handlebars.registerHelper('hasOthers', (commits: ConventionalCommit[]) => filterCommitsExcludingTypes(commits, ['feat', 'fix', 'perf']).length > 0);
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerFindOthersHelper(): void {
     Handlebars.registerHelper('findOthers', (commits: ConventionalCommit[]) => filterCommitsExcludingTypes(commits, ['feat', 'fix', 'perf']));
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerLookupHelper(): void {
     Handlebars.registerHelper('lookup', (container: unknown, key: unknown) => {
       if (container instanceof Map) {
@@ -98,7 +98,7 @@ export class HandlebarsRenderService implements IRenderService {
     });
   }
 
-  @onConstruct(execute())
+  @onResolveOnce(execute())
   registerCallHelper(): void {
     Handlebars.registerHelper('call', (target: unknown, methodName: unknown, ...args: unknown[]) => {
       const options = args.pop();
