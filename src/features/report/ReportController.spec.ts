@@ -3,7 +3,6 @@ import { It, Mock, Times } from 'moq.ts';
 import { IContainer } from 'ts-ioc-container';
 import { ReportController, resolvePublicPackages } from './ReportController.js';
 import { PLUGIN_CONFIG_SCHEMA } from './ReportConfig.js';
-import { BumpMatcher } from '../../domain/BumpMatcher.js';
 import { NpmPackage } from '../../domain/NpmPackage.js';
 import { ConventionalCommit } from '../../domain/ConventionalCommit.js';
 import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
@@ -14,7 +13,6 @@ import { IFileSystemService } from '../../services/NodeFileSystemService.js';
 import { DirtyWorkingTreeException } from '../../exceptions/DomainException.js';
 
 const DEFAULT_CONFIG = PLUGIN_CONFIG_SCHEMA.parse({});
-const DEFAULT_BUMP_MATCHER = new BumpMatcher(DEFAULT_CONFIG.bumps);
 
 describe('ReportController.generate', () => {
   it('given a dirty working tree when generate runs then it fails before touching anything', () => {
@@ -23,7 +21,7 @@ describe('ReportController.generate', () => {
     const output = new Mock<OutputService>();
 
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_BUMP_MATCHER);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG);
 
     expect(() => controller.generate()).toThrow(DirtyWorkingTreeException);
     output.verify((m) => m.write(It.IsAny()), Times.Never());
@@ -39,7 +37,7 @@ describe('ReportController.generate', () => {
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
 
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_BUMP_MATCHER);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG);
 
     controller.generate();
 
@@ -69,7 +67,7 @@ describe('ReportController.generate', () => {
 
     const pkgA = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0' }, '/repo/packages/pkg-b');
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB], DEFAULT_BUMP_MATCHER);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB], DEFAULT_CONFIG);
 
     controller.generate();
 
@@ -101,7 +99,7 @@ describe('ReportController.generate', () => {
     const pkgA = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0' }, '/repo/packages/pkg-b');
     const config = PLUGIN_CONFIG_SCHEMA.parse({ bumps: { patch: [...DEFAULT_CONFIG.bumps.patch, { type: 'docs', scope: 'specs', packages: '*' }] } });
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB], new BumpMatcher(config.bumps));
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB], config);
 
     controller.generate();
 
@@ -127,7 +125,7 @@ describe('ReportController.generate', () => {
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
 
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_BUMP_MATCHER);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG);
 
     controller.generate();
 

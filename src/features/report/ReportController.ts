@@ -9,7 +9,6 @@ import { DirtyWorkingTreeException } from '../../exceptions/DomainException.js';
 import { action, execute, onDefault } from '../../cli/index.js';
 import { sortLessDependenciesFirst } from '../../utils/sortLessDependenciesFirst.js';
 import { ConventionalCommit } from '../../domain/ConventionalCommit.js';
-import { BumpMatcher } from '../../domain/BumpMatcher.js';
 import { bumpTypeToString, SemVerBumpType } from '../../domain/SemVerBumpType.js';
 import { serializeContext } from '../../domain/ReleaseControllerContext.js';
 import { pluginsConfigService } from '../../services/PluginsConfigService.js';
@@ -30,14 +29,6 @@ export const resolvePublicPackages = (container: IContainer): NpmPackage[] => {
   return sortLessDependenciesFirst(packageJsonList.map(([pkgPath, pkg]) => NpmPackage.createFromPackage(pkg, pkgPath)).filter((p) => !p.isPrivate));
 };
 
-const resolveReportConfig = pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA);
-
-// Same arrow-function-as-token reasoning as `resolvePublicPackages` above.
-export const resolveBumpMatcher = (container: IContainer): BumpMatcher => {
-  const config = resolveReportConfig(container) as z.infer<typeof PLUGIN_CONFIG_SCHEMA>;
-  return new BumpMatcher(config.bumps);
-};
-
 @register('report')
 export class ReportController {
   constructor(
@@ -45,7 +36,7 @@ export class ReportController {
     @inject(ILoggerKey.args('report')) private logger: ILogger,
     @inject(OutputServiceKey) private output: OutputService,
     @inject(resolvePublicPackages) private publicPackages: NpmPackage[],
-    @inject(resolveBumpMatcher) private bumpMatcher: BumpMatcher,
+    @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,
   ) {}
 
   @onDefault(execute())
@@ -69,7 +60,7 @@ export class ReportController {
     for (const pkg of this.publicPackages) {
       const commitsSinceTag = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag());
       const commitBumps = commitsSinceTag
-        .map((c) => [c, this.bumpMatcher.resolveLevel(c, pkg.name)] as const)
+        .map((c) => [c, c.bumpMatch(this.config.bumps, pkg.name)] as const)
         .filter(([, level]) => level !== SemVerBumpType.NONE);
       const pkgReleaseCommits = commitBumps.map(([c]) => c);
       const dependencyUpdates = pkg.getDependencyUpdates(releasedVersions);

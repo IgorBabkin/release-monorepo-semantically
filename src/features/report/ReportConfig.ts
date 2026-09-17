@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEFAULT_MAJOR_MATCHERS, DEFAULT_MINOR_MATCHERS, DEFAULT_PATCH_MATCHERS } from '../../domain/BumpMatcher.js';
+import { DEFAULT_MAJOR_MATCHERS, DEFAULT_MINOR_MATCHERS, DEFAULT_PATCH_MATCHERS } from '../../domain/ConventionalCommit.js';
 
 export const CONFIG_KEY = 'report';
 

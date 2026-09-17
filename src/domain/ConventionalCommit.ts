@@ -1,3 +1,5 @@
+import { SemVerBumpType } from './SemVerBumpType.js';
+
 export interface ConventionalCommitJSON {
   type: string;
   scope: string | null;
@@ -15,6 +17,19 @@ export interface BumpMatcherRule {
   breaking?: boolean;
   packages?: '*' | string[];
 }
+
+export interface BumpMatchers {
+  major: BumpMatcherRule[];
+  minor: BumpMatcherRule[];
+  patch: BumpMatcherRule[];
+}
+
+export const DEFAULT_MAJOR_MATCHERS: BumpMatcherRule[] = [{ breaking: true }];
+export const DEFAULT_MINOR_MATCHERS: BumpMatcherRule[] = [{ type: 'feat', scope: PACKAGE_TOKEN }];
+export const DEFAULT_PATCH_MATCHERS: BumpMatcherRule[] = [
+  { type: 'fix', scope: PACKAGE_TOKEN },
+  { type: 'perf', scope: PACKAGE_TOKEN },
+];
 
 export class ConventionalCommit {
   constructor(
@@ -50,8 +65,16 @@ export class ConventionalCommit {
     return new ConventionalCommit(type, scope || null, subject, isBreaking, commitHash);
   }
 
+  /** Highest bump level this commit triggers for the given package, or NONE if it matches nothing. */
+  bumpMatch(bumpConfig: BumpMatchers, packageName: string): SemVerBumpType {
+    if (this.matchesAny(bumpConfig.major, packageName)) return SemVerBumpType.MAJOR;
+    if (this.matchesAny(bumpConfig.minor, packageName)) return SemVerBumpType.MINOR;
+    if (this.matchesAny(bumpConfig.patch, packageName)) return SemVerBumpType.PATCH;
+    return SemVerBumpType.NONE;
+  }
+
   /** Whether this commit matches any of the given matchers for the given package. */
-  matchesAny(matchers: BumpMatcherRule[], packageName: string): boolean {
+  private matchesAny(matchers: BumpMatcherRule[], packageName: string): boolean {
     return matchers.some((matcher) => this.matchesCriteria(matcher, packageName) && this.matchesAttribution(matcher, packageName));
   }
 
