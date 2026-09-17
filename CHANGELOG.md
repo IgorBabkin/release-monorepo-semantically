@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.11.0...v1.12.0) (2026-09-17)
+
+
+### Features
+
+* **report:** support explicit bump tags ([47084c7](https://github.com/IgorBabkin/release-monorepo-semantically/commit/47084c750f6d6332c27429bd267dc5b8790ab9be))
+
 # [1.11.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.10.0...v1.11.0) (2026-09-17)
 
 
