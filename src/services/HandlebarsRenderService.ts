@@ -1,12 +1,10 @@
 import 'reflect-metadata';
 
-import { execute } from '../cli/execute.js';
-
 import { readFileSync } from 'node:fs';
 import Handlebars from 'handlebars';
 import { ConventionalCommit, filterCommitsByType, filterCommitsExcludingTypes } from '../domain/ConventionalCommit.js';
 import { TemplateInvocationTargetException, TemplateMethodNotFunctionException } from '../exceptions/DomainException.js';
-import { inject, onConstruct, register, SingleToken, singleton } from 'ts-ioc-container';
+import { inject, register, SingleToken, singleton } from 'ts-ioc-container';
 import { globalConfig } from '../domain/GlobalConfig.js';
 import path from 'node:path';
 
@@ -18,7 +16,21 @@ export const IRenderServiceKey = new SingleToken<IRenderService>('IRenderService
 
 @register(IRenderServiceKey, singleton())
 export class HandlebarsRenderService implements IRenderService {
-  constructor(@inject(globalConfig('cwd')) private readonly cwd: string) {}
+  constructor(@inject(globalConfig('cwd')) private readonly cwd: string) {
+    this.registerNowHelper();
+    this.registerHasBreakingChangesHelper();
+    this.registerHasFeaturesHelper();
+    this.registerFindFeaturesHelper();
+    this.registerHasFixesHelper();
+    this.registerFindFixesHelper();
+    this.registerFindBreakingHelper();
+    this.registerHasPerformanceHelper();
+    this.registerFindPerformanceHelper();
+    this.registerHasOthersHelper();
+    this.registerFindOthersHelper();
+    this.registerLookupHelper();
+    this.registerCallHelper();
+  }
 
   private resolveAbsolutePath(paths: string, options: { cwd?: string } = {}) {
     return path.resolve(options.cwd ?? this.cwd, paths);
@@ -30,62 +42,50 @@ export class HandlebarsRenderService implements IRenderService {
     return template(data);
   }
 
-  @onConstruct(execute())
   registerNowHelper(): void {
     Handlebars.registerHelper('now', () => new Date().toISOString().slice(0, 10));
   }
 
-  @onConstruct(execute())
   registerHasBreakingChangesHelper(): void {
     Handlebars.registerHelper('hasBreakingChanges', (commits: ConventionalCommit[]) => commits.some((commit) => commit.isBreaking));
   }
 
-  @onConstruct(execute())
   registerHasFeaturesHelper(): void {
     Handlebars.registerHelper('hasFeatures', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'feat').length > 0);
   }
 
-  @onConstruct(execute())
   registerFindFeaturesHelper(): void {
     Handlebars.registerHelper('findFeatures', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'feat'));
   }
 
-  @onConstruct(execute())
   registerHasFixesHelper(): void {
     Handlebars.registerHelper('hasFixes', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'fix').length > 0);
   }
 
-  @onConstruct(execute())
   registerFindFixesHelper(): void {
     Handlebars.registerHelper('findFixes', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'fix'));
   }
 
-  @onConstruct(execute())
   registerFindBreakingHelper(): void {
     Handlebars.registerHelper('findBreakingChanges', (commits: ConventionalCommit[]) => commits.filter((commit) => commit.isBreaking));
   }
 
-  @onConstruct(execute())
   registerHasPerformanceHelper(): void {
     Handlebars.registerHelper('hasPerformance', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'perf').length > 0);
   }
 
-  @onConstruct(execute())
   registerFindPerformanceHelper(): void {
     Handlebars.registerHelper('findPerformance', (commits: ConventionalCommit[]) => filterCommitsByType(commits, 'perf'));
   }
 
-  @onConstruct(execute())
   registerHasOthersHelper(): void {
     Handlebars.registerHelper('hasOthers', (commits: ConventionalCommit[]) => filterCommitsExcludingTypes(commits, ['feat', 'fix', 'perf']).length > 0);
   }
 
-  @onConstruct(execute())
   registerFindOthersHelper(): void {
     Handlebars.registerHelper('findOthers', (commits: ConventionalCommit[]) => filterCommitsExcludingTypes(commits, ['feat', 'fix', 'perf']));
   }
 
-  @onConstruct(execute())
   registerLookupHelper(): void {
     Handlebars.registerHelper('lookup', (container: unknown, key: unknown) => {
       if (container instanceof Map) {
@@ -98,7 +98,6 @@ export class HandlebarsRenderService implements IRenderService {
     });
   }
 
-  @onConstruct(execute())
   registerCallHelper(): void {
     Handlebars.registerHelper('call', (target: unknown, methodName: unknown, ...args: unknown[]) => {
       const options = args.pop();

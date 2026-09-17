@@ -1,4 +1,4 @@
-import { createHookContextFactory, HooksRunner, type IContainer } from 'ts-ioc-container';
+import { createHookContextFactory, HookCollector, toTask, type IContainer } from 'ts-ioc-container';
 import { MissingControllerException } from '../exceptions/DomainException.js';
 import { IErrorHandler, IErrorHandlerKey } from './IErrorHandler.js';
 import { DEFAULT_ACTION } from './decorators.js';
@@ -40,8 +40,10 @@ export class Application {
     try {
       const { controller, action } = parseControllerAndAction(argv);
       const controllerInstance = this.scope.resolve<object>(controller);
-      const createContext = createHookContextFactory({ args: argv });
-      new HooksRunner(action).execute(controllerInstance, { scope: this.scope, createContext });
+      const collector = new HookCollector({ key: action, createExecutionContext: createHookContextFactory({ args: argv }) });
+      for (const actionItem of collector.getActions(controllerInstance, { scope: this.scope })) {
+        toTask(actionItem)();
+      }
     } catch (error) {
       this.errorHandler.handleError(error);
     } finally {

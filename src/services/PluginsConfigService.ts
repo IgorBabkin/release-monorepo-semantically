@@ -1,6 +1,5 @@
-import { IContainer, inject, onConstruct, register, shallowCache, SingleToken, singleton } from 'ts-ioc-container';
+import { IContainer, inject, register, shallowCache, SingleToken, singleton } from 'ts-ioc-container';
 import { z, ZodType } from 'zod';
-import { execute } from '../cli/execute.js';
 import path from 'node:path';
 import { globalConfig } from '../domain/GlobalConfig.js';
 import * as fs from 'node:fs';
@@ -23,9 +22,11 @@ export class PluginsConfigService implements IPluginsConfigService {
   constructor(
     @inject(globalConfig('cwd')) private readonly cwd: string,
     @inject(ILoggerKey.args('config')) private readonly logger: ILogger,
-  ) {}
+  ) {
+    this.loadConfigFromPackageJson();
+    this.loadConfigFromFile();
+  }
 
-  @onConstruct(execute())
   loadConfigFromPackageJson() {
     const packageJsonPath = path.join(this.cwd, 'package.json');
     if (!fs.existsSync(packageJsonPath)) {
@@ -40,7 +41,6 @@ export class PluginsConfigService implements IPluginsConfigService {
     }
   }
 
-  @onConstruct(execute())
   loadConfigFromFile() {
     const configPath = path.join(this.cwd, CONFIG_FILE_NAME);
     if (!fs.existsSync(configPath)) {
