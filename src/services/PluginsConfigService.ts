@@ -1,4 +1,6 @@
 import { IContainer, inject, register, shallowCache, SingleToken, singleton } from 'ts-ioc-container';
+import { execute } from '../cli/execute.js';
+import { onResolveOnce, resolved } from '../utils/ts-ioc-container.js';
 import { z, ZodType } from 'zod';
 import path from 'node:path';
 import { globalConfig } from '../domain/GlobalConfig.js';
@@ -15,18 +17,16 @@ export interface IPluginsConfigService {
 export const IPluginsConfigServiceKey = new SingleToken<IPluginsConfigService>('IPluginsConfigService');
 export const pluginsConfigService = (key: string, schema: ZodType) => (c: IContainer) => IPluginsConfigServiceKey.resolve(c).getConfig(key, schema);
 
-@register(IPluginsConfigServiceKey, singleton())
+@register(IPluginsConfigServiceKey, singleton(), resolved())
 export class PluginsConfigService implements IPluginsConfigService {
   private config: Record<string, unknown> = {};
 
   constructor(
     @inject(globalConfig('cwd')) private readonly cwd: string,
     @inject(ILoggerKey.args('config')) private readonly logger: ILogger,
-  ) {
-    this.loadConfigFromPackageJson();
-    this.loadConfigFromFile();
-  }
+  ) {}
 
+  @onResolveOnce(execute())
   loadConfigFromPackageJson() {
     const packageJsonPath = path.join(this.cwd, 'package.json');
     if (!fs.existsSync(packageJsonPath)) {
@@ -41,6 +41,7 @@ export class PluginsConfigService implements IPluginsConfigService {
     }
   }
 
+  @onResolveOnce(execute())
   loadConfigFromFile() {
     const configPath = path.join(this.cwd, CONFIG_FILE_NAME);
     if (!fs.existsSync(configPath)) {
