@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.10.0...v1.11.0) (2026-09-17)
+
+
+### Features
+
+* **report:** let consumers configure which commits trigger which bump ([b2ef91d](https://github.com/IgorBabkin/release-monorepo-semantically/commit/b2ef91dbf82f7273132f7d7de33554d7fd60432f))
+
 # [1.10.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.4...v1.10.0) (2026-09-16)
 
 
