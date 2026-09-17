@@ -44,18 +44,18 @@ function attributionMatches(matcher: BumpMatcherRule, commit: ConventionalCommit
   return commit.scope === packageName;
 }
 
-function matchesAny(commit: ConventionalCommit, matchers: BumpMatcherRule[], packageName: string): boolean {
-  return matchers.some((matcher) => criteriaMatches(commit, matcher, packageName) && attributionMatches(matcher, commit, packageName));
-}
-
 export class BumpMatcher {
   constructor(private readonly bumps: BumpMatchers) {}
 
   /** Highest bump level this commit triggers for the given package, or NONE if it matches nothing. */
   resolveLevel(commit: ConventionalCommit, packageName: string): SemVerBumpType {
-    if (matchesAny(commit, this.bumps.major, packageName)) return SemVerBumpType.MAJOR;
-    if (matchesAny(commit, this.bumps.minor, packageName)) return SemVerBumpType.MINOR;
-    if (matchesAny(commit, this.bumps.patch, packageName)) return SemVerBumpType.PATCH;
+    if (this.matchesAny(commit, this.bumps.major, packageName)) return SemVerBumpType.MAJOR;
+    if (this.matchesAny(commit, this.bumps.minor, packageName)) return SemVerBumpType.MINOR;
+    if (this.matchesAny(commit, this.bumps.patch, packageName)) return SemVerBumpType.PATCH;
     return SemVerBumpType.NONE;
+  }
+
+  private matchesAny(commit: ConventionalCommit, matchers: BumpMatcherRule[], packageName: string): boolean {
+    return matchers.some((matcher) => criteriaMatches(commit, matcher, packageName) && attributionMatches(matcher, commit, packageName));
   }
 }
