@@ -11,11 +11,17 @@ export const PLUGIN_CONFIG_SCHEMA = z.object({
     .string()
     .trim()
     .regex(/^[^/\s]+\/[^/\s]+$/)
-    .optional(),
-  token: z.string().trim().min(1).optional(),
-  dryRun: z.boolean().default(false),
-  template: z.string().optional(),
-  kind: z.enum(['github']).default('github'),
+    .optional()
+    .describe('GitHub repository as owner/name. Falls back to the GITHUB_REPOSITORY environment variable.'),
+  token: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe('GitHub token. Falls back to the GITHUB_TOKEN environment variable; prefer the env var over committing a token.'),
+  dryRun: z.boolean().default(false).describe('Always preview this step (same as passing --dry-run): no file, git, or registry mutation.'),
+  template: z.string().optional().describe('Path (relative to the working directory) to a Handlebars template for the release notes body.'),
+  kind: z.enum(['github']).default('github').describe('Release notes provider.'),
 });
 export type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;
 export const whenConfig = <K extends keyof PluginConfig>(key: K, value: PluginConfig[K]) =>

@@ -1,241 +1,207 @@
 # [1.13.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.12.1...v1.13.0) (2026-09-26)
 
-
 ### Features
 
-* detect squash commits and read their squashed commits ([257d5f6](https://github.com/IgorBabkin/release-monorepo-semantically/commit/257d5f6862923e57dfa0c2d2ceb5538354283c0c))
+- detect squash commits and read their squashed commits ([257d5f6](https://github.com/IgorBabkin/release-monorepo-semantically/commit/257d5f6862923e57dfa0c2d2ceb5538354283c0c))
 
 ## [1.12.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.12.0...v1.12.1) (2026-09-17)
 
-
 ### Bug Fixes
 
-* use [skip-ci] instead of [skip ci] in release commit message ([9e88558](https://github.com/IgorBabkin/release-monorepo-semantically/commit/9e88558cdad042ad61b2a4021b6648aec670f113)), closes [#19](https://github.com/IgorBabkin/release-monorepo-semantically/issues/19)
+- use [skip-ci] instead of [skip ci] in release commit message ([9e88558](https://github.com/IgorBabkin/release-monorepo-semantically/commit/9e88558cdad042ad61b2a4021b6648aec670f113)), closes [#19](https://github.com/IgorBabkin/release-monorepo-semantically/issues/19)
 
 # [1.12.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.11.0...v1.12.0) (2026-09-17)
 
-
 ### Features
 
-* **report:** support explicit bump tags ([47084c7](https://github.com/IgorBabkin/release-monorepo-semantically/commit/47084c750f6d6332c27429bd267dc5b8790ab9be))
+- **report:** support explicit bump tags ([47084c7](https://github.com/IgorBabkin/release-monorepo-semantically/commit/47084c750f6d6332c27429bd267dc5b8790ab9be))
 
 # [1.11.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.10.0...v1.11.0) (2026-09-17)
 
-
 ### Features
 
-* **report:** let consumers configure which commits trigger which bump ([b2ef91d](https://github.com/IgorBabkin/release-monorepo-semantically/commit/b2ef91dbf82f7273132f7d7de33554d7fd60432f))
+- **report:** let consumers configure which commits trigger which bump ([b2ef91d](https://github.com/IgorBabkin/release-monorepo-semantically/commit/b2ef91dbf82f7273132f7d7de33554d7fd60432f))
 
 # [1.10.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.4...v1.10.0) (2026-09-16)
 
-
 ### Bug Fixes
 
-* **package-manager:** write the version bump into package.json ([6bf2f76](https://github.com/IgorBabkin/release-monorepo-semantically/commit/6bf2f76cd9c859e68da2b2b55a25a7237d5c0c30))
-
+- **package-manager:** write the version bump into package.json ([6bf2f76](https://github.com/IgorBabkin/release-monorepo-semantically/commit/6bf2f76cd9c859e68da2b2b55a25a7237d5c0c30))
 
 ### Features
 
-* **validation:** fail with explicit errors on invalid manifests ([c588696](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c5886960c65203dec07d0599624974d6c8863e53))
+- **validation:** fail with explicit errors on invalid manifests ([c588696](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c5886960c65203dec07d0599624974d6c8863e53))
 
 ## [1.9.4](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.3...v1.9.4) (2026-09-05)
 
-
 ### Bug Fixes
 
-* never rewrite an internal dependency on the workspace protocol ([94682ca](https://github.com/IgorBabkin/release-monorepo-semantically/commit/94682caf4853fb60fa9f944052972d9e2a20dd5e)), closes [#8](https://github.com/IgorBabkin/release-monorepo-semantically/issues/8)
+- never rewrite an internal dependency on the workspace protocol ([94682ca](https://github.com/IgorBabkin/release-monorepo-semantically/commit/94682caf4853fb60fa9f944052972d9e2a20dd5e)), closes [#8](https://github.com/IgorBabkin/release-monorepo-semantically/issues/8)
 
 ## [1.9.3](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.2...v1.9.3) (2026-09-04)
 
-
 ### Bug Fixes
 
-* **package-json:** bump dependencies in place and refresh the lockfile ([e710ca8](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e710ca8df6840c8c25fef015513dc475ec946c68)), closes [#5](https://github.com/IgorBabkin/release-monorepo-semantically/issues/5)
+- **package-json:** bump dependencies in place and refresh the lockfile ([e710ca8](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e710ca8df6840c8c25fef015513dc475ec946c68)), closes [#5](https://github.com/IgorBabkin/release-monorepo-semantically/issues/5)
 
 ## [1.9.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.1...v1.9.2) (2026-08-15)
 
-
 ### Bug Fixes
 
-* use pnpm's --no-git-checks flag instead of nonexistent --no-vcs-checks ([e9bf869](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e9bf869ad480ae229e79157b5e9e8819519ae41a))
+- use pnpm's --no-git-checks flag instead of nonexistent --no-vcs-checks ([e9bf869](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e9bf869ad480ae229e79157b5e9e8819519ae41a))
 
 ## [1.9.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.9.0...v1.9.1) (2026-08-15)
 
-
 ### Bug Fixes
 
-* skip creating a git tag if it already exists ([d71e8c1](https://github.com/IgorBabkin/release-monorepo-semantically/commit/d71e8c11728917ab59d1690cd669fe8ee82ca7ea))
+- skip creating a git tag if it already exists ([d71e8c1](https://github.com/IgorBabkin/release-monorepo-semantically/commit/d71e8c11728917ab59d1690cd669fe8ee82ca7ea))
 
 # [1.9.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.8.0...v1.9.0) (2026-08-15)
 
-
 ### Bug Fixes
 
-* exclude test files from the published package ([e20537c](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e20537c1a4c4e7c5b3ca6f5f2035fd0bff4bc2b4))
-* make the step-based CLI actually run, end to end ([923b8ce](https://github.com/IgorBabkin/release-monorepo-semantically/commit/923b8ce233e19c5b6267260f69cb2c524cf4e35e))
-* pin semantic-release's default npm/github plugins via pnpm overrides ([aeb3947](https://github.com/IgorBabkin/release-monorepo-semantically/commit/aeb39475d26beff047df1d3ac4dd58342e97d963))
-* **refactor:** big refactoring ([fba6d0f](https://github.com/IgorBabkin/release-monorepo-semantically/commit/fba6d0f4a0332845649560417454672b19fd41db))
-* **refactor:** big refactoring ([a23f947](https://github.com/IgorBabkin/release-monorepo-semantically/commit/a23f947d33003d21959289870c10f54682092a29))
-* repair collateral from the plugins→features rename ([1bbddd3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/1bbddd3fa90afa66bb8542050d80e27e13a9c611))
-* repair e2e suite for the step-based CLI and fix bugs it exposed ([7af7792](https://github.com/IgorBabkin/release-monorepo-semantically/commit/7af7792a99f896061995cf04cafa30170a2d0942))
-* use github context in publish workflow ([9fc852e](https://github.com/IgorBabkin/release-monorepo-semantically/commit/9fc852ebea2b748f22f530bade5c7931acba1ce9))
-
+- exclude test files from the published package ([e20537c](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e20537c1a4c4e7c5b3ca6f5f2035fd0bff4bc2b4))
+- make the step-based CLI actually run, end to end ([923b8ce](https://github.com/IgorBabkin/release-monorepo-semantically/commit/923b8ce233e19c5b6267260f69cb2c524cf4e35e))
+- pin semantic-release's default npm/github plugins via pnpm overrides ([aeb3947](https://github.com/IgorBabkin/release-monorepo-semantically/commit/aeb39475d26beff047df1d3ac4dd58342e97d963))
+- **refactor:** big refactoring ([fba6d0f](https://github.com/IgorBabkin/release-monorepo-semantically/commit/fba6d0f4a0332845649560417454672b19fd41db))
+- **refactor:** big refactoring ([a23f947](https://github.com/IgorBabkin/release-monorepo-semantically/commit/a23f947d33003d21959289870c10f54682092a29))
+- repair collateral from the plugins→features rename ([1bbddd3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/1bbddd3fa90afa66bb8542050d80e27e13a9c611))
+- repair e2e suite for the step-based CLI and fix bugs it exposed ([7af7792](https://github.com/IgorBabkin/release-monorepo-semantically/commit/7af7792a99f896061995cf04cafa30170a2d0942))
+- use github context in publish workflow ([9fc852e](https://github.com/IgorBabkin/release-monorepo-semantically/commit/9fc852ebea2b748f22f530bade5c7931acba1ce9))
 
 ### Features
 
-* **config:** move changelog file name into plugin config ([6c1e5d3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/6c1e5d3fef49b51eac08b2d7064268e575454d1a))
-* **config:** require templates for rendered plugins ([cf603dd](https://github.com/IgorBabkin/release-monorepo-semantically/commit/cf603dd21f1a612820d99d061e3ce01c4531bf7a))
+- **config:** move changelog file name into plugin config ([6c1e5d3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/6c1e5d3fef49b51eac08b2d7064268e575454d1a))
+- **config:** require templates for rendered plugins ([cf603dd](https://github.com/IgorBabkin/release-monorepo-semantically/commit/cf603dd21f1a612820d99d061e3ce01c4531bf7a))
 
 # [1.8.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.7.1...v1.8.0) (2026-03-08)
 
-
 ### Features
 
-* **config:** support configurable release plugins order ([599d470](https://github.com/IgorBabkin/release-monorepo-semantically/commit/599d4708cd705dc0dfd4e0ffac39adffac6d13aa))
-* **config:** support object-based plugin configs ([bbb66cb](https://github.com/IgorBabkin/release-monorepo-semantically/commit/bbb66cbb1cf2c0fbb0a369b606595eb1e62ddf3c))
+- **config:** support configurable release plugins order ([599d470](https://github.com/IgorBabkin/release-monorepo-semantically/commit/599d4708cd705dc0dfd4e0ffac39adffac6d13aa))
+- **config:** support object-based plugin configs ([bbb66cb](https://github.com/IgorBabkin/release-monorepo-semantically/commit/bbb66cbb1cf2c0fbb0a369b606595eb1e62ddf3c))
 
 ## [1.7.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.7.0...v1.7.1) (2026-03-08)
 
-
 ### Bug Fixes
 
-* **core:** align controller and cli options module naming ([86e7ce4](https://github.com/IgorBabkin/release-monorepo-semantically/commit/86e7ce43e338627c4e86bd8ddace74d821808cfa))
+- **core:** align controller and cli options module naming ([86e7ce4](https://github.com/IgorBabkin/release-monorepo-semantically/commit/86e7ce43e338627c4e86bd8ddace74d821808cfa))
 
 # [1.7.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.6.2...v1.7.0) (2026-03-08)
 
-
 ### Features
 
-* **cli:** extract config handling services and validate github env ([230bd3d](https://github.com/IgorBabkin/release-monorepo-semantically/commit/230bd3d257e11a431f2131b8284178b81740aa87))
+- **cli:** extract config handling services and validate github env ([230bd3d](https://github.com/IgorBabkin/release-monorepo-semantically/commit/230bd3d257e11a431f2131b8284178b81740aa87))
 
 ## [1.6.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.6.1...v1.6.2) (2026-03-08)
 
-
 ### Bug Fixes
 
-* **dry-run:** do not mutate anything ([8f935e9](https://github.com/IgorBabkin/release-monorepo-semantically/commit/8f935e9d72dcad7e8a5d1e188b6845b467a7c2bd))
+- **dry-run:** do not mutate anything ([8f935e9](https://github.com/IgorBabkin/release-monorepo-semantically/commit/8f935e9d72dcad7e8a5d1e188b6845b467a7c2bd))
 
 ## [1.6.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.6.0...v1.6.1) (2026-03-08)
 
-
 ### Bug Fixes
 
-* **readme:** add project usage and release documentation ([e83f6f3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e83f6f37455b7c33bb6c79c56670f14df76fa5c1))
+- **readme:** add project usage and release documentation ([e83f6f3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e83f6f37455b7c33bb6c79c56670f14df76fa5c1))
 
 # [1.6.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.5.2...v1.6.0) (2026-03-08)
 
-
 ### Features
 
-* **github:** add automated GitHub release plugin and e2e stubs ([cf07c8c](https://github.com/IgorBabkin/release-monorepo-semantically/commit/cf07c8c69b18a84e4d23055981baa00bbcfbbc1f))
+- **github:** add automated GitHub release plugin and e2e stubs ([cf07c8c](https://github.com/IgorBabkin/release-monorepo-semantically/commit/cf07c8c69b18a84e4d23055981baa00bbcfbbc1f))
 
 ## [1.5.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.5.1...v1.5.2) (2026-03-08)
 
-
 ### Bug Fixes
 
-* **render:** add package json write logs and performance helper names ([3bee8df](https://github.com/IgorBabkin/release-monorepo-semantically/commit/3bee8df674e971f1f770a555e2c74818638007bb))
+- **render:** add package json write logs and performance helper names ([3bee8df](https://github.com/IgorBabkin/release-monorepo-semantically/commit/3bee8df674e971f1f770a555e2c74818638007bb))
 
 ## [1.5.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.5.0...v1.5.1) (2026-03-08)
 
-
 ### Bug Fixes
 
-* **model:** restore commit hash field compatibility ([627a5bd](https://github.com/IgorBabkin/release-monorepo-semantically/commit/627a5bd7d8ca4bb22da9d3b3d418d949907e550f))
-* **release:** resolve plugin/template regressions ([087d68d](https://github.com/IgorBabkin/release-monorepo-semantically/commit/087d68d4611db65f04f18acaae43c79df7dfec7b))
-* **render:** add handlebars helper registrations ([c27ccfc](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c27ccfcf13a48061400ce125ad333f4c1a0445b8))
+- **model:** restore commit hash field compatibility ([627a5bd](https://github.com/IgorBabkin/release-monorepo-semantically/commit/627a5bd7d8ca4bb22da9d3b3d418d949907e550f))
+- **release:** resolve plugin/template regressions ([087d68d](https://github.com/IgorBabkin/release-monorepo-semantically/commit/087d68d4611db65f04f18acaae43c79df7dfec7b))
+- **render:** add handlebars helper registrations ([c27ccfc](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c27ccfcf13a48061400ce125ad333f4c1a0445b8))
 
 # [1.5.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.3...v1.5.0) (2026-03-07)
 
-
 ### Features
 
-* **cli:** push and publish releases by default ([1f9d699](https://github.com/IgorBabkin/release-monorepo-semantically/commit/1f9d699cfa5e2d55d3ba0819ba3c872ea08460bb))
+- **cli:** push and publish releases by default ([1f9d699](https://github.com/IgorBabkin/release-monorepo-semantically/commit/1f9d699cfa5e2d55d3ba0819ba3c872ea08460bb))
 
 ## [1.4.3](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.2...v1.4.3) (2026-03-07)
 
-
 ### Bug Fixes
 
-* **cli:** repair packaged bin entrypoint ([63f2f65](https://github.com/IgorBabkin/release-monorepo-semantically/commit/63f2f65b101186f8d543b586c45a9c43503a3335))
+- **cli:** repair packaged bin entrypoint ([63f2f65](https://github.com/IgorBabkin/release-monorepo-semantically/commit/63f2f65b101186f8d543b586c45a9c43503a3335))
 
 ## [1.4.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.1...v1.4.2) (2026-03-07)
 
-
 ### Bug Fixes
 
-* **cli:** remove duplicate help handling ([d791077](https://github.com/IgorBabkin/release-monorepo-semantically/commit/d791077a3dc09d51970da7ace72dec0f3262253c))
+- **cli:** remove duplicate help handling ([d791077](https://github.com/IgorBabkin/release-monorepo-semantically/commit/d791077a3dc09d51970da7ace72dec0f3262253c))
 
 ## [1.4.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.4.0...v1.4.1) (2026-03-07)
 
-
 ### Bug Fixes
 
-* **release:** trigger publish ([5b220d0](https://github.com/IgorBabkin/release-monorepo-semantically/commit/5b220d02027161356a367e24a2a6547ec3f896c7))
+- **release:** trigger publish ([5b220d0](https://github.com/IgorBabkin/release-monorepo-semantically/commit/5b220d02027161356a367e24a2a6547ec3f896c7))
 
 # [1.4.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.3.0...v1.4.0) (2026-03-07)
 
-
 ### Bug Fixes
 
-* **cli:** stream commit hook output ([c92c672](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c92c6726725b148ed462039d43bcefcb866aab10))
-
+- **cli:** stream commit hook output ([c92c672](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c92c6726725b148ed462039d43bcefcb866aab10))
 
 ### Features
 
-* **cli:** style release progress logs ([da51906](https://github.com/IgorBabkin/release-monorepo-semantically/commit/da519067eb21587f7671556db4eded2753aec105))
-* **templates:** add emoji to release artifacts ([e488110](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e48811019408a30814265cb8cf482d06cd8a5110))
+- **cli:** style release progress logs ([da51906](https://github.com/IgorBabkin/release-monorepo-semantically/commit/da519067eb21587f7671556db4eded2753aec105))
+- **templates:** add emoji to release artifacts ([e488110](https://github.com/IgorBabkin/release-monorepo-semantically/commit/e48811019408a30814265cb8cf482d06cd8a5110))
 
 # [1.3.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.2.1...v1.3.0) (2026-03-07)
 
-
 ### Bug Fixes
 
-* **templates:** preserve handlebars formatting ([8e2fa19](https://github.com/IgorBabkin/release-monorepo-semantically/commit/8e2fa19496e03c9ee0c1c5db6a4e18143920db12))
-
+- **templates:** preserve handlebars formatting ([8e2fa19](https://github.com/IgorBabkin/release-monorepo-semantically/commit/8e2fa19496e03c9ee0c1c5db6a4e18143920db12))
 
 ### Features
 
-* **release:** publish aggregated release commit details ([228d98e](https://github.com/IgorBabkin/release-monorepo-semantically/commit/228d98e1e40b6b08b0fc91fbf420d9b1a8df0401))
+- **release:** publish aggregated release commit details ([228d98e](https://github.com/IgorBabkin/release-monorepo-semantically/commit/228d98e1e40b6b08b0fc91fbf420d9b1a8df0401))
 
 ## [1.2.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.2.0...v1.2.1) (2026-03-07)
 
-
 ### Bug Fixes
 
-* **release:** skip changelog for skipped bumps ([0f98acf](https://github.com/IgorBabkin/release-monorepo-semantically/commit/0f98acf83a8979e39e7983b3b791c109c1639a5a))
+- **release:** skip changelog for skipped bumps ([0f98acf](https://github.com/IgorBabkin/release-monorepo-semantically/commit/0f98acf83a8979e39e7983b3b791c109c1639a5a))
 
 # [1.2.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.1.2...v1.2.0) (2026-03-07)
 
-
 ### Features
 
-* **release:** keep releases local and add dry run ([14d06ec](https://github.com/IgorBabkin/release-monorepo-semantically/commit/14d06ecdcbd307f0599e7ff6050b262cbf342b4c))
+- **release:** keep releases local and add dry run ([14d06ec](https://github.com/IgorBabkin/release-monorepo-semantically/commit/14d06ecdcbd307f0599e7ff6050b262cbf342b4c))
 
 ## [1.1.2](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.1.1...v1.1.2) (2026-03-07)
 
-
 ### Bug Fixes
 
-* **templates:** make bundled defaults optional fallback ([5afa5fb](https://github.com/IgorBabkin/release-monorepo-semantically/commit/5afa5fbb960c85091d00226f204ef8ecd59a0742))
+- **templates:** make bundled defaults optional fallback ([5afa5fb](https://github.com/IgorBabkin/release-monorepo-semantically/commit/5afa5fbb960c85091d00226f204ef8ecd59a0742))
 
 ## [1.1.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.1.0...v1.1.1) (2026-03-07)
 
-
 ### Bug Fixes
 
-* **cli:** support help with directory workspaces ([cdb51a1](https://github.com/IgorBabkin/release-monorepo-semantically/commit/cdb51a1bb421dfceb15eba8dabdade84632fbc46))
+- **cli:** support help with directory workspaces ([cdb51a1](https://github.com/IgorBabkin/release-monorepo-semantically/commit/cdb51a1bb421dfceb15eba8dabdade84632fbc46))
 
 # [1.1.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.0.0...v1.1.0) (2026-03-07)
 
-
 ### Bug Fixes
 
-* **ci:** add npm token fallback for release ([7ee9919](https://github.com/IgorBabkin/release-monorepo-semantically/commit/7ee991977f6669442746749ea11e4630b36bc2b6))
-* **release:** add missing changelog plugin ([1284be1](https://github.com/IgorBabkin/release-monorepo-semantically/commit/1284be1313804e3fc703289c71c058ba610c07cd))
-* **release:** trigger release ([c57ef4c](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c57ef4ce317405229ef028fd5a7957204ce7895a))
-
+- **ci:** add npm token fallback for release ([7ee9919](https://github.com/IgorBabkin/release-monorepo-semantically/commit/7ee991977f6669442746749ea11e4630b36bc2b6))
+- **release:** add missing changelog plugin ([1284be1](https://github.com/IgorBabkin/release-monorepo-semantically/commit/1284be1313804e3fc703289c71c058ba610c07cd))
+- **release:** trigger release ([c57ef4c](https://github.com/IgorBabkin/release-monorepo-semantically/commit/c57ef4ce317405229ef028fd5a7957204ce7895a))
 
 ### Features
 
-* enable npm package provenance for OIDC publish ([b5b55a7](https://github.com/IgorBabkin/release-monorepo-semantically/commit/b5b55a7143523e8f387ec5d0f1e402f76da6ddf2))
+- enable npm package provenance for OIDC publish ([b5b55a7](https://github.com/IgorBabkin/release-monorepo-semantically/commit/b5b55a7143523e8f387ec5d0f1e402f76da6ddf2))

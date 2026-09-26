@@ -84,6 +84,8 @@ Non-release types: `docs`, `test`, `ci`, `chore`, `refactor`, `style`.
 
 Package scope is matched by package name.
 
+To force a level regardless of rules, put `[major]`, `[minor]`, `[patch]`, or `[skip-bump]` in the commit subject, e.g. `chore: drop node 18 [major]`. The tag is stripped from the subject and overrides the rule-based level for that commit.
+
 This mapping is `report`'s default configuration, not a fixed rule — see [Configuring release rules](#configuring-release-rules) to change or extend it.
 
 ## Steps
@@ -128,13 +130,16 @@ Steps read settings from a `release` section in the root `package.json`, a root 
 }
 ```
 
-`.release.json` uses the same shape without the `release` wrapper:
+`.release.json` uses the same shape without the `release` wrapper. Point `$schema` at the JSON Schema shipped with the package to get editor validation and autocompletion:
 
 ```json
 {
+  "$schema": "./node_modules/release-monorepo-semantically/dist/release.schema.json",
   "vcs": { "template": "templates/release-commit-msg.hbs" }
 }
 ```
+
+The schema is generated from the same definitions the CLI validates with, and is also importable as `release-monorepo-semantically/release.schema.json`.
 
 `dryRun: true` in any section makes that step always preview, equivalent to always passing `--dry-run` to it.
 
@@ -234,6 +239,10 @@ Default templates ship with the package and are used automatically. Override per
 - `release-notes` — GitHub release notes body
 
 Templates are [Handlebars](https://handlebarsjs.com/), with `now`, `hasBreakingChanges`, `hasFeatures`, `hasFixes`, `hasPerformance`, `hasOthers`, `findBreakingChanges`, `findFeatures`, `findFixes`, `findPerformance`, `findOthers`, `lookup`, and `call` helpers registered. `hasOthers`/`findOthers` cover any commit type that isn't `feat`, `fix`, or `perf` — the bucket a custom `report.bumps` matcher (e.g. `docs`) lands in.
+
+## For AI agents
+
+The package ships [`llms.txt`](llms.txt), a compact guide for coding agents: the pipeline, the release context format, config, and every error code with its fix. After installation it is at `node_modules/release-monorepo-semantically/llms.txt`. Point your agent at it (e.g. from your `AGENTS.md` or `CLAUDE.md`) when it sets up or debugs a release pipeline.
 
 ## Development
 

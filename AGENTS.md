@@ -116,3 +116,5 @@ Expected outcomes:
 - Favor BDD-style test names and end-to-end scenarios that describe user-visible release behavior.
 - Progress logs go to stderr, not stdout — `report`'s stdout must stay pure JSON so `RELEASE_CONTEXT=$(monorepo-semantic-release report)` works without stripping log lines.
 - `SPECS.md` is the authoritative product specification. Consult it before changing release semantics.
+- `llms.txt` is the consumer-facing guide for code agents and ships in the npm package. When CLI steps, flags, the release context shape, config, or error codes change, update it alongside `README.md`.
+- `dist/release.schema.json` is generated at build time (`scripts/generate-schema.mjs`) from `src/schema/releaseConfigSchema.ts`, which composes every step's `PLUGIN_CONFIG_SCHEMA`. A new step's config must be added there; field `.describe()` texts become the schema's descriptions.
