@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DEFAULT_MAJOR_MATCHERS, DEFAULT_MINOR_MATCHERS, DEFAULT_PATCH_MATCHERS } from '../../domain/ConventionalCommit.js';
+import { SquashCommitPattern } from '../../domain/SquashCommitPattern.js';
 
 export const CONFIG_KEY = 'report';
 
@@ -10,6 +11,19 @@ const BUMP_MATCHER_SCHEMA = z.object({
   packages: z.union([z.literal('*'), z.array(z.string())]).optional(),
 });
 
+const isValidRegExp = (source: string): boolean => {
+  try {
+    new RegExp(source);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const REGEXP_SCHEMA = z.string().min(1).refine(isValidRegExp, 'must be a valid regular expression');
+
+const SQUASH_SCHEMA = z.union([z.literal('github'), z.object({ detect: REGEXP_SCHEMA, entry: REGEXP_SCHEMA })]);
+
 export const PLUGIN_CONFIG_SCHEMA = z.object({
   bumps: z
     .object({
@@ -18,5 +32,6 @@ export const PLUGIN_CONFIG_SCHEMA = z.object({
       patch: z.array(BUMP_MATCHER_SCHEMA).default(DEFAULT_PATCH_MATCHERS),
     })
     .default({ major: DEFAULT_MAJOR_MATCHERS, minor: DEFAULT_MINOR_MATCHERS, patch: DEFAULT_PATCH_MATCHERS }),
+  squash: SQUASH_SCHEMA.optional().transform((squash) => (squash === undefined ? undefined : SquashCommitPattern.fromConfig(squash))),
 });
 export type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;

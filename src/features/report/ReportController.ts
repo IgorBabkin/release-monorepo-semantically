@@ -58,7 +58,7 @@ export class ReportController {
     const releasedCommits = new Map<PackageName, ConventionalCommit[]>();
 
     for (const pkg of this.publicPackages) {
-      const commitsSinceTag = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag());
+      const commitsSinceTag = this.vsc.findManyCommitsSinceTag(pkg.getCommitTag(), this.config.squash);
       const commitBumps = commitsSinceTag
         .map((c) => [c, c.bumpMatch(this.config.bumps, pkg.name)] as const)
         .filter(([, level]) => level !== SemVerBumpType.NONE);
