@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.12.1...v1.13.0) (2026-09-26)
+
+
+### Features
+
+* detect squash commits and read their squashed commits ([257d5f6](https://github.com/IgorBabkin/release-monorepo-semantically/commit/257d5f6862923e57dfa0c2d2ceb5538354283c0c))
+
 ## [1.12.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.12.0...v1.12.1) (2026-09-17)
 
 
