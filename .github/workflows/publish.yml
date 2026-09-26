@@ -16,30 +16,8 @@ permissions:
   packages: write # Required for publishing to GitHub Packages
 
 jobs:
-  build:
-    name: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run lint
-      - run: pnpm run typecheck
-      - run: pnpm test
-      - run: pnpm run build
-      - run: pnpm run test:e2e
-
-      - name: Upload build artifact
-        uses: ./.github/actions/upload-build-artifact
-
   publish:
     name: release
-    needs: build
     environment:
       name: production
       url: https://www.npmjs.com/package/release-monorepo-semantically
@@ -56,26 +34,22 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
 
-      - name: Download build artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: build-output
-          path: dist
+      - name: Configure Git
+        uses: ./.github/actions/configure-git-bot
 
       # OIDC authentication is automatically used when:
       # 1. permissions.id-token: write is set (see top of file)
       # 2. npm 11.5.1+ is installed (Node 25's bundled npm already satisfies this)
       # 3. Trusted Publishing is configured in npm account settings
-      - name: Check npm version
-        run: npm --version
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Configure Git
-        uses: ./.github/actions/configure-git-bot
-
-      - name: Release
-        id: release
+      - name: Build, test, and release
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: npx semantic-release
+          RELEASE_TOKEN: ${{ github.token }}
+        run: |
+          npm --version
+          pnpm install --frozen-lockfile
+          pnpm run lint
+          pnpm run typecheck
+          pnpm test
+          pnpm run build
+          pnpm run test:e2e
+          GITHUB_TOKEN="$RELEASE_TOKEN" npx semantic-release
