@@ -19,8 +19,10 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run lint
-      - run: pnpm run typecheck
-      - run: pnpm test
-      - run: pnpm run test:e2e
+      - name: Install, lint, typecheck, and test
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run lint
+          pnpm run typecheck
+          pnpm test
+          pnpm run test:e2e
