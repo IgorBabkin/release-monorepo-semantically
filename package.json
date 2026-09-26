@@ -1,9 +1,23 @@
 {
   "name": "release-monorepo-semantically",
   "version": "1.12.1",
-  "description": "cli commands to manage versioning of package in monorepo and generate changelog",
+  "description": "CLI that versions, changelogs, tags, and publishes the packages of a pnpm monorepo from conventional commits, as independent composable CI steps",
+  "keywords": [
+    "monorepo",
+    "pnpm",
+    "workspaces",
+    "semantic-release",
+    "semver",
+    "conventional-commits",
+    "changelog",
+    "release",
+    "versioning",
+    "cli",
+    "ci",
+    "github-actions"
+  ],
   "license": "ISC",
-  "author": "",
+  "author": "Igor Babkin",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,14 +25,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./release.schema.json": "./dist/release.schema.json",
+    "./llms.txt": "./llms.txt",
+    "./package.json": "./package.json"
   },
   "bin": {
     "monorepo-semantic-release": "bin/release.mjs"
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "llms.txt"
   ],
   "publishConfig": {
     "access": "public",
@@ -28,12 +46,16 @@
     "type": "git",
     "url": "git+https://github.com/IgorBabkin/release-monorepo-semantically.git"
   },
+  "homepage": "https://github.com/IgorBabkin/release-monorepo-semantically#readme",
+  "bugs": {
+    "url": "https://github.com/IgorBabkin/release-monorepo-semantically/issues"
+  },
   "engines": {
     "node": ">=20.11"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json && node scripts/copy-templates.mjs",
+    "build": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json && node scripts/copy-templates.mjs && node scripts/generate-schema.mjs",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "lint": "eslint src/",

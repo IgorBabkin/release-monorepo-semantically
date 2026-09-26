@@ -1,0 +1,119 @@
+# release-monorepo-semantically
+
+> CLI (`monorepo-semantic-release`) that versions, changelogs, tags, and publishes the public packages of a pnpm workspace from conventional commits. It is a set of independent steps, not one command: `report` computes a JSON release context, and every other step consumes that context via `--context` and does one job. The caller (a CI pipeline or shell script) chooses which steps run and in what order.
+
+Full docs: https://github.com/IgorBabkin/release-monorepo-semantically#readme
+Config JSON Schema (shipped in the package): `release-monorepo-semantically/release.schema.json` (file: `node_modules/release-monorepo-semantically/dist/release.schema.json`)
+
+## Install
+
+```bash
+pnpm add -D release-monorepo-semantically
+```
+
+Requires Node >=20.11, a git repository, a root `package.json` with `workspaces` globs, and `name` plus a `major.minor.patch` `version` in every workspace package.
+
+## Canonical pipeline
+
+Run from the workspace root, in this order:
+
+```bash
+RELEASE_CONTEXT=$(monorepo-semantic-release report)                        # fails if the working tree is dirty
+monorepo-semantic-release package-json    --context "$RELEASE_CONTEXT"    # pin internal deps to exact new versions, refresh lockfile
+monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"    # write new versions into package.json files
+monorepo-semantic-release changelog       --context "$RELEASE_CONTEXT"    # prepend CHANGELOG.md entries
+monorepo-semantic-release vcs             --context "$RELEASE_CONTEXT"    # commit, tag, push
+monorepo-semantic-release package-manager publish --context "$RELEASE_CONTEXT"  # optional: pnpm publish
+monorepo-semantic-release release-notes   --context "$RELEASE_CONTEXT"    # optional: GitHub Releases via `gh`, needs GITHUB_TOKEN + GITHUB_REPOSITORY
+```
+
+- Syntax: `monorepo-semantic-release <step> [action] [--flags]`.
+- stdout of `report` is pure JSON; all progress logs go to stderr. Capture it directly, never with `2>&1`.
+- Every step accepts `--dry-run` (no file, git, or registry mutation for that step).
+- `vcs` actions: default runs `commit`, `tag`, `push`; each is also callable alone (`vcs commit`, `vcs tag`, `vcs push`).
+- `package-manager` actions: default writes versions; `publish` publishes. They are separate on purpose.
+- `--template <path>` overrides the Handlebars template for `changelog`, `vcs commit`, and `release-notes`. `changelog` also takes `--changelog-name <file>`.
+- If nothing needs releasing, `report` emits a context with empty maps and the later steps are no-ops.
+
+## Release context (`report` output)
+
+```json
+{
+  "releasedVersions": { "@acme/core": "1.3.0" },
+  "releasedPackages": [
+    { "name": "@acme/core", "dirname": "/abs/path/packages/core", "version": "1.2.4", "isPrivate": false, "dependencies": {}, "devDependencies": {} }
+  ],
+  "releasedCommits": {
+    "@acme/core": [{ "type": "feat", "scope": "@acme/core", "subject": "add thing", "isBreaking": false, "hash": "abc1234..." }]
+  }
+}
+```
+
+`releasedVersions` maps package name to its new version. `releasedPackages[].version` is the version before the release. A commit may also carry `explicitBump` (0 none, 1 patch, 2 minor, 3 major).
+
+## How bumps are computed
+
+- Commits are read per package since its last tag `<package-name>@<version>` (tag format is fixed). With no tag, all history counts.
+- Default rules: `feat(<package-name>)` -> minor; `fix(<package-name>)` / `perf(<package-name>)` -> patch; `!` or `BREAKING CHANGE` -> major. The scope must equal the full package name, e.g. `fix(@acme/core): ...`.
+- `docs`, `test`, `ci`, `chore`, `refactor`, `style`, and unparseable messages do not release by default.
+- A package whose internal dependency was released in the same run gets at least a minor bump. Packages are processed dependencies-first.
+- Priority: major > minor > patch > none.
+- Explicit override: `[major]`, `[minor]`, `[patch]`, or `[skip-bump]` in a commit subject replaces the rule-based level for that commit.
+- Private packages (`"private": true`) are never released.
+- Internal dependency versions are written as exact versions; `workspace:` specifiers and `peerDependencies` are left alone.
+
+## Configuration
+
+Put it in `.release.json` at the workspace root, or under `"release"` in the root `package.json`. When both configure the same step, `.release.json` replaces that step's whole section. CLI flags win over both. Add `"$schema"` for editor validation:
+
+```json
+{
+  "$schema": "./node_modules/release-monorepo-semantically/dist/release.schema.json",
+  "report": {
+    "bumps": {
+      "patch": [
+        { "type": "fix", "scope": "<package>" },
+        { "type": "perf", "scope": "<package>" },
+        { "type": "docs", "scope": "specs", "packages": "*" }
+      ]
+    }
+  },
+  "changelog": { "template": "templates/changelog.hbs", "changelogName": "CHANGELOG.md" },
+  "vcs": { "template": "templates/release-commit-msg.hbs" },
+  "release-notes": { "repository": "acme/repo" },
+  "package-manager": { "kind": "pnpm" }
+}
+```
+
+Sections: `report`, `package-json`, `package-manager`, `changelog`, `vcs`, `release-notes`. Any section accepts `"dryRun": true`.
+
+`report.bumps.<major|minor|patch>` is a list of matchers `{ type?, scope?, breaking?, packages? }`. A configured level replaces that level's defaults entirely (repeat the defaults you want to keep); unconfigured levels keep their defaults. `scope: "<package>"` means "equals the package being considered". `packages: "*"` releases every public package on a match.
+
+## Templates
+
+Handlebars. Default templates ship in `dist/features/{changelog/changelog.hbs,vcs/release-commit-msg.hbs,releaseNotes/github-release-notes.hbs}` and are good starting points to copy. Helpers: `now`, `hasBreakingChanges`, `hasFeatures`, `hasFixes`, `hasPerformance`, `hasOthers`, `findBreakingChanges`, `findFeatures`, `findFixes`, `findPerformance`, `findOthers`, `lookup`, `call`.
+
+## Errors
+
+Failures print `[CODE] message` to stderr and exit with code 1.
+
+| Code | Meaning / fix |
+| --- | --- |
+| `DIRTY_WORKING_TREE` | `report` needs a clean tree. Commit or stash first. |
+| `INVALID_ROOT_PACKAGE_JSON` | Root `package.json` is missing `workspaces` or is malformed. |
+| `INVALID_PACKAGE_JSON` | A workspace package lacks `name` or a `major.minor.patch` `version`. |
+| `MISSING_PACKAGE_JSON` | A workspace glob matched a directory with no `package.json`. |
+| `INVALID_CONFIG` | A config section fails the schema. The message names the section and field. |
+| `MISSING_GITHUB_CREDENTIALS` | `release-notes` needs `repository`/`token` config or `GITHUB_REPOSITORY`/`GITHUB_TOKEN`. |
+| `GITHUB_CLI_UNAVAILABLE` | `release-notes` needs `gh` on `PATH`. |
+| `MISSING_DEPENDENCY_VERSION` | A dependency listed for update isn't declared in the package. |
+| `MISSING_CONTROLLER` | No step name was given. |
+
+## Programmatic use
+
+```ts
+import { runCli } from 'release-monorepo-semantically';
+// Same arguments as the CLI; returns the exit code. Run with process.cwd() at the
+// workspace root: git commands use the process working directory.
+const exitCode = runCli(['report']);
+```
