@@ -20,4 +20,9 @@ describe('releaseConfigJsonSchema', () => {
     const bumps = schema.properties.report.properties.bumps as { properties: Record<string, { items: { properties: object } }> };
     expect(Object.keys(bumps.properties.patch.items.properties).sort()).toEqual(['breaking', 'packages', 'scope', 'type']);
   });
+
+  it('describes the squash option by its input shape, not the parsed pattern', () => {
+    expect(JSON.stringify(schema.properties.report.properties.squash)).toContain('"github"');
+    expect(JSON.stringify(schema.properties.report.properties.squash)).toContain('"detect"');
+  });
 });

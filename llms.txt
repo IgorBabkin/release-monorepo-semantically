@@ -54,11 +54,12 @@ monorepo-semantic-release release-notes   --context "$RELEASE_CONTEXT"    # opti
 ## How bumps are computed
 
 - Commits are read per package since its last tag `<package-name>@<version>` (tag format is fixed). With no tag, all history counts.
-- Default rules: `feat(<package-name>)` -> minor; `fix(<package-name>)` / `perf(<package-name>)` -> patch; `!` or `BREAKING CHANGE` -> major. The scope must equal the full package name, e.g. `fix(@acme/core): ...`.
+- Default rules: `feat(<package-name>)` -> minor; `fix(<package-name>)` / `perf(<package-name>)` -> patch; `!` (e.g. `feat(@acme/core)!: ...`) -> major. Only commit headers are read, so a `BREAKING CHANGE:` footer in the body is not seen; use `!`. The scope must equal the full package name, e.g. `fix(@acme/core): ...`.
 - `docs`, `test`, `ci`, `chore`, `refactor`, `style`, and unparseable messages do not release by default.
 - A package whose internal dependency was released in the same run gets at least a minor bump. Packages are processed dependencies-first.
 - Priority: major > minor > patch > none.
 - Explicit override: `[major]`, `[minor]`, `[patch]`, or `[skip-bump]` in a commit subject replaces the rule-based level for that commit.
+- Squash merges: by default only a squash commit's subject (e.g. the PR title) is analyzed. Set `report.squash` to `"github"` (GitHub's default squash message) or `{ "detect": "<subject regex>", "entry": "<body line regex>" }` to analyze the commits listed in its body instead. Prefer merge or rebase merges, or a conventional squash title.
 - Private packages (`"private": true`) are never released.
 - Internal dependency versions are written as exact versions; `workspace:` specifiers and `peerDependencies` are left alone.
 
@@ -87,7 +88,7 @@ Put it in `.release.json` at the workspace root, or under `"release"` in the roo
 
 Sections: `report`, `package-json`, `package-manager`, `changelog`, `vcs`, `release-notes`. Any section accepts `"dryRun": true`.
 
-`report.bumps.<major|minor|patch>` is a list of matchers `{ type?, scope?, breaking?, packages? }`. A configured level replaces that level's defaults entirely (repeat the defaults you want to keep); unconfigured levels keep their defaults. `scope: "<package>"` means "equals the package being considered". `packages: "*"` releases every public package on a match.
+`report.bumps.<major|minor|patch>` is a list of matchers `{ type?, scope?, breaking?, packages? }`. A configured level replaces that level's defaults entirely (repeat the defaults you want to keep); unconfigured levels keep their defaults. `scope: "<package>"` means "equals the package being considered". `packages: "*"` releases every public package on a match. `report.squash` is described above.
 
 ## Templates
 

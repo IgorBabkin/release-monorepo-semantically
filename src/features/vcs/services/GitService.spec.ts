@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { execSync } from 'node:child_process';
 import { GitService } from './GitService.js';
+import { SquashCommitPattern } from '../../../domain/SquashCommitPattern.js';
 
 vi.mock('node:child_process', () => ({
   execSync: vi.fn(),
@@ -24,14 +25,14 @@ describe('GitService', () => {
   });
 
   it('given an existing tag when commit history is queried then commits are read from tag range', () => {
-    vi.mocked(execSync).mockReturnValueOnce('refs/tags/pkg-a@1.0.0\n').mockReturnValueOnce('abcd123 fix(pkg-a): bug fix\n');
+    vi.mocked(execSync).mockReturnValueOnce('refs/tags/pkg-a@1.0.0\n').mockReturnValueOnce('abcd123\x1ffix(pkg-a): bug fix\x1f\x1e\n');
 
     const service = new GitService();
 
     const commits = service.findManyCommitsSinceTag('pkg-a@1.0.0');
 
     expect(execSync).toHaveBeenNthCalledWith(1, 'git rev-parse --verify --quiet refs/tags/pkg-a@1.0.0', { encoding: 'utf-8' });
-    expect(execSync).toHaveBeenNthCalledWith(2, 'git log pkg-a@1.0.0..HEAD --format="%H %s"', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git log pkg-a@1.0.0..HEAD --format="%H%x1f%s%x1f%b%x1e"', { encoding: 'utf-8' });
     expect(commits).toHaveLength(1);
     expect(commits[0].type).toBe('fix');
     expect(commits[0].hash).toBe('abcd123');
@@ -48,8 +49,39 @@ describe('GitService', () => {
 
     const commits = service.findManyCommitsSinceTag('pkg-a@1.0.0');
 
-    expect(execSync).toHaveBeenNthCalledWith(2, 'git log HEAD --format="%H %s"', { encoding: 'utf-8' });
+    expect(execSync).toHaveBeenNthCalledWith(2, 'git log HEAD --format="%H%x1f%s%x1f%b%x1e"', { encoding: 'utf-8' });
     expect(commits).toEqual([]);
+  });
+
+  it('given a commit body when no squash pattern is given then only the subject is parsed', () => {
+    vi.mocked(execSync)
+      .mockReturnValueOnce('refs/tags/pkg-a@1.0.0\n')
+      .mockReturnValueOnce('abcd123\x1ffeat(pkg-a): add x (#12)\x1f* fix(pkg-a): y\n\n* fix(pkg-a): z\x1e\n');
+
+    const commits = new GitService().findManyCommitsSinceTag('pkg-a@1.0.0');
+
+    expect(commits.map((c) => c.toJSON())).toEqual([{ type: 'feat', scope: 'pkg-a', subject: 'add x (#12)', isBreaking: false, hash: 'abcd123' }]);
+  });
+
+  it('given a squash commit when a squash pattern is given then it is replaced by its squashed commits', () => {
+    vi.mocked(execSync)
+      .mockReturnValueOnce('refs/tags/pkg-a@1.0.0\n')
+      .mockReturnValueOnce(
+        [
+          'abcd123\x1ffeat(pkg-a): add x (#12)\x1f* feat(pkg-a)!: new api\n\nbody text\n\n* fix(pkg-b): y\n\nCo-authored-by: someone\x1e',
+          'ef01234\x1ffix(pkg-a): plain commit\x1f\x1e',
+          '5678abc\x1ffix(pkg-a): single-commit PR (#13)\x1fno bullets here\x1e',
+        ].join('\n'),
+      );
+
+    const commits = new GitService().findManyCommitsSinceTag('pkg-a@1.0.0', SquashCommitPattern.fromConfig('github'));
+
+    expect(commits.map((c) => [c.hash, c.type, c.scope, c.subject, c.isBreaking])).toEqual([
+      ['abcd123', 'feat', 'pkg-a', 'new api', true],
+      ['abcd123', 'fix', 'pkg-b', 'y', false],
+      ['ef01234', 'fix', 'pkg-a', 'plain commit', false],
+      ['5678abc', 'fix', 'pkg-a', 'single-commit PR (#13)', false],
+    ]);
   });
 
   it('given push with and without tags when push runs then tag push is conditional', () => {

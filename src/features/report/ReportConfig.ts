@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DEFAULT_MAJOR_MATCHERS, DEFAULT_MINOR_MATCHERS, DEFAULT_PATCH_MATCHERS } from '../../domain/ConventionalCommit.js';
+import { SquashCommitPattern } from '../../domain/SquashCommitPattern.js';
 
 export const CONFIG_KEY = 'report';
 
@@ -15,6 +16,27 @@ const BUMP_MATCHER_SCHEMA = z
   })
   .describe('A commit matching every given field triggers the bump level this matcher is listed under.');
 
+const isValidRegExp = (source: string): boolean => {
+  try {
+    new RegExp(source);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const REGEXP_SCHEMA = z.string().min(1).refine(isValidRegExp, 'must be a valid regular expression');
+
+const SQUASH_SCHEMA = z.union([
+  z.literal('github'),
+  z.object({
+    detect: REGEXP_SCHEMA.describe('Regex tested against a commit subject; a match marks it as a squash commit.'),
+    entry: REGEXP_SCHEMA.describe(
+      'Regex tested against each body line of a squash commit; a match is one squashed commit header (capture group 1 if present).',
+    ),
+  }),
+]);
+
 export const PLUGIN_CONFIG_SCHEMA = z.object({
   bumps: z
     .object({
@@ -24,5 +46,10 @@ export const PLUGIN_CONFIG_SCHEMA = z.object({
     })
     .default({ major: DEFAULT_MAJOR_MATCHERS, minor: DEFAULT_MINOR_MATCHERS, patch: DEFAULT_PATCH_MATCHERS })
     .describe("Matchers per bump level. A configured level replaces that level's defaults entirely (no merging); unconfigured levels keep their defaults."),
+  squash: SQUASH_SCHEMA.optional()
+    .describe(
+      'How to recognize squash-merge commits and read the conventional commits listed in their body: "github" for GitHub\'s default squash message, or { detect, entry } regexes. Omitted: squash commits are read by their subject only.',
+    )
+    .transform((squash) => (squash === undefined ? undefined : SquashCommitPattern.fromConfig(squash))),
 });
 export type PluginConfig = z.infer<typeof PLUGIN_CONFIG_SCHEMA>;
