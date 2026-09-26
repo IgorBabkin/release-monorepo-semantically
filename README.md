@@ -186,6 +186,45 @@ Note the `patch` list above repeats the default `fix`/`perf` matchers — since 
 
 The default changelog template only renders `feat`/`fix`/`perf`/breaking commits under their own headings; anything else (including a newly release-triggering type like `docs`) renders under a generic "Other Changes" section (via the `hasOthers`/`findOthers` template helpers). Override `changelog`'s template if you want different grouping for a custom type.
 
+## Squash commits
+
+> **Recommendation: don't squash-merge, or write one conventional message when you do.** Prefer merge commits or rebase-merging so every conventional commit reaches the release branch as-is. If you squash, the [Conventional Commits FAQ](https://www.conventionalcommits.org/en/v1.0.0/#faq) expects the maintainer to write the squash commit's message as a single conventional commit at merge time. The option below is a fallback for repositories that can't do either.
+
+A squash merge collapses a branch into one commit. By default `report` reads only that commit's subject line, so the conventional commits folded into its body are invisible: a PR titled `chore: add both packages (#7)` that squashed `feat(pkg-a): …` and `fix(pkg-b): …` releases nothing.
+
+There is no standard format for squash commit messages. Conventional Commits doesn't define one, and each Git host writes its own. So `report` doesn't guess: you describe your format with `report.squash`, and `report` then replaces each squash commit it detects with the commits listed in its body.
+
+```json
+{
+  "report": { "squash": "github" }
+}
+```
+
+`"github"` is a preset for GitHub's default squash-merge message: the PR title ending in `(#<number>)`, and a body with one `* <commit header>` bullet per squashed commit. For any other format, give two regular expressions (JavaScript syntax, as JSON strings):
+
+| Field    | Tested against                    | Meaning                                                                                                            |
+| -------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `detect` | the commit's subject line         | a match marks the commit as a squash commit                                                                        |
+| `entry`  | each line of a squash commit body | a match is the header of one squashed commit: capture group 1 if the expression has one, otherwise the whole match |
+
+The `"github"` preset is equivalent to:
+
+```json
+{
+  "report": { "squash": { "detect": "\\(#\\d+\\)$", "entry": "^\\* (.+)$" } }
+}
+```
+
+How a detected squash commit is read:
+
+- Each entry is parsed as its own conventional commit and goes through the normal [release rules](#configuring-release-rules). Entries keep the squash commit's hash, because the original commits don't exist on the release branch.
+- The squash commit's own subject (the PR title) is **not** analyzed as well, so its changes aren't counted twice.
+- If no body line matches `entry`, the commit falls back to its subject. For example, GitHub squashes a single-commit PR into that commit's own message, with no bullets.
+- Only entry headers are read. A `BREAKING CHANGE:` footer inside a squashed commit's body is lost, so use `!` in the header (`feat(pkg-a)!: …`) to mark a breaking change.
+- Explicit bump tags (`[major]`, `[minor]`, `[patch]`, `[skip-bump]`) work inside entries just as they do in regular commits.
+
+An invalid regular expression fails `report` with `INVALID_CONFIG`.
+
 ## Templates
 
 Default templates ship with the package and are used automatically. Override per step with `--template <path>` (relative to the working directory) or the matching config section:

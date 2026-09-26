@@ -55,6 +55,12 @@ chore: update dependencies
 
 **Current behavior:** `report` does not validate commit format. A commit that doesn't parse as `<type>(<scope>): <subject>` is treated as `type: "unknown"` with no bump (equivalent to a non-release type like `chore`) and is silently excluded from the release — it neither triggers a bump nor fails the run. Enforcing conventional commit format (e.g. via commitlint in a commit-msg hook) is left to the consuming repository; `report` only classifies what it finds.
 
+### Squash commits
+
+Squash merging is **not recommended**: Conventional Commits defines no format for a squash commit's message and treats the squash as one commit whose message the maintainer writes. By default `report` reads only a commit's subject, so commits listed in a squash commit's body are ignored.
+
+When `report.squash` is configured (the `"github"` preset, or `{ detect, entry }` regular expressions), a commit whose subject matches `detect` is replaced by the commits whose headers are matched by `entry` in its body, line by line. Each entry keeps the squash commit's hash. The squash commit's own subject is not analyzed as well. If no body line matches, the commit falls back to its subject. Only entry headers are read, so a `BREAKING CHANGE:` footer inside a squashed commit is lost; `!` in the header is not.
+
 ## CLI Interface
 
 There is no single release command. The tool is a set of independent steps — `report`, `package-json`, `package-manager`, `changelog`, `vcs`, `release-notes` — invoked as `monorepo-semantic-release <controller> [action] [--flags...]`. `report` reads the repository and computes what should release; every other step receives that result via `--context <json>` and does one job. The caller (a CI pipeline, or a local shell loop) decides which steps to run, in what order, and whether to run them at all — the tool does not orchestrate a multi-step release itself. See [CI Integration User Story](#ci-integration-user-story) below for the canonical sequence, and `README.md` for the full command reference.
@@ -448,7 +454,7 @@ out to `pnpm version`.
   from a workspace root it has been pointed at.
 - The same resolution runs install lifecycle scripts (`postinstall` included)
   against a tree the release step has no business rebuilding.
-- It writes the new version *before* it fails, so a failed bump still leaves
+- It writes the new version _before_ it fails, so a failed bump still leaves
   the manifest changed.
 
 Everything it was used for is covered elsewhere: the version format is

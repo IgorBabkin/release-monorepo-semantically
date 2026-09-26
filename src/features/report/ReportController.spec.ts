@@ -11,6 +11,7 @@ import { ILogger } from '../../services/ConsoleLogger.js';
 import { OutputService } from '../../services/OutputService.js';
 import { IFileSystemService } from '../../services/NodeFileSystemService.js';
 import { DirtyWorkingTreeException } from '../../exceptions/DomainException.js';
+import { SquashCommitPattern } from '../../domain/SquashCommitPattern.js';
 
 const DEFAULT_CONFIG = PLUGIN_CONFIG_SCHEMA.parse({});
 
@@ -31,7 +32,7 @@ describe('ReportController.generate', () => {
     const vsc = new Mock<VSCService>()
       .setup((m) => m.isWorkingTreeClean())
       .returns(true)
-      .setup((m) => m.findManyCommitsSinceTag(It.IsAny()))
+      .setup((m) => m.findManyCommitsSinceTag(It.IsAny(), It.IsAny()))
       .returns([]);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
@@ -58,9 +59,9 @@ describe('ReportController.generate', () => {
     const vsc = new Mock<VSCService>()
       .setup((m) => m.isWorkingTreeClean())
       .returns(true)
-      .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0'))
+      .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0', It.IsAny()))
       .returns([ConventionalCommit.parse('feat(pkg-a): add feature')])
-      .setup((m) => m.findManyCommitsSinceTag('pkg-b@2.0.0'))
+      .setup((m) => m.findManyCommitsSinceTag('pkg-b@2.0.0', It.IsAny()))
       .returns([ConventionalCommit.parse('fix(pkg-b): resolve bug')]);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
@@ -89,9 +90,9 @@ describe('ReportController.generate', () => {
     const vsc = new Mock<VSCService>()
       .setup((m) => m.isWorkingTreeClean())
       .returns(true)
-      .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0'))
+      .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0', It.IsAny()))
       .returns([ConventionalCommit.parse('docs(specs): extract cross-package specs')])
-      .setup((m) => m.findManyCommitsSinceTag('pkg-b@2.0.0'))
+      .setup((m) => m.findManyCommitsSinceTag('pkg-b@2.0.0', It.IsAny()))
       .returns([ConventionalCommit.parse('docs(specs): extract cross-package specs')]);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
@@ -119,7 +120,7 @@ describe('ReportController.generate', () => {
     const vsc = new Mock<VSCService>()
       .setup((m) => m.isWorkingTreeClean())
       .returns(true)
-      .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0'))
+      .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0', It.IsAny()))
       .returns([ConventionalCommit.parse('docs(pkg-a): update docs')]);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
@@ -130,6 +131,29 @@ describe('ReportController.generate', () => {
     controller.generate();
 
     logger.verify((m) => m.info('SKIP     pkg-a@1.0.0'), Times.Once());
+  });
+
+  it('given a configured squash pattern when generate runs then commit history is read with that pattern', () => {
+    const config = PLUGIN_CONFIG_SCHEMA.parse({ squash: 'github' });
+    const vsc = new Mock<VSCService>()
+      .setup((m) => m.isWorkingTreeClean())
+      .returns(true)
+      .setup((m) => m.findManyCommitsSinceTag('pkg-a@1.0.0', config.squash))
+      .returns([ConventionalCommit.parse('fix(pkg-a): squashed fix')]);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+    const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
+
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], config);
+
+    controller.generate();
+
+    expect(config.squash).toBeInstanceOf(SquashCommitPattern);
+    logger.verify((m) => m.info('BUMP     pkg-a 1.0.0 -> 1.0.1 (patch)'), Times.Once());
+  });
+
+  it('given a squash pattern with an invalid regular expression when config is parsed then it is rejected', () => {
+    expect(PLUGIN_CONFIG_SCHEMA.safeParse({ squash: { detect: '(', entry: '^\\* (.+)$' } }).success).toBe(false);
   });
 });
 
