@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.13.0...v1.14.0) (2026-09-26)
+
+
+### Features
+
+* ship llms.txt and a config JSON Schema for AI agents ([7a522dc](https://github.com/IgorBabkin/release-monorepo-semantically/commit/7a522dca88ad3446ba3f82c3e669d319dc958501))
+
 # [1.13.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.12.1...v1.13.0) (2026-09-26)
 
 ### Features
