@@ -76,6 +76,18 @@ describe('ConventionalCommit', () => {
         const commit = ConventionalCommit.parse('[skip-bump] feat(pkg-a)!: subject');
         expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.NONE);
       });
+
+      it('given a scoped explicit bump when resolved then only the matching package is bumped', () => {
+        const commit = ConventionalCommit.parse('feat(pkg-a)!: breaking [major]');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.MAJOR);
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-b')).toBe(SemVerBumpType.NONE);
+      });
+
+      it('given an unscoped explicit bump when resolved then every package is bumped', () => {
+        const commit = ConventionalCommit.parse('[major] feat: breaking');
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-a')).toBe(SemVerBumpType.MAJOR);
+        expect(commit.bumpMatch(DEFAULT_BUMPS, 'pkg-b')).toBe(SemVerBumpType.MAJOR);
+      });
     });
 
     describe("default matchers (today's hard-coded behaviour)", () => {

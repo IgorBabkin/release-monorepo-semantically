@@ -58,7 +58,7 @@ monorepo-semantic-release release-notes   --context "$RELEASE_CONTEXT"    # opti
 - `docs`, `test`, `ci`, `chore`, `refactor`, `style`, and unparseable messages do not release by default.
 - A package whose internal dependency was released in the same run gets at least a minor bump. Packages are processed dependencies-first.
 - Priority: major > minor > patch > none.
-- Explicit override: `[major]`, `[minor]`, `[patch]`, or `[skip-bump]` in a commit subject replaces the rule-based level for that commit.
+- Explicit override: `[major]`, `[minor]`, `[patch]`, or `[skip-bump]` in a commit subject replaces the rule-based level for that commit. A scoped tag applies only to the package matching its scope; an unscoped tag applies to every public package.
 - Squash merges: by default only a squash commit's subject (e.g. the PR title) is analyzed. Set `report.squash` to `"github"` (GitHub's default squash message) or `{ "detect": "<subject regex>", "entry": "<body line regex>" }` to analyze the commits listed in its body instead. Prefer merge or rebase merges, or a conventional squash title.
 - Private packages (`"private": true`) are never released.
 - Internal dependency versions are written as exact versions; `workspace:` specifiers and `peerDependencies` are left alone.

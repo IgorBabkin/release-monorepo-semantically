@@ -341,6 +341,7 @@ These are then aggregated — the highest value wins:
 - ✅ Dependency updates trigger a **MINOR** version bump, even if there are no code changes in the package
 - ✅ Dependency updates have **higher priority than patches** but **lower priority than breaking changes**
 - ✅ Only **scoped commits** (matching the package name) are considered for version calculation
+- ✅ Explicit bump tags override the bump level but retain package attribution: scoped tags apply only to the matching package, while unscoped tags apply to every public package
 - ✅ Breaking changes **always** trigger MAJOR, regardless of dependency updates
 
 **Release-triggering commit types:**
