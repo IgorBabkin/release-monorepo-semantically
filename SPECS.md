@@ -63,11 +63,12 @@ When `report.squash` is configured (the `"github"` preset, or `{ detect, entry }
 
 ## CLI Interface
 
-There is no single release command. The tool is a set of independent steps — `report`, `package-json`, `package-manager`, `changelog`, `vcs`, `release-notes` — invoked as `monorepo-semantic-release <controller> [action] [--flags...]`. `report` reads the repository and computes what should release; every other step receives that result via `--context <json>` and does one job. The caller (a CI pipeline, or a local shell loop) decides which steps to run, in what order, and whether to run them at all — the tool does not orchestrate a multi-step release itself. See [CI Integration User Story](#ci-integration-user-story) below for the canonical sequence, and `README.md` for the full command reference.
+There is no single release command. The tool is a set of independent steps — `check`, `report`, `package-json`, `package-manager`, `changelog`, `vcs`, `release-notes` — invoked as `monorepo-semantic-release <controller> [action] [--flags...]`. `check` is a read-only configuration preflight; `report` reads the repository and computes what should release; every other release step receives that result via `--context <json>` and does one job. The caller (a CI pipeline, or a local shell loop) decides which release steps to run, in what order, and whether to run them at all — the tool does not orchestrate a multi-step release itself. See [CI Integration User Story](#ci-integration-user-story) below for the canonical sequence, and `README.md` for the full command reference.
 
 ### Usage
 
 ```bash
+monorepo-semantic-release check
 RELEASE_CONTEXT=$(monorepo-semantic-release report)
 
 monorepo-semantic-release package-json    --context "$RELEASE_CONTEXT"
@@ -591,14 +592,15 @@ ci(release): publish [skip-ci]
 
 ## Error Handling
 
-The CLI is designed to run in CI environments where the repository state is controlled. `report` performs one pre-flight check — the working tree must be clean — before computing anything; every other step fails naturally when the underlying command it wraps fails.
+`check` validates workspace discovery, release configuration, public access for scoped packages, and configured template paths without changing files. `report` repeats those checks before computing the release context and also requires a clean working tree. GitHub release-notes credentials and `gh` are optional during preflight and are reported as warnings; the release-notes step validates them before doing any work.
 
 **Error Behavior:**
 
 If a step fails:
 
-- A recognized failure (see below) prints `[CODE] message` to stderr via the domain exception it raised
-- An unrecognized failure prints the raw error
+- Failures print `[step] ✖ <problem and suggested fix>` to stderr
+- In GitHub Actions, failures also emit `::error::` workflow annotations
+- Child-process stderr is decoded to text rather than printing raw Buffer objects
 - The process exits with a non-zero status code
 - Nothing about the working directory is rolled back — whatever that step had already done (e.g. `vcs`'s commit and tag actions, before its push action fails) stays in place for inspection
 
@@ -611,6 +613,9 @@ If a step fails:
 - **`MISSING_PACKAGE_JSON`**: a manifest a step was told to read is not there
 - **`INVALID_PACKAGE_JSON`**: a package manifest is not valid JSON, or is missing `name`/`version`, or its `version` is not `major.minor.patch`, or a dependency block is not a map of specifiers
 - **`INVALID_ROOT_PACKAGE_JSON`**: the workspace root manifest declares no `workspaces` globs, so no package could be discovered
+- **`PREFLIGHT_VALIDATION_FAILED`**: `check` or `report` found unmatched workspace globs, missing scoped-package publish access, or a missing configured template; each problem is printed separately with a fix
+- **`MISSING_PUBLIC_ACCESS`**: a scoped package being published must declare `publishConfig.access: "public"`
+- **`MISSING_TEMPLATE`**: a configured or command-line template does not exist
 - **Git errors**: git commands fail with their own stderr output (e.g. push rejected, no configured remote)
 - **`pnpm publish` errors**: pnpm fails if the version already exists or is invalid
 - **Template errors**: Handlebars fails if a `--template` path is missing or invalid
@@ -674,7 +679,7 @@ Step 2 — Run each feature/controller in order, passing the context
 - name: Create GitHub releases
   run: monorepo-semantic-release release-notes --context "$RELEASE_CONTEXT"
   env:
-    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Key Properties

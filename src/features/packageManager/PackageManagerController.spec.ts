@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { It, Mock, Times } from 'moq.ts';
 import { PackageManagerController } from './PackageManagerController.js';
 import { NpmPackage } from '../../domain/NpmPackage.js';
@@ -7,6 +7,7 @@ import { PackageManager } from './services/PackageManager.js';
 import { ILogger } from '../../services/ConsoleLogger.js';
 import { IFileSystemService } from '../../services/NodeFileSystemService.js';
 import { PackageJSON } from '../../domain/PackageJSON.js';
+import { MissingPublicAccessException } from '../../exceptions/DomainException.js';
 
 describe('PackageManagerController', () => {
   const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
@@ -77,5 +78,27 @@ describe('PackageManagerController', () => {
 
     packageManager.verify((m) => m.publish('/repo/packages/pkg-a'), Times.Once());
     logger.verify((m) => m.info('PUBLISH  pkg-a@1.0.1'), Times.Once());
+  });
+
+  it('given a scoped package without public access when publishing is enabled then it fails before any package is published', () => {
+    const scopedPkg = NpmPackage.createFromPackage({ name: '@scope/pkg-a', version: '1.0.0' }, '/repo/packages/scoped');
+    const scopedContext = serializeContext({
+      releasedVersions: new Map([['@scope/pkg-a', '1.0.1']]),
+      releasedPackages: [pkg, scopedPkg],
+      releasedCommits: new Map(),
+    });
+    const config = { dryRun: false };
+    const packageManager = new Mock<PackageManager>().setup((m) => m.publish(It.IsAny())).returns(undefined);
+    const fs = new Mock<IFileSystemService>()
+      .setup((m) => m.readPackageJsonOrFail('/repo/packages/scoped'))
+      .returns({
+        name: '@scope/pkg-a',
+        version: '1.0.0',
+      });
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+    const controller = new PackageManagerController(config as never, packageManager.object(), fs.object(), logger.object());
+
+    expect(() => controller.publishAllPackages({ context: scopedContext, dryRun: false })).toThrow(MissingPublicAccessException);
+    packageManager.verify((m) => m.publish(It.IsAny()), Times.Never());
   });
 });

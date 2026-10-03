@@ -18,6 +18,7 @@ Requires Node >=20.11, a git repository, a root `package.json` with `workspaces`
 Run from the workspace root, in this order:
 
 ```bash
+monorepo-semantic-release check                                      # optional read-only PR preflight
 RELEASE_CONTEXT=$(monorepo-semantic-release report)                        # fails if the working tree is dirty
 monorepo-semantic-release package-json    --context "$RELEASE_CONTEXT"    # pin internal deps to exact new versions, refresh lockfile
 monorepo-semantic-release package-manager --context "$RELEASE_CONTEXT"    # write new versions into package.json files
@@ -33,6 +34,8 @@ monorepo-semantic-release release-notes   --context "$RELEASE_CONTEXT"    # opti
 - `vcs` actions: default runs `commit`, `tag`, `push`; each is also callable alone (`vcs commit`, `vcs tag`, `vcs push`).
 - `package-manager` actions: default writes versions; `publish` publishes. They are separate on purpose.
 - `--template <path>` overrides the Handlebars template for `changelog`, `vcs commit`, and `release-notes`. `changelog` also takes `--changelog-name <file>`.
+- `check` validates workspace package discovery, all release config, public access for scoped packages, and configured template paths. `report` runs the same validation before computing context.
+- GitHub release-notes configuration is optional during preflight; missing credentials or `gh` are warnings. `release-notes` validates its own credentials and CLI before creating releases.
 - If nothing needs releasing, `report` emits a context with empty maps and the later steps are no-ops.
 
 ## Release context (`report` output)
@@ -96,7 +99,7 @@ Handlebars. Default templates ship in `dist/features/{changelog/changelog.hbs,vc
 
 ## Errors
 
-Failures print `[CODE] message` to stderr and exit with code 1.
+Failures print `[step] ✖ <problem and suggested fix>` to stderr and exit with code 1; GitHub Actions also receives `::error::` annotations. Child-process stderr is decoded to text.
 
 | Code | Meaning / fix |
 | --- | --- |
@@ -105,6 +108,9 @@ Failures print `[CODE] message` to stderr and exit with code 1.
 | `INVALID_PACKAGE_JSON` | A workspace package lacks `name` or a `major.minor.patch` `version`. |
 | `MISSING_PACKAGE_JSON` | A workspace glob matched a directory with no `package.json`. |
 | `INVALID_CONFIG` | A config section fails the schema. The message names the section and field. |
+| `PREFLIGHT_VALIDATION_FAILED` | `check` or `report` found unmatched workspace globs, a scoped package without public access, or a missing configured template. |
+| `MISSING_PUBLIC_ACCESS` | A scoped package must declare `publishConfig.access: "public"` before it can be published. |
+| `MISSING_TEMPLATE` | A configured or command-line template file does not exist. |
 | `MISSING_GITHUB_CREDENTIALS` | `release-notes` needs `repository`/`token` config or `GITHUB_REPOSITORY`/`GITHUB_TOKEN`. |
 | `GITHUB_CLI_UNAVAILABLE` | `release-notes` needs `gh` on `PATH`. |
 | `MISSING_DEPENDENCY_VERSION` | A dependency listed for update isn't declared in the package. |

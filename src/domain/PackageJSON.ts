@@ -10,6 +10,7 @@ export interface PackageJSON {
   // versions a consumer may pair the package with, so it must survive a
   // dependency bump untouched.
   peerDependencies?: Record<string, string>;
+  publishConfig?: { access?: string };
   workspaces?: string[]; // global workspaces field for monorepos
 }
 

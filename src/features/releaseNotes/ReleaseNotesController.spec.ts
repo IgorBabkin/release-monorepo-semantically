@@ -6,6 +6,7 @@ import { serializeContext } from '../../domain/ReleaseControllerContext.js';
 import { ReleaseNotesService } from './services/ReleaseNotesService.js';
 import { IRenderService } from '../../services/HandlebarsRenderService.js';
 import { ILogger } from '../../services/ConsoleLogger.js';
+import { IFileSystemService } from '../../services/NodeFileSystemService.js';
 
 describe('ReleaseNotesController', () => {
   const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
@@ -30,8 +31,9 @@ describe('ReleaseNotesController', () => {
       .returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const renderService = new Mock<IRenderService>().setup((m) => m.render(It.IsAny(), It.IsAny(), It.IsAny())).returns('rendered release notes');
+    const fs = new Mock<IFileSystemService>().setup((m) => m.fileExists(It.IsAny())).returns(true);
 
-    new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object()).createGithubRelease({
+    new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object(), fs.object()).createGithubRelease({
       context,
       dryRun: config.dryRun,
     });
@@ -76,8 +78,9 @@ describe('ReleaseNotesController', () => {
       .returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
     const renderService = new Mock<IRenderService>().setup((m) => m.render(It.IsAny(), It.IsAny(), It.IsAny())).returns('');
+    const fs = new Mock<IFileSystemService>().setup((m) => m.fileExists(It.IsAny())).returns(true);
 
-    new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object()).createGithubRelease({
+    new ReleaseNotesController(config as never, '/repo', github.object(), logger.object(), renderService.object(), fs.object()).createGithubRelease({
       context,
       dryRun: config.dryRun,
     });

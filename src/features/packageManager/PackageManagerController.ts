@@ -10,6 +10,7 @@ import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
 import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
 import { validate } from '../../utils/zod.js';
 import { commandArgs } from '../../utils/ts-ioc-container.js';
+import { MissingPublicAccessException } from '../../exceptions/DomainException.js';
 
 @register('package-manager')
 export class PackageManagerController {
@@ -59,6 +60,14 @@ export class PackageManagerController {
   publishAllPackages(@inject(commandArgs, parseOptions(stepCommand()), validate(STEP_OPTIONS)) options: StepOptions): void {
     const { releasedPackages, releasedVersions } = deserializeContext(options.context);
     const dryRun = isDryRun(options, this.config);
+
+    if (!dryRun) {
+      for (const pkg of releasedPackages) {
+        if (pkg.name.startsWith('@') && this.fs.readPackageJsonOrFail(pkg.dirname).publishConfig?.access !== 'public') {
+          throw new MissingPublicAccessException(pkg.name);
+        }
+      }
+    }
 
     for (const pkg of releasedPackages) {
       const newVersion = releasedVersions.get(pkg.name)!;

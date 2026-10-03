@@ -102,6 +102,8 @@ describe('ChangelogController', () => {
     const fs = new Mock<IFileSystemService>()
       .setup((m) => m.fileExists(It.IsAny()))
       .returns(false)
+      .setup((m) => m.fileExists('templates/custom.hbs'))
+      .returns(true)
       .setup((m) => m.writeFile(It.IsAny(), It.IsAny()))
       .returns(undefined);
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);

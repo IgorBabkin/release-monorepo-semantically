@@ -68,7 +68,7 @@ monorepo-semantic-release vcs             --context "$RELEASE_CONTEXT"
 - name: Create GitHub releases
   run: monorepo-semantic-release release-notes --context "$RELEASE_CONTEXT"
   env:
-    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Commit conventions
@@ -94,6 +94,7 @@ Every step accepts `--context <json>` (except `report`, which produces it) and `
 
 | Command           | Action      | Does                                                                                                                                                                                                                                          |
 | ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check`           | (only one)  | Validates workspace discovery, release configuration, scoped-package publish access, and configured templates without mutating files. Missing optional GitHub release-notes setup is reported as a warning.                                   |
 | `report`          | (only one)  | Discovers workspace packages, computes version bumps from commits since each package's last release tag, fails if the working tree isn't clean. Writes the release context as JSON to stdout.                                                 |
 | `package-json`    | (only one)  | Updates internal dependency versions in each released package's `package.json` to exact versions, in the `dependencies`/`devDependencies` block each was declared in (peer ranges are left alone), then refreshes the workspace lockfile.     |
 | `package-manager` | _(default)_ | Writes each released package's new version into its `package.json`.                                                                                                                                                                           |
@@ -106,6 +107,8 @@ Every step accepts `--context <json>` (except `report`, which produces it) and `
 | `release-notes`   | (only one)  | Creates a GitHub Release per released package via the `gh` CLI. Needs `repository`/`token` from config or the `GITHUB_REPOSITORY`/`GITHUB_TOKEN` environment variables, and `gh` on `PATH`. `--template <path>` overrides the notes template. |
 
 `vcs commit`/`vcs tag`/`vcs push` exist so a pipeline can skip pushing (e.g. to inspect a release commit locally) without giving up tagging or committing.
+
+Run `monorepo-semantic-release check` as a read-only preflight in pull-request CI. `report` runs the same checks before calculating a release; workspace globs must match package manifests, public scoped packages need `publishConfig.access: "public"`, and configured templates must exist. GitHub release notes remain optional, so missing credentials or `gh` produce warnings unless `release-notes` itself is invoked.
 
 ## Configuration
 

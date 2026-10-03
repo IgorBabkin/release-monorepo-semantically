@@ -45,7 +45,7 @@ export class Application {
         toTask(actionItem)();
       }
     } catch (error) {
-      this.errorHandler.handleError(error);
+      this.errorHandler.handleError(error, argv[0]);
     } finally {
       this.scope.dispose();
     }

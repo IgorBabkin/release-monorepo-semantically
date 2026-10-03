@@ -77,6 +77,24 @@ export class MissingGithubCredentialsException extends DomainException {
   }
 }
 
+export class PreflightValidationException extends DomainException {
+  constructor(readonly problems: string[]) {
+    super('PREFLIGHT_VALIDATION_FAILED', problems.join('\n'));
+  }
+}
+
+export class MissingTemplateException extends DomainException {
+  constructor(step: string, template: string) {
+    super('MISSING_TEMPLATE', `${step} template "${template}" does not exist; correct the template path in release.${step}.template or create the file`);
+  }
+}
+
+export class MissingPublicAccessException extends DomainException {
+  constructor(packageName: string) {
+    super('MISSING_PUBLIC_ACCESS', `Scoped package ${packageName} must set publishConfig.access to "public" before publishing`);
+  }
+}
+
 export class MissingControllerException extends DomainException {
   constructor() {
     super('MISSING_CONTROLLER', 'Usage: monorepo-semantic-release <controller> [action] [--flags...]');

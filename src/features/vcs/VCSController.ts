@@ -11,6 +11,8 @@ import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
 import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand, type StepOptions } from '../../utils/cli.js';
 import { validate } from '../../utils/zod.js';
 import { commandArgs } from '../../utils/ts-ioc-container.js';
+import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
+import { MissingTemplateException } from '../../exceptions/DomainException.js';
 
 export const VCS_OPTIONS = STEP_OPTIONS.extend({
   template: z.string().trim().optional(),
@@ -25,6 +27,7 @@ export class VCSController {
     @inject(globalConfig('cwd')) private readonly cwd: string,
     @inject(VSCServiceKey) private readonly vcs: VSCService,
     @inject(IRenderServiceKey) private readonly renderService: IRenderService,
+    @inject(IFileSystemServiceKey) private readonly fs: IFileSystemService,
     @inject(ILoggerKey.args('vcs')) private readonly logger: ILogger,
   ) {}
 
@@ -39,6 +42,9 @@ export class VCSController {
     // changes before the pipeline touches anything — lives in `report`.
     const releaseContext = deserializeContext(options.context);
     const template = options.template ?? this.config.template;
+    if (template && !this.fs.fileExists(template)) {
+      throw new MissingTemplateException('vcs', template);
+    }
     const cwd = template ? this.cwd : import.meta.dirname;
     const commitMessage = this.renderService.render(template ?? './release-commit-msg.hbs', releaseContext, { cwd });
 
