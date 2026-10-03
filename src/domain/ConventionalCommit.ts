@@ -83,7 +83,11 @@ export class ConventionalCommit {
 
   /** Highest bump level this commit triggers for the given package, or NONE if it matches nothing. */
   bumpMatch(bumpConfig: BumpMatchers, packageName: string): SemVerBumpType {
-    if (this.explicitBump !== undefined) return this.explicitBump;
+    if (this.explicitBump !== undefined) {
+      // An unscoped explicit bump applies workspace-wide; a scoped one is attributed to its package only.
+      if (this.scope === null || this.scope === packageName) return this.explicitBump;
+      return SemVerBumpType.NONE;
+    }
     if (this.matchesAny(bumpConfig.major, packageName)) return SemVerBumpType.MAJOR;
     if (this.matchesAny(bumpConfig.minor, packageName)) return SemVerBumpType.MINOR;
     if (this.matchesAny(bumpConfig.patch, packageName)) return SemVerBumpType.PATCH;
