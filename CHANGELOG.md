@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.14.0...v1.14.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* attribute explicit bumps to commit scope ([6269af3](https://github.com/IgorBabkin/release-monorepo-semantically/commit/6269af384b015242466648cf749cf6cc1b5bef2e))
+
 # [1.14.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.13.0...v1.14.0) (2026-09-26)
 
 
