@@ -84,7 +84,7 @@ Non-release types: `docs`, `test`, `ci`, `chore`, `refactor`, `style`.
 
 Package scope is matched by package name.
 
-To force a level regardless of rules, put `[major]`, `[minor]`, `[patch]`, or `[skip-bump]` in the commit subject, e.g. `chore: drop node 18 [major]`. The tag is stripped from the subject and overrides the rule-based level for that commit.
+To force a level regardless of rules, put `[major]`, `[minor]`, `[patch]`, or `[skip-bump]` in the commit subject, e.g. `chore: drop node 18 [major]`. The tag is stripped from the subject and overrides the rule-based level for that commit. A scoped tag (for example, `feat(pkg-a): ... [major]`) applies only to the package matching the scope; an unscoped tag (for example, `[major] feat: ...`) applies to every public package.
 
 This mapping is `report`'s default configuration, not a fixed rule — see [Configuring release rules](#configuring-release-rules) to change or extend it.
 
