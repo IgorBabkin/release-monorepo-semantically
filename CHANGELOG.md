@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.14.1...v1.15.0) (2026-10-03)
+
+
+### Features
+
+* **preflight:** add config validation ([f422f6b](https://github.com/IgorBabkin/release-monorepo-semantically/commit/f422f6b38222512d0eee4a7fa9718221e4af275e))
+
 ## [1.14.1](https://github.com/IgorBabkin/release-monorepo-semantically/compare/v1.14.0...v1.14.1) (2026-10-03)
 
 

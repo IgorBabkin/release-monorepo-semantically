@@ -1,6 +1,6 @@
 {
   "name": "release-monorepo-semantically",
-  "version": "1.14.1",
+  "version": "1.15.0",
   "description": "CLI that versions, changelogs, tags, and publishes the packages of a pnpm monorepo from conventional commits, as independent composable CI steps",
   "keywords": [
     "monorepo",
