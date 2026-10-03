@@ -12,8 +12,10 @@ import { OutputService } from '../../services/OutputService.js';
 import { IFileSystemService } from '../../services/NodeFileSystemService.js';
 import { DirtyWorkingTreeException } from '../../exceptions/DomainException.js';
 import { SquashCommitPattern } from '../../domain/SquashCommitPattern.js';
+import { PreflightService } from '../../services/PreflightService.js';
 
 const DEFAULT_CONFIG = PLUGIN_CONFIG_SCHEMA.parse({});
+const preflight = () => new Mock<PreflightService>().setup((m) => m.validate()).returns([]);
 
 describe('ReportController.generate', () => {
   it('given a dirty working tree when generate runs then it fails before touching anything', () => {
@@ -22,7 +24,7 @@ describe('ReportController.generate', () => {
     const output = new Mock<OutputService>();
 
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG, preflight().object());
 
     expect(() => controller.generate()).toThrow(DirtyWorkingTreeException);
     output.verify((m) => m.write(It.IsAny()), Times.Never());
@@ -38,7 +40,7 @@ describe('ReportController.generate', () => {
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
 
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG, preflight().object());
 
     controller.generate();
 
@@ -55,6 +57,20 @@ describe('ReportController.generate', () => {
     );
   });
 
+  it('given failed preflight validation when generate runs then no release context is written', () => {
+    const vsc = new Mock<VSCService>().setup((m) => m.isWorkingTreeClean()).returns(true);
+    const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+    const output = new Mock<OutputService>();
+    const error = new Error('preflight failed');
+    const validation = new Mock<PreflightService>().setup((m) => m.validate()).throws(error);
+    const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
+
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG, validation.object());
+
+    expect(() => controller.generate()).toThrow(error);
+    output.verify((m) => m.write(It.IsAny()), Times.Never());
+  });
+
   it('given release-triggering commits when generate runs then packages are bumped and output contains serialized context', () => {
     const vsc = new Mock<VSCService>()
       .setup((m) => m.isWorkingTreeClean())
@@ -68,7 +84,7 @@ describe('ReportController.generate', () => {
 
     const pkgA = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0' }, '/repo/packages/pkg-b');
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB], DEFAULT_CONFIG);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB], DEFAULT_CONFIG, preflight().object());
 
     controller.generate();
 
@@ -100,7 +116,7 @@ describe('ReportController.generate', () => {
     const pkgA = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
     const pkgB = NpmPackage.createFromPackage({ name: 'pkg-b', version: '2.0.0' }, '/repo/packages/pkg-b');
     const config = PLUGIN_CONFIG_SCHEMA.parse({ bumps: { patch: [...DEFAULT_CONFIG.bumps.patch, { type: 'docs', scope: 'specs', packages: '*' }] } });
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB], config);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkgA, pkgB], config, preflight().object());
 
     controller.generate();
 
@@ -126,7 +142,7 @@ describe('ReportController.generate', () => {
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
 
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], DEFAULT_CONFIG, preflight().object());
 
     controller.generate();
 
@@ -144,7 +160,7 @@ describe('ReportController.generate', () => {
     const output = new Mock<OutputService>().setup((m) => m.write(It.IsAny())).returns(undefined);
 
     const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
-    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], config);
+    const controller = new ReportController(vsc.object(), logger.object(), output.object(), [pkg], config, preflight().object());
 
     controller.generate();
 

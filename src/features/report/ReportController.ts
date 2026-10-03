@@ -13,6 +13,7 @@ import { bumpTypeToString, SemVerBumpType } from '../../domain/SemVerBumpType.js
 import { serializeContext } from '../../domain/ReleaseControllerContext.js';
 import { pluginsConfigService } from '../../services/PluginsConfigService.js';
 import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './ReportConfig.js';
+import { PreflightService, PreflightServiceKey } from '../../services/PreflightService.js';
 
 // Arrow function, not `function`: ts-ioc-container's token resolver treats any
 // function with a `.prototype` as a class to `new`, which a plain function
@@ -37,6 +38,7 @@ export class ReportController {
     @inject(OutputServiceKey) private output: OutputService,
     @inject(resolvePublicPackages) private publicPackages: NpmPackage[],
     @inject(pluginsConfigService(CONFIG_KEY, PLUGIN_CONFIG_SCHEMA)) private config: z.infer<typeof PLUGIN_CONFIG_SCHEMA>,
+    @inject(PreflightServiceKey) private preflight: PreflightService,
   ) {}
 
   @onDefault(execute())
@@ -52,6 +54,10 @@ export class ReportController {
     // into the release commit.
     if (!this.vsc.isWorkingTreeClean()) {
       throw new DirtyWorkingTreeException();
+    }
+
+    for (const warning of this.preflight.validate()) {
+      this.logger.info(`⚠ ${warning}`);
     }
 
     const releasedVersions = new Map<PackageName, PackageVersion>();

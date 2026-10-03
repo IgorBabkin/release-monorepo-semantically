@@ -5,6 +5,7 @@ import { ConsoleLogger } from '../services/ConsoleLogger.js';
 import { HandlebarsRenderService } from '../services/HandlebarsRenderService.js';
 import { GlobalConfigKey } from '../domain/GlobalConfig.js';
 import { PluginsConfigService } from '../services/PluginsConfigService.js';
+import { PreflightService } from '../services/PreflightService.js';
 
 interface CommonModuleOptions {
   cwd: string;
@@ -21,6 +22,7 @@ export class CommonModule implements IContainerModule {
       .addRegistration(R.fromClass(NodeFileSystemService))
       .addRegistration(R.fromClass(ExceptionHandler))
       .addRegistration(R.fromClass(ConsoleLogger))
-      .addRegistration(R.fromClass(HandlebarsRenderService));
+      .addRegistration(R.fromClass(HandlebarsRenderService))
+      .addRegistration(R.fromClass(PreflightService));
   }
 }

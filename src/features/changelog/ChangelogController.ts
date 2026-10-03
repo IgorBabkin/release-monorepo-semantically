@@ -12,6 +12,7 @@ import { CONFIG_KEY, PLUGIN_CONFIG_SCHEMA } from './ChangelogConfig.js';
 import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand } from '../../utils/cli.js';
 import { validate } from '../../utils/zod.js';
 import { commandArgs } from '../../utils/ts-ioc-container.js';
+import { MissingTemplateException } from '../../exceptions/DomainException.js';
 
 export const CHANGELOG_OPTIONS = STEP_OPTIONS.extend({
   template: z.string().trim().optional(),
@@ -41,6 +42,10 @@ export class ChangelogController {
     const template = options.template ?? this.config.template;
     const changelogName = options.changelogName ?? this.config.changelogName;
     const dryRun = isDryRun(options, this.config);
+
+    if (template && !this.fs.fileExists(template)) {
+      throw new MissingTemplateException('changelog', template);
+    }
 
     for (const pkg of releasedPackages) {
       const changelogFile = path.resolve(pkg.dirname, changelogName);

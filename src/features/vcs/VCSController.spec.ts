@@ -6,6 +6,7 @@ import { serializeContext } from '../../domain/ReleaseControllerContext.js';
 import { VSCService } from './services/VSCService.js';
 import { IRenderService } from '../../services/HandlebarsRenderService.js';
 import { ILogger } from '../../services/ConsoleLogger.js';
+import { IFileSystemService } from '../../services/NodeFileSystemService.js';
 
 describe('VCSController', () => {
   const pkg = NpmPackage.createFromPackage({ name: 'pkg-a', version: '1.0.0' }, '/repo/packages/pkg-a');
@@ -32,8 +33,9 @@ describe('VCSController', () => {
       .returns(undefined);
     const renderService = new Mock<IRenderService>().setup((m) => m.render(It.IsAny(), It.IsAny(), It.IsAny())).returns('release commit message');
     const logger = new Mock<ILogger>().setup((m) => m.info(It.IsAny())).returns(undefined);
+    const fs = new Mock<IFileSystemService>().setup((m) => m.fileExists(It.IsAny())).returns(true);
 
-    const controller = new VCSController(config as never, '/repo', vcs.object(), renderService.object(), logger.object());
+    const controller = new VCSController(config as never, '/repo', vcs.object(), renderService.object(), fs.object(), logger.object());
     controller.commitChanges({ context, dryRun: config.dryRun });
     controller.createTags({ context, dryRun: config.dryRun });
     controller.pushChanges({ context, dryRun: config.dryRun });

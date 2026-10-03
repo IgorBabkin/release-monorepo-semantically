@@ -12,6 +12,8 @@ import { deserializeContext } from '../../domain/ReleaseControllerContext.js';
 import { isDryRun, parseOptions, STEP_OPTIONS, stepCommand } from '../../utils/cli.js';
 import { validate } from '../../utils/zod.js';
 import { commandArgs } from '../../utils/ts-ioc-container.js';
+import { IFileSystemService, IFileSystemServiceKey } from '../../services/NodeFileSystemService.js';
+import { MissingTemplateException } from '../../exceptions/DomainException.js';
 
 export const RELEASE_NOTES_OPTIONS = STEP_OPTIONS.extend({
   template: z.string().trim().optional(),
@@ -27,6 +29,7 @@ export class ReleaseNotesController {
     @inject(ReleaseNotesServiceKey) private readonly githubService: ReleaseNotesService,
     @inject(ILoggerKey.args('release-notes')) private readonly logger: ILogger,
     @inject(IRenderServiceKey) private readonly renderService: IRenderService,
+    @inject(IFileSystemServiceKey) private readonly fs: IFileSystemService,
   ) {}
 
   @onDefault(execute())
@@ -43,6 +46,10 @@ export class ReleaseNotesController {
     const dryRun = isDryRun(options, this.config);
     const template = options.template ?? this.config.template;
     const { repository, token } = this.resolveCredentials(dryRun);
+
+    if (template && !this.fs.fileExists(template)) {
+      throw new MissingTemplateException('release-notes', template);
+    }
 
     if (!dryRun && !this.githubService.isCliAvailable()) {
       throw new GithubCliUnavailableException();

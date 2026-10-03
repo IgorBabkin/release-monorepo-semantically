@@ -7,11 +7,13 @@ import { PackageManagerModule } from './features/packageManager/PackageManagerMo
 import { PackageJsonModule } from './features/packageJson/PackageJsonModule.js';
 import { ChangelogModule } from './features/changelog/ChangelogModule.js';
 import { ReportModule } from './features/report/ReportModule.js';
+import { CheckModule } from './features/check/CheckModule.js';
 import { Application } from './cli/Application.js';
 
 export function runCli(args: string[], cwd = process.cwd()): number {
   const container = new Container({ tags: ['root'] })
     .useModule(new CommonModule({ cwd }))
+    .useModule(new CheckModule())
     .useModule(new ReportModule())
     .useModule(new VCSModule())
     .useModule(new ReleaseNotesModule())
